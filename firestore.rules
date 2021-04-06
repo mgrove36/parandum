@@ -1,0 +1,189 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+	    match /users/{userID} {
+			allow read, delete: if isSignedIn() && (isSignedInUser(userID) || getUserData(request.auth.uid).admin); // is current user's data or is admin
+			allow update: if isSignedIn() && getUserData(request.auth.uid).admin && verifyFields([],["admin"]) && verifyUsersFieldTypes();
+			// NOTE: create disallowed to ensure users can't define themselves as admins. Handled in Cloud Functions instead.
+
+			match /private/settings {
+				allow read: if isSignedIn() && isSignedInUser(userID); // is current user's data
+				allow delete: if isSignedIn() && (isSignedInUser(userID) || getUserData(request.auth.uid).admin);
+				allow update: if isSignedIn() && isSignedInUser(userID) && verifyFields([],["display_name", "sound", "theme"]) && verifyUsersPrivateSettingsFieldTypes();
+				allow create: if isSignedIn() && isSignedInUser(userID) && verifyFields(["display_name", "sound", "theme"],[]) && verifyUsersPrivateSettingsFieldTypes();
+			}
+			match /groups/{groupID} {
+				allow read, delete: if isSignedIn() && (isSignedInUser(userID) || getUserGroupData(request.auth.uid, groupID).role == "owner" || getUserData(request.auth.uid).admin); // is current user's data or is owner of group or is admin
+				allow create: if isSignedIn() && (isSignedInUser(userID) || getUserGroupData(request.auth.uid, groupID).role == "owner" || getUserData(request.auth.uid).admin) && verifyFields(["role"],[]) && verifyUsersGroupsFieldTypes();
+				allow update: if isSignedIn() && (isSignedInUser(userID) || getUserGroupData(request.auth.uid, groupID).role == "owner" || getUserData(request.auth.uid).admin) && verifyFields([],["role"]) && verifyUsersGroupsFieldTypes();
+			}
+		}
+
+		match /groups/{groupID} {
+			match /sets/{setID} {
+				allow delete: if isSignedIn() && (getUserGroupData(groupID).role == "owner" || getUserData(request.auth.uid).admin);
+				allow read: if isSignedIn() && (getUserGroupData(groupID).role || getUserData(request.auth.uid).admin);
+				allow create: if isSignedIn() && isSetIDValid(setID) && (getUserGroupData(groupID).role == "contributor" || getUserGroupData(groupID).role == "owner" || getUserData(request.auth.uid).admin) && verifyFields(["sets"],[]) && verifyGroupsFieldTypes();
+			}
+			
+			match /static/data {
+				allow read, delete: if isSignedIn() && (getUserGroupData(groupID).role == "owner" || getUserData(request.auth.uid).admin);
+				allow create: if isSignedIn() && (getUserGroupData(groupID).role == "owner" || getUserData(request.auth.uid).admin) && verifyFields(["join_code"],[]) && verifyGroupsStaticDataFieldTypes();
+			}
+
+			match /restricted/data {
+				allow delete: if isSignedIn() && (getUserGroupData(groupID).role == "owner" || getUserData(request.auth.uid).admin);
+				allow read: if isSignedIn() && (getUserGroupData(groupID).role || getUserData(request.auth.uid).admin);
+				allow create: if isSignedIn() && (getUserGroupData(groupID).role == "owner" || getUserData(request.auth.uid).admin) && verifyFields(["display_name"],[]) && verifyGroupsFieldTypes();
+				allow update: if isSignedIn() && (getUserGroupData(groupID).role == "owner" || getUserData(request.auth.uid).admin) && verifyFields([],["display_name"]) && verifyGroupsFieldTypes();
+			}
+		}
+
+
+		match /sets/{setID} {
+			allow read, delete: if isSignedIn() && request.auth.uid == getSetOwner(setID);
+			allow read: if isSignedIn() && resource.data.public;
+			allow create: if isSignedIn() && request.auth.uid == getSetOwner(setID) && verifyFields(["public", "title"],[]) && verifySetsFieldTypes();
+			allow update: if isSignedIn() && request.auth.uid == getSetOwner(setID) && verifyFields([],["public", "title"]) && verifySetsFieldTypes();
+
+			match /static/data {
+				allow read, delete: if isSignedIn() && request.auth.uid == resource.data.owner;
+				allow read: if isSignedIn() && getSetData(setID).public;
+				allow create: if isSignedIn() && request.auth.uid == request.resource.data.owner && verifyFields(["owner"],[]) && verifySetsStaticDataFieldTypes();
+			}
+
+			match /vocab/{vocabID} {
+				allow read, delete: if isSignedIn() && request.auth.uid == getSetOwner(setID);
+				allow read: if isSignedIn() && (getSetData(setID).public || request.auth.uid == getSetOwner(setID));
+				allow create: if isSignedIn() && request.auth.uid == getSetOwner(setID) && verifyFields(["term", "sound", "definition"],[]) && verifySetsVocabFieldTypes();
+				allow update: if isSignedIn() && request.auth.uid == getSetOwner(setID) && verifyFields([],["term", "sound", "definition"]) && verifySetsVocabFieldTypes();
+			}
+		}
+
+		match /progress/{progressID} {
+			allow read: if isSignedIn() && checkProgressUser(progressID);
+			allow delete: if isSignedIn() && checkProgressUser(progressID) && checkNotComplete(progressID);
+			// NOTE: update and create disallowed as these are handled by Cloud Functions to ensure sound file IDs aren't altered to illegally access other files
+
+			match /static/data {
+				allow read: if isSignedIn() && checkProgressUser(progressID);
+				// NOTE: create handled by Cloud Functions
+				allow delete: if isSignedIn() && checkProgressUser(progressID) && checkNotComplete(progressID);
+			}
+
+			match /terms/{vocabID} {
+				allow read: if isSignedIn() && checkProgressUser(progressID) && !(isLanguageSwitched(progressID));
+				// NOTE: create handled by Cloud Functions
+				allow delete: if isSignedIn() && checkProgressUser(progressID) && checkNotComplete(progressID);
+			}
+
+			match /definitions/{vocabID} {
+				allow read: if isSignedIn() && checkProgressUser(progressID) && isLanguageSwitched(progressID);
+				// NOTE: create handled by Cloud Functions
+				allow delete: if isSignedIn() && checkProgressUser(progressID) && checkNotComplete(progressID);
+			}
+		}
+
+		function isSignedIn() {
+			return request.auth != null;
+		}
+		function isSignedInUser(userID) {
+			return request.auth.uid == userID;
+		}
+		function getUserData(userID) {
+			return get(/databases/$(database)/documents/users/$(userID)).data;
+		}
+		function getUserGroupData(userID, groupID) {
+			return get(/databases/$(database)/documents/users/$(userID)/groups/$(groupID)).data;
+		}
+		function checkProgressUser(progressID) {
+			return get(/databases/$(database)/documents/progress/$(progressID)/static/data).data.uid == request.auth.uid;
+		}
+		function checkNotComplete(progressID) {
+			return get(/databases/$(database)/documents/progress/$(progressID)).data.progress < get(/databases/$(database)/documents/progress/$(progressID)).data.questions.length;
+		}
+		function isLanguageSwitched(progressID) {
+			return get(/databases/$(database)/documents/progress/$(progressID)/static/data).data;
+		}
+		function getSetData(setID) {
+			return get(/databases/$(database)/documents/sets/$(setID)).data;
+		}
+		function getSetOwner(setID) {
+			return get(/databases/$(database)/documents/sets/$(setID)/static/data).data.owner;
+		}
+		function verifyFields(required, optional) {
+			return request.resource.data.keys().hasAll(required) && request.resource.data.keys().hasOnly(required.concat(optional));
+		}
+		function isSetIDValid(setID) {
+			return getSetData(setID).public || getSetOwner(setID) == request.auth.uid;
+		}
+
+		function verifyUsersFieldTypes() {
+			let data = request.resource.data;
+			return data.get("admin",true) is bool;
+		}
+		function verifyUsersPrivateSettingsFieldTypes() {
+			let data = request.resource.data;
+			return data.get("display_name",true) is bool &&
+				data.get("sound",true) is bool &&
+				data.get("theme","") is string;
+		}
+		function verifyUsersGroupsFieldTypes() {
+			let data = request.resource.data;
+			return data.get("role","") is string &&
+				(data.get("role","") == "member" ||
+				data.get("role","") == "contributor" ||
+				data.get("role","") == "owner");
+		}
+		function verifyGroupsFieldTypes() {
+			let data = request.resource.data;
+			return data.get("display_name","") is string &&
+				data.get("sets",[]) is list;
+		}
+		function verifyGroupsStaticDataFieldTypes() {
+			let data = request.resource.data;
+			return data.get("join_code","") is string;
+		}
+		function verifySetsFieldTypes() {
+			let data = request.resource.data;
+			return data.get("public",true) is bool &&
+				data.get("title","") is string;
+		}
+		function verifySetsStaticDataFieldTypes() {
+			let data = request.resource.data;
+			return data.get("owner","") is string;
+		}
+		function verifySetsVocabFieldTypes() {
+			let data = request.resource.data;
+			return data.get("term","") is string &&
+				data.get("sound","") is string &&
+				data.get("definition","") is string;
+		}
+		function verifyProgressFieldTypes() {
+			let data = request.resource.data;
+			return data.get("correct",[]) is list &&
+				data.get("incorrect",[]) is list &&
+				data.get("questions",[]) is list &&
+				data.get("mark",0) is number &&
+				data.get("progress",0) is number;
+		}
+		function verifyProgressStaticDataFieldTypes() {
+			let data = request.resource.data;
+			return data.get("set_title","") is string &&
+				data.get("start_time",timestamp.date(2021,1,1)) is timestamp &&
+				data.get("switch_language",true) is bool &&
+				data.get("uid","") is string;
+		}
+		function verifyProgressTermsFieldTypes() {
+			let data = request.resource.data;
+			return data.get("term","") is string &&
+				data.get("sound","") is string;
+		}
+		function verifyProgressDefinitionsFieldTypes() {
+			let data = request.resource.data;
+			return data.get("definition","") is string;
+		}
+  }
+}
