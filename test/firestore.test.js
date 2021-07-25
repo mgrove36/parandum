@@ -21,13 +21,12 @@ function getAdminFirestore() {
 	return firebase.initializeAdminApp({ projectId: PROJECT_ID }).firestore();
 }
 
-
-describe.skip("Parandum Firestore database", () => {
+describe("Parandum Firestore database", () => {
 	beforeEach(async () => {
 		await firebase.clearFirestoreData({ projectId: PROJECT_ID });
 	});
 
-	after(async () => {
+	afterEach(async () => {
 		await firebase.clearFirestoreData({ projectId: PROJECT_ID });
 	});
 	
@@ -47,26 +46,26 @@ describe.skip("Parandum Firestore database", () => {
 		const db = getFirestore(myAuth);
 		const myTestDoc = db.collection("users").doc(myId);
 		const theirTestDoc = db.collection("users").doc(theirId);
-		await firebase.assertFails(myTestDoc.set({ display_name: "Name" }));
-		await firebase.assertFails(theirTestDoc.set({ display_name: "Name" }));
+		await firebase.assertFails(myTestDoc.set({ sound: true }));
+		await firebase.assertFails(theirTestDoc.set({ sound: true }));
 	});
 
 	it("Can update current user's user collection", async () => {
 		const admin = getAdminFirestore();
-		await admin.collection("users").doc(myId).set({ display_name: "Name" });
+		await admin.collection("users").doc(myId).set({ sound: true });
 
 		const db = getFirestore(myAuth);
 		const myTestDoc = db.collection("users").doc(myId);
-		await firebase.assertSucceeds(myTestDoc.update({ display_name: "Name 1" }));
+		await firebase.assertSucceeds(myTestDoc.update({ sound: false }));
 	});
 
 	it("Can't update current user's user collection with invalid data types", async () => {
 		const admin = getAdminFirestore();
-		await admin.collection("users").doc(myId).set({ display_name: "Name", sound: true, theme: "default" });
+		await admin.collection("users").doc(myId).set({ sound: true, theme: "default" });
 
 		const db = getFirestore(myAuth);
 		const myTestDoc = db.collection("users").doc(myId);
-		await firebase.assertFails(myTestDoc.update({ display_name: 0, sound: 0, theme: 0 }));
+		await firebase.assertFails(myTestDoc.update({ sound: 0, theme: 0 }));
 	});
 
 	it("Can't update current user's user collection with invalid fields", async () => {
@@ -75,16 +74,16 @@ describe.skip("Parandum Firestore database", () => {
 		await firebase.assertFails(myTestDoc.update({ invalid_field: "error" }));
 	});
 
-	it("Can delete current user's user collection", async () => {
+	it("Can't delete current user's user collection", async () => {
 		const db = getFirestore(myAdminAuth);
 		const testDoc = db.collection("users").doc(myId);
-		await firebase.assertSucceeds(testDoc.delete());
+		await firebase.assertFails(testDoc.delete());
 	});
 
-	it("Can delete other users' user collections when admin", async () => {
+	it("Can't delete other users' user collections when admin", async () => {
 		const db = getFirestore(myAdminAuth);
 		const testDoc = db.collection("users").doc(theirId);
-		await firebase.assertSucceeds(testDoc.delete());
+		await firebase.assertFails(testDoc.delete());
 	});
 
 	it("Can't delete other users' user collections when not admin", async () => {
@@ -137,19 +136,19 @@ describe.skip("Parandum Firestore database", () => {
 		await firebase.assertSucceeds(testDoc.delete());
 	});
 
-	it("Can add any user to group when admin", async () => {
+	it("Can add current user to group as any role when admin", async () => {
 		const db = getFirestore(myAdminAuth);
-		const testDoc = db.collection("users").doc(theirId).collection("groups").doc(groupOne);
+		const testDoc = db.collection("users").doc(myId).collection("groups").doc(groupOne);
 		await firebase.assertSucceeds(testDoc.set({role: "owner"}));
 	});
 
-	it("Can add any user to group when group owner", async () => {
+	it("Can't add any user to group when group owner", async () => {
 		const admin = getAdminFirestore();
 		await admin.collection("users").doc(myId).collection("groups").doc(groupOne).set({role: "owner"});
 
 		const db = getFirestore(myAuth);
 		const testDoc = db.collection("users").doc(theirId).collection("groups").doc(groupOne);
-		await firebase.assertSucceeds(testDoc.set({role: "member"}));
+		await firebase.assertFails(testDoc.set({role: "member"}));
 	});
 
 	it("Can't add other users to groups when not owner or admin", async() => {
@@ -164,7 +163,7 @@ describe.skip("Parandum Firestore database", () => {
 		await firebase.assertSucceeds(testDoc.set({role: "member"}));
 	});
 
-	it("Can't add current user to groups as contributor or owner when not owner or admin", async () => {
+	it("Can't add current user to groups as contributor or owner when not admin", async () => {
 		const db = getFirestore(myAuth);
 		const testDocOne = db.collection("users").doc(myId).collection("groups").doc(groupOne);
 		const testDocTwo = db.collection("users").doc(myId).collection("groups").doc(groupTwo);
@@ -179,8 +178,6 @@ describe.skip("Parandum Firestore database", () => {
 		const testDocThree = db.collection("users").doc(myId).collection("groups").doc(groupThree);
 		const testDocFour = db.collection("users").doc(myId).collection("groups").doc("group_04");
 		await firebase.assertSucceeds(testDocOne.set({ role: "member" }));
-		await firebase.assertSucceeds(testDocTwo.set({ role: "contributor" }));
-		await firebase.assertSucceeds(testDocThree.set({ role: "owner" }));
 		await firebase.assertFails(testDocFour.set({ role: "invalid_role" }));
 	});
 
@@ -273,15 +270,6 @@ describe.skip("Parandum Firestore database", () => {
 		await firebase.assertFails(testDoc.get());
 	});
 
-	it("Can create group when group owner", async () => {
-		const admin = getAdminFirestore();
-		await admin.collection("users").doc(myId).collection("groups").doc(groupOne).set({ role: "owner" });
-
-		const db = getFirestore(myAuth);
-		const testDoc = db.collection("groups").doc(groupOne);
-		await firebase.assertSucceeds(testDoc.set({ display_name: "Test Group" }));
-	});
-
 	it("Can't create group when not group owner", async () => {
 		const admin = getAdminFirestore();
 		await admin.collection("users").doc(myId).collection("groups").doc(groupOne).set({ role: "member" });
@@ -312,7 +300,7 @@ describe.skip("Parandum Firestore database", () => {
 	it("Can update group display name when group owner", async () => {
 		const admin = getAdminFirestore();
 		await admin.collection("users").doc(myId).collection("groups").doc(groupOne).set({ role: "owner" });
-		await admin.collection("groups").doc(groupOne).set({ display_name: "Test Group" });
+		await admin.collection("groups").doc(groupOne).set({ display_name: "Test Group", join_code: "abcd1234", sets: null, users: null });
 
 		const db = getFirestore(myAdminAuth);
 		const testDoc = db.collection("groups").doc(groupOne);
@@ -321,7 +309,7 @@ describe.skip("Parandum Firestore database", () => {
 
 	it("Can update group display name when admin", async () => {
 		const admin = getAdminFirestore();
-		await admin.collection("groups").doc(groupOne).set({ display_name: "Test Group" });
+		await admin.collection("groups").doc(groupOne).set({ display_name: "Test Group", join_code: "abcd1234", sets: null, users: null });
 
 		const db = getFirestore(myAdminAuth);
 		const testDoc = db.collection("groups").doc(groupOne);
@@ -380,201 +368,6 @@ describe.skip("Parandum Firestore database", () => {
 		const testDoc = db.collection("groups").doc(groupOne);
 		await firebase.assertFails(testDoc.delete());
 	});
-
-	it("Can read group sets when member of group", async () => {
-		const admin = getAdminFirestore();
-		await admin.collection("users").doc(myId).collection("groups").doc(groupOne).set({ role: "member" });
-
-		const db = getFirestore(myAuth);
-		const testDoc = db.collection("groups").doc(groupOne).collection("sets").doc(setOne);
-		await firebase.assertSucceeds(testDoc.get());
-	});
-
-	it("Can read group sets when admin", async () => {
-		const db = getFirestore(myAdminAuth);
-		const testDoc = db.collection("groups").doc(groupOne).collection("sets").doc(setOne);
-		await firebase.assertSucceeds(testDoc.get());
-	});
-
-	it("Can't read group sets when not admin or member of group", async () => {
-		const db = getFirestore(myAuth);
-		const testDoc = db.collection("groups").doc(groupOne).collection("sets").doc(setOne);
-		await firebase.assertFails(testDoc.get());
-	});
-
-	it("Can create group sets when set owner", async () => {
-		const admin = getAdminFirestore();
-		await admin.collection("sets").doc(setOne).set({ owner: myId });
-
-		const db = getFirestore(myAdminAuth);
-		const testDoc = db.collection("groups").doc(groupOne).collection("sets").doc(setOne);
-		await firebase.assertSucceeds(testDoc.set({ exists: true }));
-	});
-
-	it("Can create group sets when set is public", async () => {
-		const admin = getAdminFirestore();
-		await admin.collection("sets").doc(setOne).set({ public: true });
-
-		const db = getFirestore(myAdminAuth);
-		const testDoc = db.collection("groups").doc(groupOne).collection("sets").doc(setOne);
-		await firebase.assertSucceeds(testDoc.set({ exists: true }));
-	});
-
-	it("Can't create group sets when not set owner and set is not public", async () => {
-		const db = getFirestore(myAdminAuth);
-		const testDoc = db.collection("groups").doc(groupOne).collection("sets").doc(setOne);
-		await firebase.assertFails(testDoc.set({ exists: true }));
-	});
-
-	it("Can create group sets when group owner", async () => {
-		const admin = getAdminFirestore();
-		await admin.collection("users").doc(myId).collection("groups").doc(groupOne).set({ role: "owner" });
-		await admin.collection("sets").doc(setOne).set({ public: true });
-
-		const db = getFirestore(myAuth);
-		const testDoc = db.collection("groups").doc(groupOne).collection("sets").doc(setOne);
-		await firebase.assertSucceeds(testDoc.set({ exists: true }));
-	});
-
-	it("Can create group sets when group contributor", async () => {
-		const admin = getAdminFirestore();
-		await admin.collection("users").doc(myId).collection("groups").doc(groupOne).set({ role: "contributor" });
-		await admin.collection("sets").doc(setOne).set({ public: true });
-
-		const db = getFirestore(myAuth);
-		const testDoc = db.collection("groups").doc(groupOne).collection("sets").doc(setOne);
-		await firebase.assertSucceeds(testDoc.set({ exists: true }));
-	});
-
-	it("Can create group sets when admin", async () => {
-		const admin = getAdminFirestore();
-		await admin.collection("sets").doc(setOne).set({ public: true });
-
-		const db = getFirestore(myAdminAuth);
-		const testDoc = db.collection("groups").doc(groupOne).collection("sets").doc(setOne);
-		await firebase.assertSucceeds(testDoc.set({ exists: true }));
-	});
-
-	it("Can't create group sets when not group owner, group contributor, or admin", async () => {
-		const admin = getAdminFirestore();
-		await admin.collection("users").doc(myId).collection("groups").doc(groupOne).set({ role: "member" });
-		await admin.collection("sets").doc(setOne).set({ public: true });
-
-		const db = getFirestore(myAuth);
-		const testDoc = db.collection("groups").doc(groupOne).collection("sets").doc(setOne);
-		await firebase.assertFails(testDoc.set({ exists: true }));
-	});
-
-	it("Can't create group sets with invalid values", async () => {
-		const admin = getAdminFirestore();
-		await admin.collection("sets").doc(setOne).set({ public: true });
-		await admin.collection("sets").doc(setTwo).set({ public: true });
-
-		const db = getFirestore(myAdminAuth);
-		const testDocOne = db.collection("groups").doc(groupOne).collection("sets").doc(setOne);
-		const testDocTwo = db.collection("groups").doc(groupOne).collection("sets").doc(setTwo);
-		await firebase.assertFails(testDocOne.set({ exists: false }));
-		await firebase.assertFails(testDocTwo.set({ exists: "error" }));
-	});
-
-	it("Can't create group sets with invalid fields", async () => {
-		const admin = getAdminFirestore();
-		await admin.collection("sets").doc(setOne).set({ public: true });
-
-		const db = getFirestore(myAdminAuth);
-		const testDoc = db.collection("groups").doc(groupOne).collection("sets").doc(setOne);
-		await firebase.assertFails(testDoc.set({ exists: true, invalid_field: "error" }));
-	});
-
-	it("Can delete group sets when group owner", async () => {
-		const admin = getAdminFirestore();
-		await admin.collection("users").doc(myId).collection("groups").doc(groupOne).set({ role: "owner" });
-
-		const db = getFirestore(myAuth);
-		const testDoc = db.collection("groups").doc(groupOne).collection("sets").doc(setOne);
-		await firebase.assertSucceeds(testDoc.delete());
-	});
-
-	it("Can delete group sets when admin", async () => {
-		const db = getFirestore(myAdminAuth);
-		const testDoc = db.collection("groups").doc(groupOne).collection("sets").doc(setOne);
-		await firebase.assertSucceeds(testDoc.delete());
-	});
-
-	it("Can't delete group sets when not admin or group owner", async () => {
-		const db = getFirestore(myAuth);
-		const testDoc = db.collection("groups").doc(groupOne).collection("sets").doc(setOne);
-		await firebase.assertFails(testDoc.delete());
-	});
-
-	it("Can read group join code when admin", async () => {
-		const db = getFirestore(myAdminAuth);
-		const testDoc = db.collection("groups").doc(groupOne).collection("static").doc("data");
-		await firebase.assertSucceeds(testDoc.get());
-	});
-
-	it("Can read group join code when group owner", async () => {
-		const admin = getAdminFirestore();
-		await admin.collection("users").doc(myId).collection("groups").doc(groupOne).set({ role: "owner" });
-
-		const db = getFirestore(myAuth);
-		const testDoc = db.collection("groups").doc(groupOne).collection("static").doc("data");
-		await firebase.assertSucceeds(testDoc.get());
-	});
-
-	it("Can't read group join code when not admin or group owner", async () => {
-		const db = getFirestore(myAuth);
-		const testDoc = db.collection("groups").doc(groupOne).collection("static").doc("data");
-		await firebase.assertFails(testDoc.get());
-	});
-
-	it("Can delete group join code when admin", async () => {
-		const db = getFirestore(myAdminAuth);
-		const testDoc = db.collection("groups").doc(groupOne).collection("static").doc("data");
-		await firebase.assertSucceeds(testDoc.delete());
-	});
-
-	it("Can delete group join code when group owner", async () => {
-		const admin = getAdminFirestore();
-		await admin.collection("users").doc(myId).collection("groups").doc(groupOne).set({ role: "owner" });
-
-		const db = getFirestore(myAuth);
-		const testDoc = db.collection("groups").doc(groupOne).collection("static").doc("data");
-		await firebase.assertSucceeds(testDoc.delete());
-	});
-
-	it("Can't delete group join code when not admin or group owner", async () => {
-		const db = getFirestore(myAuth);
-		const testDoc = db.collection("groups").doc(groupOne).collection("static").doc("data");
-		await firebase.assertFails(testDoc.delete());
-	});
-
-	it("Can create group join code when group owner", async () => {
-		const admin = getAdminFirestore();
-		await admin.collection("users").doc(myId).collection("groups").doc(groupOne).set({ role: "owner" });
-
-		const db = getFirestore(myAuth);
-		const testDoc = db.collection("groups").doc(groupOne).collection("static").doc("data");
-		await firebase.assertSucceeds(testDoc.set({ join_code: "abc123" }));
-	});
-
-	it("Can create group join code when admin", async () => {
-		const db = getFirestore(myAdminAuth);
-		const testDoc = db.collection("groups").doc(groupOne).collection("static").doc("data");
-		await firebase.assertSucceeds(testDoc.set({ join_code: "abc123" }));
-	});
-
-	it("Can't create group join code with invalid fields", async () => {
-		const db = getFirestore(myAdminAuth);
-		const testDoc = db.collection("groups").doc(groupOne).collection("static").doc("data");
-		await firebase.assertFails(testDoc.set({ invalid_field: "error" }));
-	});
-
-	it("Can't create group join code with invalid data types", async () => {
-		const db = getFirestore(myAdminAuth);
-		const testDoc = db.collection("groups").doc(groupOne).collection("static").doc("data");
-		await firebase.assertFails(testDoc.set({ join_code: 0 }));
-	});
 	
 	it("Can read current user's sets", async () => {
 		const admin = getAdminFirestore();
@@ -615,7 +408,7 @@ describe.skip("Parandum Firestore database", () => {
 	it("Can create sets with current user as owner", async () => {
 		const db = getFirestore(myAuth);
 		const testDoc = db.collection("sets").doc(setOne);
-		await firebase.assertSucceeds(testDoc.set({ owner: myId, public: true, title: "Set Title" }));
+		await firebase.assertSucceeds(testDoc.set({ owner: myId, public: true, title: "Set Title", groups: null }));
 	});
 
 	it("Can't create sets with other user as owner", async () => {
@@ -644,7 +437,7 @@ describe.skip("Parandum Firestore database", () => {
 
 	it("Can update set titles and visibility", async () => {
 		const admin = getAdminFirestore();
-		await admin.collection("sets").doc(setOne).set({ owner: myId, public: true, title: "Set Title" });
+		await admin.collection("sets").doc(setOne).set({ owner: myId, public: true, title: "Set Title", groups: null });
 
 		const db = getFirestore(myAuth);
 		const testDoc = db.collection("sets").doc(setOne);
@@ -876,13 +669,13 @@ describe.skip("Parandum Firestore database", () => {
 		await firebase.assertFails(testDoc.get());
 	});
 
-	it("Can delete current user's progress terms when not complete", async () => {
+	it("Can't delete current user's progress terms when not complete", async () => {
 		const admin = getAdminFirestore();
 		await admin.collection("progress").doc(progressOne).set({ uid: myId, progress: 0, questions: [0] });
 
 		const db = getFirestore(myAuth);
 		const testDoc = db.collection("progress").doc(progressOne).collection("terms").doc(vocabOne);
-		await firebase.assertSucceeds(testDoc.delete());
+		await firebase.assertFails(testDoc.delete());
 	});
 
 	it("Can't delete other users' progress terms", async () => {
@@ -930,13 +723,13 @@ describe.skip("Parandum Firestore database", () => {
 		await firebase.assertFails(testDoc.get());
 	});
 
-	it("Can delete current user's progress definitions when not complete", async () => {
+	it("Can't delete current user's progress definitions when not complete", async () => {
 		const admin = getAdminFirestore();
 		await admin.collection("progress").doc(progressOne).set({ uid: myId, progress: 0, questions: [0] });
 
 		const db = getFirestore(myAuth);
 		const testDoc = db.collection("progress").doc(progressOne).collection("definitions").doc(vocabOne);
-		await firebase.assertSucceeds(testDoc.delete());
+		await firebase.assertFails(testDoc.delete());
 	});
 
 	it("Can't delete other users' progress definitions", async () => {
