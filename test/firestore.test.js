@@ -9,9 +9,9 @@ const groupOne = "group_01";
 const groupTwo = "group_02";
 const groupThree = "group_03";
 const setOne = "set_01";
-const setTwo = "set_02";
 const progressOne = "progress_01";
 const vocabOne = "vocab_01";
+const vocabTwo = "vocab_02";
 
 function getFirestore(auth) {
 	return firebase.initializeTestApp({ projectId: PROJECT_ID, auth: auth }).firestore();
@@ -521,7 +521,7 @@ describe("Parandum Firestore database", () => {
 
 		const db = getFirestore(myAuth);
 		const testDoc = db.collection("sets").doc(setOne).collection("vocab").doc(vocabOne);
-		await firebase.assertSucceeds(testDoc.set({ term: "value", sound: "value", definition: "value" }));
+		await firebase.assertSucceeds(testDoc.set({ term: "value", sound: vocabOne, definition: "value" }));
 	});
 
 	it("Can't create vocab in sets with other user as owner", async () => {
@@ -530,7 +530,7 @@ describe("Parandum Firestore database", () => {
 
 		const db = getFirestore(myAuth);
 		const testDoc = db.collection("sets").doc(setOne).collection("vocab").doc(vocabOne);
-		await firebase.assertFails(testDoc.set({ term: "value", sound: "value", definition: "value" }));
+		await firebase.assertFails(testDoc.set({ term: "value", sound: vocabOne, definition: "value" }));
 	});
 
 	it("Can't create sets' vocab with invalid fields", async () => {
@@ -539,7 +539,7 @@ describe("Parandum Firestore database", () => {
 
 		const db = getFirestore(myAuth);
 		const testDoc = db.collection("sets").doc(setOne).collection("vocab").doc(vocabOne);
-		await firebase.assertFails(testDoc.set({ term: "value", sound: "value", definition: "value", invalid_field: "error" }));
+		await firebase.assertFails(testDoc.set({ term: "value", sound: vocabOne, definition: "value", invalid_field: "error" }));
 	});
 
 	it("Can't create sets' vocab with invalid data types", async () => {
@@ -560,17 +560,17 @@ describe("Parandum Firestore database", () => {
 	it("Can update sets' vocab", async () => {
 		const admin = getAdminFirestore();
 		await admin.collection("sets").doc(setOne).set({ owner: myId });
-		await admin.collection("sets").doc(setOne).collection("vocab").doc(vocabOne).set({ term: "value", sound: "value", definition: "value" });
+		await admin.collection("sets").doc(setOne).collection("vocab").doc(vocabOne).set({ term: "value", sound: vocabOne, definition: "value" });
 
 		const db = getFirestore(myAuth);
 		const testDoc = db.collection("sets").doc(setOne).collection("vocab").doc(vocabOne);
-		await firebase.assertSucceeds(testDoc.update({ term: "value 1", sound: "sound 1", definition: "definition 1" }));
+		await firebase.assertSucceeds(testDoc.update({ term: "value 1", definition: "definition 1" }));
 	});
 
 	it("Can't update sets' vocab with invalid fields", async () => {
 		const admin = getAdminFirestore();
 		await admin.collection("sets").doc(setOne).set({ owner: myId });
-		await admin.collection("sets").doc(setOne).collection("vocab").doc(vocabOne).set({ term: "value", sound: "value", definition: "value" });
+		await admin.collection("sets").doc(setOne).collection("vocab").doc(vocabOne).set({ term: "value", sound: vocabOne, definition: "value" });
 
 		const db = getFirestore(myAuth);
 		const testDoc = db.collection("sets").doc(setOne).collection("vocab").doc(vocabOne);
@@ -580,17 +580,27 @@ describe("Parandum Firestore database", () => {
 	it("Can't update sets' vocab with invalid data types", async () => {
 		const admin = getAdminFirestore();
 		await admin.collection("sets").doc(setOne).set({ owner: myId });
-		await admin.collection("sets").doc(setOne).collection("vocab").doc(vocabOne).set({ term: "value", sound: "value", definition: "value" });
+		await admin.collection("sets").doc(setOne).collection("vocab").doc(vocabOne).set({ term: "value", sound: vocabOne, definition: "value" });
 
 		const db = getFirestore(myAuth);
 		const testDoc = db.collection("sets").doc(setOne).collection("vocab").doc(vocabOne);
-		await firebase.assertFails(testDoc.set({ term: 0, sound: 0, definition: 0 }));
+		await firebase.assertFails(testDoc.set({ term: 0, definition: 0 }));
+	});
+
+	it("Can't update sets' sound file IDs", async () => {
+		const admin = getAdminFirestore();
+		await admin.collection("sets").doc(setOne).set({ owner: myId });
+		await admin.collection("sets").doc(setOne).collection("vocab").doc(vocabOne).set({ term: "value", sound: vocabOne, definition: "value" });
+
+		const db = getFirestore(myAuth);
+		const testDoc = db.collection("sets").doc(setOne).collection("vocab").doc(vocabOne);
+		await firebase.assertFails(testDoc.set({ sound: vocabTwo }));
 	});
 
 	it("Can't update other users' sets' vocab", async () => {
 		const admin = getAdminFirestore();
 		await admin.collection("sets").doc(setOne).set({ owner: theirId });
-		await admin.collection("sets").doc(setOne).collection("vocab").doc(vocabOne).set({ term: "value", sound: "value", definition: "value" });
+		await admin.collection("sets").doc(setOne).collection("vocab").doc(vocabOne).set({ term: "value", sound: vocabOne, definition: "value" });
 
 		const db = getFirestore(myAuth);
 		const testDoc = db.collection("sets").doc(setOne).collection("vocab").doc(vocabOne);
