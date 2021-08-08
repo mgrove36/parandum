@@ -2,8 +2,11 @@
 /* eslint-disable no-tabs */
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
+const { ChatSharp } = require("@material-ui/icons");
 admin.initializeApp();
 const db = admin.firestore();
+
+// TODO: set up App Check https://firebase.google.com/docs/app-check/cloud-functions
 
 /**
  * Randomises the items in an array.
@@ -20,6 +23,7 @@ function shuffleArray(array) {
 
 /**
  * Adds extra user info when new user created.
+ * NOTE: Can't be unit tested.
  * @return {promise} Promise from database write.
  */
 exports.userCreated = functions.auth.user().onCreate(async (user) => {
@@ -35,6 +39,7 @@ exports.userCreated = functions.auth.user().onCreate(async (user) => {
 
 /**
  * Cleans up database when user deleted. Progress documents are kept as they may provide useful metrics.
+ * NOTE: Can't be unit tested.
  * @return {promise} Promise from database delete.
  */
 exports.userDeleted = functions.auth.user().onDelete(async (user) => {
@@ -46,40 +51,60 @@ exports.userDeleted = functions.auth.user().onDelete(async (user) => {
  * @param {object} data The data passed to the function.
  * @param {string} data.set_id The ID of the desired set.
  * @param {boolean} data.switch_language Whether or not the languages should be reversed.
- * @return {string} progressId The ID of the created progress document.
+ * @param {boolean} data.mode The mode to be tested in. Valid options are "questions" and "lives".
+ * @param {boolean} data.limit The maximum number of lives/questions for the test.
+ * @return {string} The ID of the created progress document.
 */
 exports.createProgress = functions.https.onCall((data, context) => {
 	// const uid = context.auth.uid;
-	const uid = "W3eFM5CcDqtocwQ37QGOQSCaWFFj";
+	const uid = "user_01";
 
-	const switchLanguage = data.switch_language;
 	const setId = data.set_id;
-
-	const correct = [];
-	const incorrect = [];
-	const mark = 0;
-	const progress = 0;
-	const startTime = Date.now();
-
-	const setDocId = db.collection("sets").doc(setId);
-	const setVocabCollectionId = db
-		.collection("sets").doc(setId)
-		.collection("vocab");
-	const progressDocId = db
-		.collection("progress").doc();
-
-
+	
+	const setDocId = db.collection("sets").doc(setId);	
+	
 	return db.runTransaction((transaction) => {
 		return transaction.get(setDocId).then((setDoc) => {
 			if (!setDoc.exists) {
 				throw new functions.https.HttpsError("not-found", "Set doesn't exist");
+			} else if (!setDoc.data().public && setDoc.data().owner !== uid) {
+				throw new functions.https.HttpsError("permission-denied", "Insufficient permissions to access set");
 			} else {
+				const switchLanguage = data.switch_language;
+				const mode = data.mode;
+				const limit = data.limit;
+
 				const setTitle = setDoc.data().title;
+				const setOwner = setDoc.data().owner;
+				
+				const correct = [];
+				const incorrect = [];
+				const currentCorrect = [];
+				const progress = 0;
+				const startTime = Date.now();
+				const setVocabCollectionId = db
+					.collection("sets").doc(setId)
+					.collection("vocab");
+				const progressDocId = db
+					.collection("progress").doc();
 
 				return transaction.get(setVocabCollectionId).then((setVocab) => {
-					let questions = [];
+					let dataToSet = {
+						questions: [],
+						correct: correct,
+						current_correct: currentCorrect,
+						incorrect: incorrect,
+						progress: progress,
+						start_time: startTime,
+						set_title: setTitle,
+						uid: uid,
+						switch_language: switchLanguage,
+						duration: null,
+						set_owner: setOwner,
+						mode: mode,
+					}
 
-					setVocab.forEach((doc) => {
+					shuffleArray(setVocab).forEach((doc, index, array) => {
 						const vocabId = doc.id;
 
 						const terms = {
@@ -90,7 +115,7 @@ exports.createProgress = functions.https.onCall((data, context) => {
 							"item": doc.data().definition,
 						};
 
-						questions.push(vocabId);
+						dataToSet.questions.push(vocabId);
 
 						transaction.set(
 							progressDocId.collection("terms").doc(vocabId),
@@ -100,31 +125,27 @@ exports.createProgress = functions.https.onCall((data, context) => {
 							progressDocId.collection("definitions").doc(vocabId),
 							definitions
 						);
+
+						if (mode == "questions" && index >= limit - 1) {
+							array.length = index + 1;
+						}
 					});
 
+
+					if (mode === "lives") dataToSet.lives = limit;
+					
 					transaction.set(
 						progressDocId,
-						{
-							questions: shuffleArray(questions),
-							correct: correct,
-							incorrect: incorrect,
-							mark: mark,
-							progress: progress,
-							start_time: startTime,
-							set_title: setTitle,
-							uid: uid,
-							switch_language: switchLanguage,
-							duration: null,
-						}
+						dataToSet
 					);
 
-					return {
-						progressId: progressDocId.id,
-					};
+					return progressDocId.id;
 				});
 			}
 		});
 	});
+
+
 });
 
 /**
@@ -181,12 +202,46 @@ exports.getPrompt = functions.https.onCall((data, context) => {
 });*/
 
 /**
+ * Checks whether two arrays have the same members.
+ * @param {array} arr1 The first array to compare.
+ * @param {array} arr2 The second array to compare.
+ * @return {boolean} Whether or not the two arrays have the same members.
+ */
+function arraysHaveSameMembers(arr1, arr2) {
+	const set1 = new Set(arr1);
+	const set2 = new Set(arr2);
+	return arr1.every(item => set2.has(item)) &&
+		arr2.every(item => set1.has(item));
+}
+
+/**
+ * Removes characters from terms & definitions that should be ignored.
+ * @param {string} item The term/definition to remove the characters that should be ignored from.
+ * @return {string} The original string with the unwanted characters removed.
+ */
+function cleanseVocabString(item) {
+	const chars = " .,()-_'\"";
+
+	let newString = item;
+
+	chars.split("").forEach((char) => {
+		newString = newString.replace(char, "");
+	});
+
+	return newString;
+}
+
+/**
  * Processes a response to a question in a vocab set.
  * @param {object} data The data passed to the function.
  * @param {string} data.progressId The ID of the progress document to update.
  * @param {string} data.answer The answer given by the user to the current prompt.
  * @return {boolean} correct Whether the provided answer was correct.
- * @return {array} correctAnswers An array of correct answers for the question just answered.
+ * @return {array} correctAnswers An array of correct answers for the question just answered. If not all correct
+ * 					answers have yet been given, and the current answer is correct, this only contains the correct
+ * 					answers given so far.
+ * @return {integer} lives Total number of lives available in this test. Only returned if mode is "lives".
+ * @return {boolean} moreAnswers Whether or not there are more answers required for the current prompt.
  * @return {object} nextPrompt Details of the next prompt, if relevant. Null if last question has been answered.
  * @return {string} nextPrompt.item The term/definition prompt for the next question.
  * @return {string} nextPrompt.sound The file ID for the next question's sound file. Null if language is switched.
@@ -197,7 +252,7 @@ exports.getPrompt = functions.https.onCall((data, context) => {
  */
 exports.processAnswer = functions.https.onCall((data, context) => {
 	// const uid = context.auth.uid;
-	const uid = "W3eFM5CcDqtocwQ37QGOQSCaWFFj";
+	const uid = "user_01";
 
 	const progressId = data.progressId;
 	const inputAnswer = data.answer;
@@ -207,9 +262,11 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 
 	return db.runTransaction((transaction) => {
 		return transaction.get(progressDocId).then((progressDoc) => {
-			if (uid !== progressDoc.data().uid) {
+			if (!progressDoc.exists) {
+				throw new functions.https.HttpsError("not-found", "Progress record " + progressId + " doesn't exist")
+			} else if (uid !== progressDoc.data().uid) {
 				throw new functions.https.HttpsError("permission-denied", "Wrong user's progress");
-			} else if (progressDoc.data().progress >= progressDoc.data().questions.length) {
+			} else if (progressDoc.data().progress >= progressDoc.data().questions.length || (progressDoc.data().mode === "lives" && progressDoc.data().incorrect.length >= progressDoc.data().lives)) {
 				throw new functions.https.HttpsError("permission-denied", "Progress already completed")
 			} else {
 				currentIndex = progressDoc.data().progress;
@@ -226,73 +283,113 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 				}
 
 				return transaction.get(answerDocId).then((answerDoc) => {
-					// TODO: rename due to conflict with var passed to cloud fn
-					const data = progressDoc.data();
+					const docData = progressDoc.data();
+					const mode = docData.mode;
 					const correctAnswers = answerDoc.data().item;
-					const splitCorrectAnswers = correctAnswers.replace(" ", "").split("/");
-					const isCorrectAnswer = splitCorrectAnswers.includes(inputAnswer.replace(" ", ""));
-					
-					data.progress++;
-					
-					if (isCorrectAnswer) {
-						data.correct.push(currentVocab);
-					} else {
-						data.incorrect.push(currentVocab);
-						data.questions.push(currentVocab);
-						const doneQuestions = data.questions.slice(0,data.progress);
-						const notDoneQuestions = data.questions.slice(data.progress);
-						data.questions = doneQuestions.concat(shuffleArray(notDoneQuestions));
-					}
+					const splitCorrectAnswers = correctAnswers.split("/");
+					const cleansedSplitCorrectAnswers = cleanseVocabString(correctAnswers).split("/");
+					const cleansedInputAnswer = cleanseVocabString(inputAnswer);
 
+					let isCorrectAnswer = false;
+					let correctAnswerIndex;
+
+					cleansedSplitCorrectAnswers.forEach((answer, index, array) => {
+						if (answer === cleansedInputAnswer) {
+							isCorrectAnswer = true;
+							correctAnswerIndex = index;
+							array.length = index + 1;
+						}
+					});
+
+					let prevCorrect = progressDoc.data().current_correct;
+					
 					var returnData = {
+						mode: mode,
 						correct: isCorrectAnswer,
 						correctAnswers: splitCorrectAnswers,
+						moreAnswers: false,
 						nextPrompt: null,
-						progress: data.progress,
-						totalQuestions: data.questions.length,
-						totalCorrect: data.correct.length,
-						totalIncorrect: data.incorrect.length,
+						progress: docData.progress,
+						totalQuestions: docData.questions.length,
+						totalCorrect: docData.correct.length,
+						totalIncorrect: docData.incorrect.length,
 					}
 
-					if (data.progress >= data.questions.length) {
-						const duration = Date.now() - data.start_time;
-						data.duration = duration;
-						returnData.duration = duration;
-						console.log("duration: " + data.duration + " // start time: " + data.start_time);
-						transaction.set(progressDocId, data);
-						return returnData;
-					} else {
-						const nextVocabId = data.questions[data.progress];
-
-						if (data.switch_language) {
-							const promptDocId = progressDocId
-								.collection("definitions").doc(nextVocabId);
-							const sound = null;
-
-							return transaction.get(promptDocId).then((promptDoc) => {
-								returnData.nextPrompt = {
-									item: promptDoc.data().item,
-									sound: sound,
-								}
-								transaction.set(progressDocId, data);
-								return returnData;
-							});
-						} else {
-							const promptDocId = progressDocId
-								.collection("terms").doc(nextVocabId);
-
-							return transaction.get(promptDocId).then((promptDoc) => {
-								const sound = promptDoc.data().sound;
-								returnData.nextPrompt = {
-									item: promptDoc.data().item,
-									sound: sound,
-								}
-								transaction.set(progressDocId, data);
-								return returnData;
-							});
+					if (isCorrectAnswer) {
+						if (!prevCorrect) {
+							docData.current_correct = [splitCorrectAnswers[correctAnswerIndex]];
+						} else if (!prevCorrect.includes(splitCorrectAnswers[correctAnswerIndex])) {
+							docData.current_correct.push(splitCorrectAnswers[correctAnswerIndex]);
 						}
+						
+						if (docData.current_correct.length === splitCorrectAnswers.length) {
+							docData.progress++;
+							returnData.progress = docData.progress;
+							docData.current_correct = [];
+							docData.correct.push(currentVocab);
+							returnData.totalCorrect = docData.correct.length;
+						} else {
+							returnData.moreAnswers = true;
+							returnData.correctAnswers = docData.current_correct;
+						}
+					} else {
+						docData.progress++;
+						returnData.progress = docData.progress;
+						docData.incorrect.push(currentVocab);
+						docData.questions.push(currentVocab);
+						const doneQuestions = docData.questions.slice(0, docData.progress);
+						const notDoneQuestions = docData.questions.slice(docData.progress);
+						docData.current_correct = [];
+						docData.questions = doneQuestions.concat(shuffleArray(notDoneQuestions));
+						returnData.totalQuestions = docData.questions.length;
+						returnData.totalIncorrect = docData.incorrect.length;
 					}
-					
+
+					if (mode === "lives") returnData.lives = docData.lives;
+
+					if (!returnData.moreAnswers) {
+						if (docData.progress >= docData.questions.length || (mode === "lives" && docData.incorrect.length >= docData.lives)) {
+							const duration = Date.now() - docData.start_time;
+							docData.duration = duration;
+							returnData.duration = duration;
+	
+							transaction.set(progressDocId, docData);
+							return returnData;
+						} else {
+							const nextVocabId = docData.questions[docData.progress];
+	
+							if (docData.switch_language) {
+								const promptDocId = progressDocId
+									.collection("definitions").doc(nextVocabId);
+								const sound = null;
+	
+								return transaction.get(promptDocId).then((promptDoc) => {
+									returnData.nextPrompt = {
+										item: promptDoc.data().item,
+										sound: sound,
+									}
+									transaction.set(progressDocId, docData);
+									return returnData;
+								});
+							} else {
+								const promptDocId = progressDocId
+									.collection("terms").doc(nextVocabId);
+	
+								return transaction.get(promptDocId).then((promptDoc) => {
+									const sound = promptDoc.data().sound;
+									returnData.nextPrompt = {
+										item: promptDoc.data().item,
+										sound: sound,
+									}
+									transaction.set(progressDocId, docData);
+									return returnData;
+								});
+							}
+						}
+					} else {
+						transaction.set(progressDocId, docData);
+						return returnData;
+					}
 				});
 			}
 		});
@@ -309,9 +406,9 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 */
 exports.setAdmin = functions.https.onCall(async (data, context) => {
 	// const uid = context.auth.uid;
-	// const admin = context.auth.tokens.admin;
-	const uid = "W3eFM5CcDqtocwQ37QGOQSCaWFFj";
-	const isAdmin = false;
+	// const isAdmin = context.auth.tokens.admin;
+	const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
+	const isAdmin = true;
 
 	const targetUser = data.targetUser;
 	const adminState = data.adminState;
@@ -340,8 +437,8 @@ exports.addSetToGroup = functions.https.onCall((data, context) => {
 	// const uid = context.auth.uid;
 	// const isAdmin = context.auth.token.admin;
 	// const auth = context.auth;
-	const uid = "W3eFM5CcDqtocwQ37QGOQSCaWFFj";
-	const isAdmin = true;
+	const uid = "user_01";
+	const isAdmin = false;
 	const auth = { uid: uid };
 
 	const groupId = data.groupId;
@@ -399,7 +496,7 @@ exports.removeSetFromGroup = functions.https.onCall((data, context) => {
 	// const uid = context.auth.uid;
 	// const isAdmin = context.auth.token.admin;
 	// const auth = context.auth;
-	const uid = "W3eFM5CcDqtocwQ37QGOQSCaWFFj";
+	const uid = "user_01";
 	const isAdmin = false;
 	const auth = { uid: uid };
 
@@ -413,7 +510,6 @@ exports.removeSetFromGroup = functions.https.onCall((data, context) => {
 		return transaction.get(setDocId).then((setDoc) => {
 			return transaction.get(userGroupDocId).then((userGroupDoc) => {
 				const userRole = userGroupDoc.data().role;
-				console.log(context.auth);
 				if (auth && (userRole == "owner" || isAdmin)) {
 					let setDocData = setDoc.data();
 					if (setDocData.groups == null || !setDocData.groups.includes(groupId)) {
@@ -445,6 +541,7 @@ exports.removeSetFromGroup = functions.https.onCall((data, context) => {
 /**
  * Changes an existing user's membership status of a group in the groups collection
  * in Firestore, after it has been changed in the users collection.
+ * NOTE: Can't be unit tested.
  * @return {promise} The promise from setting the group's updated data.
 */
 exports.userGroupRoleChanged = functions.firestore.document("users/{userId}/groups/{groupId}")
@@ -484,7 +581,6 @@ async function generateJoinCode() {
 	if (snapshot.exists) {
 		return generateJoinCode();
 	} else {
-		console.log("RETURNING");
 		return joinCode;
 	}
 }
@@ -496,7 +592,7 @@ async function generateJoinCode() {
 */
 exports.createGroup = functions.https.onCall(async (data, context) => {
 	// const uid = context.auth.uid;
-	const uid = "W3eFM5CcDqtocwQ37QGOQSCaWFFj";
+	const uid = "user_01";
 
 	const joinCode = await generateJoinCode();
 
@@ -516,6 +612,7 @@ exports.createGroup = functions.https.onCall(async (data, context) => {
 
 /**
  * Cleans up database after group is deleted - removes group references from user groups collections.
+ * NOTE: Can't be unit tested.
  * @return {promise} The promise from deleting the user's group data.
 */
 exports.groupDeleted = functions.firestore.document("groups/{groupId}")
@@ -543,6 +640,7 @@ exports.groupDeleted = functions.firestore.document("groups/{groupId}")
 
 /**
  * Cleans up database after group is deleted - removes group references from user groups collections.
+ * NOTE: Can't be unit tested.
  * @return {boolean} Returns true on completion.
 */
 exports.progressDeleted = functions.firestore.document("progress/{progressId}")
@@ -576,6 +674,12 @@ async function deleteCollection(db, collectionPath, batchSize) {
 	});
 }
 
+/**
+ * Deletes a batch of Firestore documents.
+ * @param {FirebaseFirestore.Firestore} db The database object from which the collection should be deleted.
+ * @param {string} query The delete query.
+ * @param {integer} resolve The resolve object from a generated promise.
+*/
 async function deleteQueryBatch(db, query, resolve) {
 	const snapshot = await query.get();
 
