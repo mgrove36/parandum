@@ -52,9 +52,14 @@ service cloud.firestore {
 				return request.auth.uid == userId;
 			}
 			
+			function verifyThemeValue() {
+				let requestField = getRequestField("theme", "default");
+				return requestField == "default";
+			}
+
 			function verifyFieldTypes() {
 				return verifyBoolType("sound") &&
-					verifyStringType("theme");
+					verifyThemeValue();
 			}
 
 			function getPossibleFields() {
@@ -143,23 +148,38 @@ service cloud.firestore {
 			allow update: if isSignedIn() && request.auth.uid == resource.data.owner && verifyUpdateFields(getPossibleUpdateFields()) && verifyFieldTypes();
 
 			match /vocab/{vocabId} {
-				function verifyVocabFieldTypes() {
-					return verifyStringType("term") &&
-						verifyStringType("sound") &&
-						verifyStringType("definition");
+				function verifySoundValue() {
+					return getRequestField("sound", vocabId) == vocabId;
 				}
 
-				function getPossibleVocabFields() {
-					let requiredFields = ["term", "sound", "definition"];
-					let optionalFields = [];
-					let allFields = requiredFields.concat(optionalFields);
-					return [requiredFields, allFields];
+				function verifyVocabFieldTypes() {
+					return verifyStringType("term") &&
+						verifyStringType("definition") &&
+						verifySoundValue();
+				}
+				
+				function getPossibleFields() {
+					let nonStaticFields = ["term", "definition"];
+					let staticFields = ["sound"];
+
+					let allFields = staticFields.concat(nonStaticFields);
+					return [nonStaticFields, allFields];
+				}
+
+				function getPossibleCreateFields() {
+					let fields = getPossibleFields();
+					return [fields[1], fields[1]];
+				}
+
+				function getPossibleUpdateFields() {
+					let fields = getPossibleFields();
+					return [[], fields[0]];
 				}
 
 				allow read, delete: if isSignedIn() && isSetOwner(setId);
 				allow read: if isSignedIn() && isPublicSet(setId);
-				allow create: if isSignedIn() && isSetOwner(setId) && verifyCreateFields(getPossibleVocabFields()) && verifyVocabFieldTypes();
-				allow update: if isSignedIn() && isSetOwner(setId) && verifyUpdateFields(getPossibleVocabFields()) && verifyVocabFieldTypes();
+				allow create: if isSignedIn() && isSetOwner(setId) && verifyCreateFields(getPossibleCreateFields()) && verifyVocabFieldTypes();
+				allow update: if isSignedIn() && isSetOwner(setId) && verifyUpdateFields(getPossibleUpdateFields()) && verifyVocabFieldTypes();
 			}
 		}
 
@@ -178,17 +198,13 @@ service cloud.firestore {
 
 			allow read: if isSignedIn() && isProgressUser();
 			allow delete: if isSignedIn() && isProgressUser() && isNotComplete();
-			// NOTE: update and create disallowed as these are handled by Cloud Functions to ensure sound file Ids aren't altered to illegally access other files
-			// NOTE: disallow start_time update
 
 			match /terms/{vocabId} {
 				allow read: if isSignedIn() && isProgressUser() && !(isLanguageSwitched());
-				// NOTE: create handled by Cloud Functions
 			}
 
 			match /definitions/{vocabId} {
 				allow read: if isSignedIn() && isProgressUser() && isLanguageSwitched();
-				// NOTE: create handled by Cloud Functions
 			}
 		}
   	}
