@@ -6,8 +6,7 @@ const test = require('firebase-functions-test')({
 
 const admin = require("firebase-admin");
 const cloudFunctions = require('../functions/index.js');
-const firebase = require("@firebase/testing");
-const functions = require("firebase-functions");
+const firebase = require("@firebase/rules-unit-testing");
 const hamjest = require("hamjest");
 const assert = require("assert");
 
@@ -29,6 +28,9 @@ const termTwo = "term_02";
 const definitionTwo = "definition_02";
 const soundTwo = "sound_02";
 const groupOne = "group_01";
+const doubleDefinitionOne = "definition/01";
+const doubleDefinitionTwo = "definition/02";
+const punctuationDefinitionOne = "definition .,()-_'\"01";
 
 describe("Parandum Cloud Functions", () => {
 
@@ -44,7 +46,7 @@ describe("Parandum Cloud Functions", () => {
 		);
 	});
 
-	it("createProgress can create new progress file from existing set", async () => {
+	it("createProgress can create new questions mode progress file from existing set", async () => {
 		const createProgress = test.wrap(cloudFunctions.createProgress);
 
 		const setDataOne = {
@@ -72,6 +74,8 @@ describe("Parandum Cloud Functions", () => {
 		const requestData = {
 			switch_language: false,
 			set_id: setOne,
+			mode: "questions",
+			limit: 2,
 		};
 
 		const progressId = await createProgress(requestData);
@@ -87,6 +91,7 @@ describe("Parandum Cloud Functions", () => {
 		));
 		assert.deepStrictEqual(snapAfter.correct, []);
 		assert.deepStrictEqual(snapAfter.incorrect, []);
+		assert.deepStrictEqual(snapAfter.current_correct, []);
 		assert.strictEqual(snapAfter.duration, null);
 		assert.strictEqual(snapAfter.progress, 0);
 		assert.strictEqual(snapAfter.set_title, setOne);
@@ -94,6 +99,64 @@ describe("Parandum Cloud Functions", () => {
 		assert.strictEqual(snapAfter.switch_language, false);
 		assert.strictEqual(snapAfter.uid, userOne);
 		assert.strictEqual(snapAfter.set_owner, userOne);
+		assert.strictEqual(snapAfter.mode, "questions");
+	});
+
+	it("createProgress can create new lives mode progress file from existing set", async () => {
+		const createProgress = test.wrap(cloudFunctions.createProgress);
+
+		const setDataOne = {
+			"owner": userOne,
+			"public": false,
+			"title": setOne,
+		};
+		const vocabDataOne = {
+			"term": termOne,
+			"definition": definitionOne,
+			"sound": soundOne,
+		};
+		const vocabDataTwo = {
+			"term": termTwo,
+			"definition": definitionTwo,
+			"sound": soundTwo,
+		};
+
+		await firestore.collection("sets").doc(setOne).set(setDataOne);
+		await firestore.collection("sets").doc(setOne)
+			.collection("vocab").doc(vocabOne).set(vocabDataOne);
+		await firestore.collection("sets").doc(setOne)
+			.collection("vocab").doc(vocabTwo).set(vocabDataTwo);
+
+		const requestData = {
+			switch_language: false,
+			set_id: setOne,
+			mode: "lives",
+			limit: 2,
+		};
+
+		const progressId = await createProgress(requestData);
+		const progressDocId = firestore.collection("progress").doc(progressId);
+
+		const snapAfter = await progressDocId.get().then((doc) => {
+			return doc.data();
+		});
+
+		hamjest.assertThat(snapAfter.questions, hamjest.anyOf(
+			hamjest.is(["vocab_01", "vocab_02"]),
+			hamjest.is(["vocab_02", "vocab_01"])
+		));
+		assert.deepStrictEqual(snapAfter.correct, []);
+		assert.deepStrictEqual(snapAfter.incorrect, []);
+		assert.deepStrictEqual(snapAfter.current_correct, []);
+		assert.strictEqual(snapAfter.duration, null);
+		assert.strictEqual(snapAfter.progress, 0);
+		assert.strictEqual(snapAfter.set_title, setOne);
+		assert.notStrictEqual(snapAfter.start_time, null);
+		assert.strictEqual(snapAfter.switch_language, false);
+		assert.strictEqual(snapAfter.uid, userOne);
+		assert.strictEqual(snapAfter.set_owner, userOne);
+		assert.strictEqual(snapAfter.mode, "lives");
+		assert.strictEqual(snapAfter.lives, 2);
 	});
 
 	it("createProgress can create new progress file from public set they aren't the owner of", async () => {
@@ -124,6 +187,8 @@ describe("Parandum Cloud Functions", () => {
 		const requestData = {
 			switch_language: false,
 			set_id: setOne,
+			mode: "questions",
+			limit: 2,
 		};
 
 		return await firebase.assertSucceeds(createProgress(requestData));
@@ -157,6 +222,8 @@ describe("Parandum Cloud Functions", () => {
 		const requestData = {
 			switch_language: false,
 			set_id: setTwo,
+			mode: "questions",
+			limit: 2,
 		};
 		
 		return await firebase.assertFails(createProgress(requestData));
@@ -167,6 +234,7 @@ describe("Parandum Cloud Functions", () => {
 
 		const progressData = {
 			correct: [],
+			current_correct: [],
 			duration: null,
 			incorrect: [],
 			progress: 0,
@@ -179,6 +247,7 @@ describe("Parandum Cloud Functions", () => {
 			switch_language: false,
 			uid: userOne,
 			set_owner: userOne,
+			mode: "questions",
 		};
 		const termDataOne = {
 			"item": termOne,
@@ -219,6 +288,37 @@ describe("Parandum Cloud Functions", () => {
 
 		const firstReturn = await processAnswer(secondTermAnswerRequestData);
 
+		hamjest.assertThat(firstReturn, hamjest.anyOf(
+			hamjest.is({
+				mode: "questions",
+				correct: false,
+				correctAnswers: [definitionOne],
+				moreAnswers: false,
+				nextPrompt: {
+					item: termOne,
+					sound: soundOne,
+				},
+				progress: 1,
+				totalQuestions: 3,
+				totalCorrect: 0,
+				totalIncorrect: 1,
+			}),
+			hamjest.is({
+				mode: "questions",
+				correct: false,
+				correctAnswers: [definitionOne],
+				moreAnswers: false,
+				nextPrompt: {
+					item: termTwo,
+					sound: soundTwo,
+				},
+				progress: 1,
+				totalQuestions: 3,
+				totalCorrect: 0,
+				totalIncorrect: 1,
+			})
+		));
+
 		const snapAfterIncorrectData = await progressDocId.get().then((doc) => {
 			return doc.data();
 		});
@@ -226,6 +326,7 @@ describe("Parandum Cloud Functions", () => {
 		hamjest.assertThat(snapAfterIncorrectData, hamjest.anyOf(
 			hamjest.is({
 				correct: [],
+				current_correct: [],
 				duration: null,
 				incorrect: [vocabOne],
 				progress: 1,
@@ -239,9 +340,11 @@ describe("Parandum Cloud Functions", () => {
 				switch_language: false,
 				uid: userOne,
 				set_owner: userOne,
+				mode: "questions",
 			}),
 			hamjest.is({
 				correct: [],
+				current_correct: [],
 				duration: null,
 				incorrect: [vocabOne],
 				progress: 1,
@@ -254,6 +357,8 @@ describe("Parandum Cloud Functions", () => {
 				start_time: 1627308670962,
 				switch_language: false,
 				uid: userOne,
+				set_owner: userOne,
+				mode: "questions",
 			})
 		));
 
@@ -278,6 +383,7 @@ describe("Parandum Cloud Functions", () => {
 			hamjest.is(["vocab_01", "vocab_02", "vocab_01"])
 		));
 		assert.deepStrictEqual(snapAfterCorrectData.incorrect, [vocabOne]);
+		assert.deepStrictEqual(snapAfterCorrectData.current_correct, []);
 		assert.notStrictEqual(snapAfterCorrectData.duration, null);
 		assert.strictEqual(snapAfterCorrectData.progress, 3);
 		assert.strictEqual(snapAfterCorrectData.set_title, setOne);
@@ -285,6 +391,247 @@ describe("Parandum Cloud Functions", () => {
 		assert.strictEqual(snapAfterCorrectData.switch_language, false);
 		assert.strictEqual(snapAfterCorrectData.uid, userOne);
 		assert.strictEqual(snapAfterCorrectData.set_owner, userOne);
+		assert.strictEqual(snapAfterCorrectData.mode, "questions");
+	});
+
+	it("processAnswer correctly handles correct and incorrect inputted answers when a vocab term has multiple required answers", async () => {
+		const processAnswer = test.wrap(cloudFunctions.processAnswer);
+
+		const progressData = {
+			correct: [],
+			duration: null,
+			incorrect: [],
+			current_correct: [],
+			progress: 0,
+			questions: [
+				vocabOne,
+				vocabTwo
+			],
+			set_title: setOne,
+			start_time: 1627308670962,
+			switch_language: false,
+			uid: userOne,
+			set_owner: userOne,
+			mode: "questions",
+		};
+		const termDataOne = {
+			"item": termOne,
+			"sound": soundOne,
+		};
+		const termDataTwo = {
+			"item": termTwo,
+			"sound": soundTwo,
+		};
+		const definitionDataOne = {
+			"item": doubleDefinitionOne,
+		};
+		const definitionDataTwo = {
+			"item": doubleDefinitionTwo,
+		};
+
+		const progressId = "progress_01";
+		const progressDocId = firestore.collection("progress").doc(progressId);
+
+		await progressDocId.set(progressData);
+		await progressDocId.collection("terms").doc(vocabOne)
+			.set(termDataOne);
+		await progressDocId.collection("terms").doc(vocabTwo)
+			.set(termDataTwo);
+		await progressDocId.collection("definitions").doc(vocabOne)
+			.set(definitionDataOne);
+		await progressDocId.collection("definitions").doc(vocabTwo)
+			.set(definitionDataTwo);
+
+		const firstTermAnswerOneRequestData = {
+			progressId: progressId,
+			answer: "definition",
+		};
+		const firstTermAnswerTwoRequestData = {
+			progressId: progressId,
+			answer: "01",
+		};
+		const secondTermAnswerOneRequestData = {
+			progressId: progressId,
+			answer: "definition",
+		};
+		const secondTermAnswerTwoRequestData = {
+			progressId: progressId,
+			answer: "02",
+		};
+
+		const returnAfterCorrect = await processAnswer(firstTermAnswerOneRequestData);
+		 
+		assert.deepStrictEqual(returnAfterCorrect, {
+			mode: "questions",
+			correct: true,
+			correctAnswers: ["definition"],
+			moreAnswers: true,
+			nextPrompt: null,
+			progress: 0,
+			totalQuestions: 2,
+			totalCorrect: 0,
+			totalIncorrect: 0,
+		});
+
+		const snapAfterTermOneAnswerOneData = await progressDocId.get().then((doc) => {
+			return doc.data();
+		});
+
+		assert.deepStrictEqual(snapAfterTermOneAnswerOneData, {
+			correct: [],
+			current_correct: ["definition"],
+			duration: null,
+			incorrect: [],
+			progress: 0,
+			questions: [
+				vocabOne,
+				vocabTwo
+			],
+			set_title: setOne,
+			start_time: 1627308670962,
+			switch_language: false,
+			uid: userOne,
+			set_owner: userOne,
+			mode: "questions",
+		});
+
+		const returnAfterIncorrect = await processAnswer(secondTermAnswerTwoRequestData);
+
+		const snapAfterIncorrectData = await progressDocId.get().then((doc) => {
+			return doc.data();
+		});
+
+		hamjest.assertThat(snapAfterIncorrectData, hamjest.anyOf(
+			hamjest.is({
+				correct: [],
+				current_correct: [],
+				duration: null,
+				incorrect: [vocabOne],
+				progress: 1,
+				questions: [
+					vocabOne,
+					vocabOne,
+					vocabTwo
+				],
+				set_title: setOne,
+				start_time: 1627308670962,
+				switch_language: false,
+				uid: userOne,
+				set_owner: userOne,
+				mode: "questions",
+			}),
+			hamjest.is({
+				correct: [],
+				current_correct: [],
+				duration: null,
+				incorrect: [vocabOne],
+				progress: 1,
+				questions: [
+					vocabOne,
+					vocabTwo,
+					vocabOne
+				],
+				set_title: setOne,
+				start_time: 1627308670962,
+				switch_language: false,
+				uid: userOne,
+				set_owner: userOne,
+				mode: "questions",
+			})
+		));
+
+		if (returnAfterIncorrect.nextPrompt.item === "term_01") {
+			await processAnswer(firstTermAnswerOneRequestData);
+			await processAnswer(firstTermAnswerTwoRequestData);
+			await processAnswer(secondTermAnswerOneRequestData);
+			await processAnswer(secondTermAnswerTwoRequestData);
+		} else {
+			await processAnswer(secondTermAnswerOneRequestData);
+			await processAnswer(secondTermAnswerTwoRequestData);
+			await processAnswer(firstTermAnswerOneRequestData);
+			await processAnswer(firstTermAnswerTwoRequestData);
+		}
+
+		const snapAfterCorrectData = await progressDocId.get().then((doc) => {
+			return doc.data();
+		});
+
+		hamjest.assertThat(snapAfterCorrectData.correct, hamjest.anyOf(
+			hamjest.is(["vocab_01", "vocab_02"]),
+			hamjest.is(["vocab_02", "vocab_01"])
+		));
+		hamjest.assertThat(snapAfterCorrectData.questions, hamjest.anyOf(
+			hamjest.is(["vocab_01", "vocab_01", "vocab_02"]),
+			hamjest.is(["vocab_01", "vocab_02", "vocab_01"])
+		));
+		assert.deepStrictEqual(snapAfterCorrectData.incorrect, [vocabOne]);
+		assert.deepStrictEqual(snapAfterCorrectData.current_correct, []);
+		assert.notStrictEqual(snapAfterCorrectData.duration, null);
+		assert.strictEqual(snapAfterCorrectData.progress, 3);
+		assert.strictEqual(snapAfterCorrectData.set_title, setOne);
+		assert.strictEqual(snapAfterCorrectData.start_time, 1627308670962);
+		assert.strictEqual(snapAfterCorrectData.switch_language, false);
+		assert.strictEqual(snapAfterCorrectData.uid, userOne);
+		assert.strictEqual(snapAfterCorrectData.set_owner, userOne);
+		assert.strictEqual(snapAfterCorrectData.mode, "questions");
+	}).timeout(5000);
+
+	it("processAnswer ignores punctuation", async () => {
+		const processAnswer = test.wrap(cloudFunctions.processAnswer);
+
+		const progressData = {
+			correct: [],
+			current_correct: [],
+			duration: null,
+			incorrect: [],
+			progress: 0,
+			questions: [
+				vocabOne,
+				vocabTwo
+			],
+			set_title: setOne,
+			start_time: 1627308670962,
+			switch_language: false,
+			uid: userOne,
+			set_owner: userOne,
+			mode: "questions",
+		};
+		const termDataOne = {
+			"item": termOne,
+			"sound": soundOne,
+		};
+		const termDataTwo = {
+			"item": termTwo,
+			"sound": soundTwo,
+		};
+		const definitionDataOne = {
+			"item": punctuationDefinitionOne,
+		};
+		const definitionDataTwo = {
+			"item": definitionTwo,
+		};
+
+		const progressId = "progress_01";
+		const progressDocId = firestore.collection("progress").doc(progressId);
+
+		await progressDocId.set(progressData);
+		await progressDocId.collection("terms").doc(vocabOne)
+			.set(termDataOne);
+		await progressDocId.collection("terms").doc(vocabTwo)
+			.set(termDataTwo);
+		await progressDocId.collection("definitions").doc(vocabOne)
+			.set(definitionDataOne);
+		await progressDocId.collection("definitions").doc(vocabTwo)
+			.set(definitionDataTwo);
+
+		const requestData = {
+			progressId: progressId,
+			answer: "definition\"'_-)(,.0 1",
+		};
+
+		const returnedData = await processAnswer(requestData);
+
+		assert.equal(returnedData.correct, true);
 	});
 
 	it("setAdmin can change other users' admin states", async () => {
