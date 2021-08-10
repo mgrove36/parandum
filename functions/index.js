@@ -2,7 +2,7 @@
 /* eslint-disable no-tabs */
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const { ChatSharp } = require("@material-ui/icons");
+const { ChatSharp, DiscFull } = require("@material-ui/icons");
 admin.initializeApp();
 const db = admin.firestore();
 
@@ -49,103 +49,122 @@ exports.userDeleted = functions.auth.user().onDelete(async (user) => {
 /**
  * Creates new progress document.
  * @param {object} data The data passed to the function.
- * @param {string} data.set_id The ID of the desired set.
+ * @param {array} data.sets An array of IDs of the desired sets.
  * @param {boolean} data.switch_language Whether or not the languages should be reversed.
  * @param {boolean} data.mode The mode to be tested in. Valid options are "questions" and "lives".
  * @param {boolean} data.limit The maximum number of lives/questions for the test.
  * @return {string} The ID of the created progress document.
 */
 exports.createProgress = functions.https.onCall((data, context) => {
-	// const uid = context.auth.uid;
-	const uid = "user_01";
-
-	const setId = data.set_id;
+	const uid = context.auth.uid;
+	// const uid = "user_01";
 	
-	const setDocId = db.collection("sets").doc(setId);	
+	if (!data.sets || data.sets.length < 1) {
+		throw new functions.https.HttpsError("invalid-argument", "At least one set must be provided");
+	} else if (Number.isInteger(data.limit) || data.limit < 1) {
+		throw new functions.https.HttpsError("invalid-argument", "Limit must be an integer greater than 0")
+	}
+	else {
+		return db.runTransaction( async (transaction) => {
+			const sets = data.sets;
+			const setsId = db.collection("sets");
+			let allSetTitles = [];
+			let allVocab = [];
 	
-	return db.runTransaction((transaction) => {
-		return transaction.get(setDocId).then((setDoc) => {
-			if (!setDoc.exists) {
-				throw new functions.https.HttpsError("not-found", "Set doesn't exist");
-			} else if (!setDoc.data().public && setDoc.data().owner !== uid) {
-				throw new functions.https.HttpsError("permission-denied", "Insufficient permissions to access set");
-			} else {
-				const switchLanguage = data.switch_language;
-				const mode = data.mode;
-				const limit = data.limit;
-
-				const setTitle = setDoc.data().title;
-				const setOwner = setDoc.data().owner;
-				
-				const correct = [];
-				const incorrect = [];
-				const currentCorrect = [];
-				const progress = 0;
-				const startTime = Date.now();
-				const setVocabCollectionId = db
-					.collection("sets").doc(setId)
-					.collection("vocab");
-				const progressDocId = db
-					.collection("progress").doc();
-
-				return transaction.get(setVocabCollectionId).then((setVocab) => {
-					let dataToSet = {
-						questions: [],
-						correct: correct,
-						current_correct: currentCorrect,
-						incorrect: incorrect,
-						progress: progress,
-						start_time: startTime,
-						set_title: setTitle,
-						uid: uid,
-						switch_language: switchLanguage,
-						duration: null,
-						set_owner: setOwner,
-						mode: mode,
-					}
-
-					shuffleArray(setVocab).forEach((doc, index, array) => {
-						const vocabId = doc.id;
-
-						const terms = {
-							"item": doc.data().term,
-							"sound": doc.data().sound,
-						};
-						const definitions = {
-							"item": doc.data().definition,
-						};
-
-						dataToSet.questions.push(vocabId);
-
-						transaction.set(
-							progressDocId.collection("terms").doc(vocabId),
-							terms
-						);
-						transaction.set(
-							progressDocId.collection("definitions").doc(vocabId),
-							definitions
-						);
-
-						if (mode == "questions" && index >= limit - 1) {
-							array.length = index + 1;
-						}
-					});
-
-
-					if (mode === "lives") dataToSet.lives = limit;
-					
-					transaction.set(
-						progressDocId,
-						dataToSet
-					);
-
-					return progressDocId.id;
-				});
+			async function asyncForEach(array, callback) {
+				for (let index = 0; index < array.length; index++) {
+					await callback(array[index], index, array);
+				}
 			}
+	
+			await asyncForEach(sets, async (setId) => {
+				return transaction.get(setsId.doc(setId)).then((setDoc) => {
+					if (!setDoc.exists) {
+						throw new functions.https.HttpsError("not-found", "Set doesn't exist");
+					} else if (!setDoc.data().public && setDoc.data().owner !== uid) {
+						throw new functions.https.HttpsError("permission-denied", "Insufficient permissions to access set");
+					} else {
+						const setVocabCollectionId = db
+						.collection("sets").doc(setId)
+						.collection("vocab");
+						
+						return transaction.get(setVocabCollectionId).then((setVocab) => {
+							allSetTitles.push(setDoc.data().title);
+	
+							return setVocab.docs.map((vocabDoc) => {
+								let newVocabData = vocabDoc;
+								newVocabData.vocabId = setDoc.data().owner + "__" + vocabDoc.id;
+								allVocab.push(newVocabData);
+							});
+						});
+					}
+				});
+			});
+	
+			const mode = data.mode;
+			const limit = data.limit;
+			const switchLanguage = data.switch_language;
+			const progressDocId = db
+				.collection("progress").doc();
+	
+			let setTitle;
+			if (allSetTitles.length > 1) {
+				setTitle = allSetTitles.slice(0, -1).join(", ") + " & " + allSetTitles.slice(-1);
+			} else {
+				setTitle = allSetTitles[0];
+			}
+	
+			let dataToSet = {
+				questions: [],
+				correct: [],
+				current_correct: [],
+				incorrect: [],
+				progress: 0,
+				start_time: Date.now(),
+				set_title: setTitle,
+				uid: uid,
+				switch_language: switchLanguage,
+				duration: null,
+				mode: mode,
+			}
+	
+			shuffleArray(allVocab).forEach((doc, index, array) => {
+				const vocabId = doc.vocabId;
+	
+				const terms = {
+					"item": doc.data().term,
+					"sound": doc.data().sound,
+				};
+				const definitions = {
+					"item": doc.data().definition,
+				};
+	
+				dataToSet.questions.push(vocabId);
+	
+				transaction.set(
+					progressDocId.collection("terms").doc(vocabId),
+					terms
+				);
+				transaction.set(
+					progressDocId.collection("definitions").doc(vocabId),
+					definitions
+				);
+	
+				if (mode == "questions" && index >= limit - 1) {
+					array.length = index + 1;
+				}
+			});
+	
+			if (mode === "lives") dataToSet.lives = limit;
+	
+			transaction.set(
+				progressDocId,
+				dataToSet
+			);
+	
+			return progressDocId.id;
 		});
-	});
-
-
+	}
 });
 
 /**
@@ -251,8 +270,8 @@ function cleanseVocabString(item) {
  * @return {integer} totalIncorrect Total number of incorrect answers so far.
  */
 exports.processAnswer = functions.https.onCall((data, context) => {
-	// const uid = context.auth.uid;
-	const uid = "user_01";
+	const uid = context.auth.uid;
+	// const uid = "user_01";
 
 	const progressId = data.progressId;
 	const inputAnswer = data.answer;
@@ -357,6 +376,7 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 							return returnData;
 						} else {
 							const nextVocabId = docData.questions[docData.progress];
+							const nextSetOwner = nextVocabId.split("__")[0];
 	
 							if (docData.switch_language) {
 								const promptDocId = progressDocId
@@ -367,6 +387,7 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 									returnData.nextPrompt = {
 										item: promptDoc.data().item,
 										sound: sound,
+										set_owner: nextSetOwner,
 									}
 									transaction.set(progressDocId, docData);
 									return returnData;
@@ -380,6 +401,7 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 									returnData.nextPrompt = {
 										item: promptDoc.data().item,
 										sound: sound,
+										set_owner: nextSetOwner,
 									}
 									transaction.set(progressDocId, docData);
 									return returnData;
@@ -405,10 +427,10 @@ exports.processAnswer = functions.https.onCall((data, context) => {
  * @return {promise} The promise from setting the target user's admin custom auth claim.
 */
 exports.setAdmin = functions.https.onCall(async (data, context) => {
-	// const uid = context.auth.uid;
-	// const isAdmin = context.auth.tokens.admin;
-	const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
-	const isAdmin = true;
+	const uid = context.auth.uid;
+	const isAdmin = context.auth.tokens.admin;
+	// const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
+	// const isAdmin = true;
 
 	const targetUser = data.targetUser;
 	const adminState = data.adminState;
@@ -434,12 +456,12 @@ exports.setAdmin = functions.https.onCall(async (data, context) => {
  * @return {promise} The promise from setting the group's updated data.
 */
 exports.addSetToGroup = functions.https.onCall((data, context) => {
-	// const uid = context.auth.uid;
-	// const isAdmin = context.auth.token.admin;
-	// const auth = context.auth;
-	const uid = "user_01";
-	const isAdmin = false;
-	const auth = { uid: uid };
+	const uid = context.auth.uid;
+	const isAdmin = context.auth.token.admin;
+	const auth = context.auth;
+	// const uid = "user_01";
+	// const isAdmin = false;
+	// const auth = { uid: uid };
 
 	const groupId = data.groupId;
 	const setId = data.setId;
@@ -493,12 +515,12 @@ exports.addSetToGroup = functions.https.onCall((data, context) => {
  * @return {promise} The promise from setting the group's updated data.
 */
 exports.removeSetFromGroup = functions.https.onCall((data, context) => {
-	// const uid = context.auth.uid;
-	// const isAdmin = context.auth.token.admin;
-	// const auth = context.auth;
-	const uid = "user_01";
-	const isAdmin = false;
-	const auth = { uid: uid };
+	const uid = context.auth.uid;
+	const isAdmin = context.auth.token.admin;
+	const auth = context.auth;
+	// const uid = "user_01";
+	// const isAdmin = false;
+	// const auth = { uid: uid };
 
 	const groupId = data.groupId;
 	const setId = data.setId;
@@ -591,8 +613,8 @@ async function generateJoinCode() {
  * @return {string} The ID of the new group's document in the groups collection.
 */
 exports.createGroup = functions.https.onCall(async (data, context) => {
-	// const uid = context.auth.uid;
-	const uid = "user_01";
+	const uid = context.auth.uid;
+	// const uid = "user_01";
 
 	const joinCode = await generateJoinCode();
 
