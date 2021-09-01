@@ -19,7 +19,6 @@ export default function Login(props) {
 			"microsoft.com",
 			props.firebase.auth.EmailAuthProvider.PROVIDER_ID
 		],
-		credentialHelper: props.firebase.auth.CredentialHelper.GOOGLE_YOLO,
 		callbacks: {
 			signInSuccessWithAuthResult: () => false,
 		},
