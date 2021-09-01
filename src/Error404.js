@@ -2,7 +2,6 @@ import React from 'react';
 import NavBar from './NavBar';
 import Footer from "./Footer";
 import { HomeRounded as HomeRoundedIcon } from "@material-ui/icons";
-import LinkButton from "./LinkButton";
 
 export default function PageNotFound() {
 	const navbarItems = [

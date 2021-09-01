@@ -93,7 +93,6 @@ export default withRouter(class GroupPage extends Component {
 						}));
 
 						if (newState.role === "owner") {
-							var counter = 0;
 							const getGroupMembers = () => {
 								return this.state.functions.getGroupMembers({ groupId: this.props.match.params.groupId })
 									.catch((error) => {
