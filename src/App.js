@@ -111,7 +111,7 @@ class App extends React.Component {
     if (this.cookies.get("parandum-cookies-accepted") !== "true") {
       this.cookieNotice.style.display = "flex";
       this.cookieNotice.animate({
-        bottom: [`-${this.cookieNotice.offsetHeight}px`, "0px"],
+        bottom: [`-${this.cookieNoticeHeight}px`, "0px"],
       }, {
         duration: 1000,
         easing: "ease-in-out",
@@ -119,7 +119,7 @@ class App extends React.Component {
         fill: "forwards",
       });
       this.root.animate({
-        marginBottom: ["0px", `${this.cookieNotice.offsetHeight}px`],
+        marginBottom: ["0px", `${this.cookieNoticeHeight}px`],
       }, {
         duration: 1000,
         easing: "ease-in-out",
@@ -132,15 +132,15 @@ class App extends React.Component {
 
   updateCookieNoticeMargins = () => {
     if (this.cookieNoticeHeight !== this.cookieNotice.offsetHeight) {
+      this.cookieNoticeHeight = this.cookieNotice.offsetHeight;
       this.root.animate({
-        marginBottom: [`${this.root.marginBottom}px`, `${this.cookieNotice.offsetHeight}px`],
+        marginBottom: [`${this.root.marginBottom}px`, `${this.cookieNoticeHeight}px`],
       }, {
         duration: 500,
         easing: "ease-in-out",
         iterations: 1,
         fill: "forwards",
       });
-      this.cookieNoticeHeight = this.cookieNotice.offsetHeight;
     }
   }
 
@@ -168,8 +168,9 @@ class App extends React.Component {
 
   acceptCookies = () => {
     window.removeEventListener('resize', this.updateCookieNoticeMargins);
+    this.cookieNoticeHeight = this.cookieNotice.offsetHeight;
     this.cookieNotice.animate({
-      bottom: ["0px", `-${this.cookieNotice.offsetHeight}px`],
+      bottom: ["0px", `-${this.cookieNoticeHeight}px`],
     }, {
       duration: 1000,
       easing: "ease-in-out",
@@ -177,7 +178,7 @@ class App extends React.Component {
       fill: "forwards",
     });
     this.root.animate({
-      marginBottom: [`${this.cookieNotice.offsetHeight}px`, "0px"],
+      marginBottom: [`${this.cookieNoticeHeight}px`, "0px"],
     }, {
       duration: 1000,
       easing: "ease-in-out",
