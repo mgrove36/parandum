@@ -106,10 +106,11 @@ class App extends React.Component {
     this.cookies = new Cookies();
     this.cookieNotice = document.getElementById("cookie-notice");
     this.root = document.getElementById("root");
-    this.cookieNoticeHeight = this.cookieNotice.offsetHeight;
+    this.cookieNoticeHeight = 0;
 
     if (this.cookies.get("parandum-cookies-accepted") !== "true") {
       this.cookieNotice.style.display = "flex";
+      this.cookieNoticeHeight = this.cookieNotice.offsetHeight;
       this.cookieNotice.animate({
         bottom: [`-${this.cookieNoticeHeight}px`, "0px"],
       }, {
