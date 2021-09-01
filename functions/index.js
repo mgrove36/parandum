@@ -1,6 +1,6 @@
 /* eslint-disable indent */
 /* eslint-disable no-tabs */
-const functions = require("firebase-functions");//.region("europe-west2")
+const functions = require("firebase-functions").region("europe-west2");//.region("europe-west2")
 const admin = require("firebase-admin");
 admin.initializeApp();
 const db = admin.firestore();
