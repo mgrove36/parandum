@@ -1,0 +1,113 @@
+.answer-input-container {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
+.answer-input-container > input {
+	max-width: 500px;
+	flex-grow: 1;
+	margin-right: 8px;
+}
+
+.answer-input-container.answer-input-container--answer-entered > input {
+	caret-color: transparent;
+}
+
+input.answer-input--correct {
+	color: #3ac535;
+}
+
+input.answer-input--incorrect {
+	color: #ff5252;
+}
+
+.progress-end-incorrect-answers {
+	display: table;
+	table-layout: fixed;
+	column-gap: 10px;
+	width: 100%;
+	margin-top: 24px;
+	row-gap: 8px;
+}
+
+.progress-end-incorrect-answers > div {
+	display: table-row;
+}
+
+.progress-end-incorrect-answers > div > * {
+	display: table-cell;
+	word-wrap: break-word;
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+
+.progress-end-button-container {
+	position: fixed;
+	left: 0;
+	right: 0;
+	margin-left: auto;
+	margin-right: auto;
+	max-width: 1080px;
+	bottom: 0;
+	width: 100%;
+	height: 0;
+}
+
+.progress-end-button-container > .button {
+	margin: 48px;
+	position: absolute;
+	right: 0;
+	bottom: 0;
+}
+
+.progress-settings-overlay-content {
+	width: 80%;
+	max-width: 700px;
+	height: 70%;
+	max-height: 500px;
+	align-items: center;
+}
+
+.progress-settings-overlay-content > .settings-themes-container {
+	justify-content: center;
+	width: 75%;
+}
+
+.form-submit {
+	display: none;
+}
+
+@media screen and (max-width: 720px) {
+	.progress-end-button-container > .button {
+		margin: 24px;
+	}
+}
+
+@media screen and (max-width: 660px) {
+	.progress-settings-overlay-content > .settings-themes-container {
+		width: 100%;
+	}
+}
+
+@media screen and (max-width: 500px) {
+	.progress-settings-overlay-content {
+		width: 75%;
+	}
+}
+
+@media screen and (max-height: 700px) {
+	.progress-settings-overlay-content {
+		height: 75%;
+	}
+}
+
+@media screen and (max-height: 600px) {
+	.progress-end-button-container > .button {
+		margin: 24px;
+	}
+	.progress-settings-overlay-content {
+		justify-content: flex-start;
+	}
+}

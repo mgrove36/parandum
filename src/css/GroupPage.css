@@ -1,0 +1,80 @@
+.group-edit-icon {
+	margin-left: 12px;
+	cursor: pointer;
+}
+
+.group-name-header-input-container {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	flex: 1;
+}
+
+.group-name-header-input-container > input {
+	margin-right: 8px;
+	padding-left: 0px;
+	flex: 1;
+	width: 0;
+}
+
+.group-name-header-input-container > input, .group-name-header-input-container > .button {
+	margin-top: -1px;
+	margin-bottom: -3px;
+}
+
+.group-role-header {
+	margin-bottom: 8px;
+}
+
+.group-links-container {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	column-gap: 42px;
+}
+
+.group-set-link > a {
+	text-decoration: none;
+	color: inherit;
+}
+
+.group-set-link {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	align-items: center;
+}
+
+.group-set-link--enabled {
+	cursor: pointer;
+}
+
+.group-set-link--enabled > svg {
+	margin-left: 8px;
+}
+
+.group-page-overlay-content {
+	width: fit-content;
+	height: fit-content;
+	padding: 0;
+}
+
+.group-page-overlay-content > * {
+	border-bottom: 1px solid var(--overlay-color);
+	cursor: pointer;
+	margin: 0;
+}
+
+.group-page-overlay-content > *:not(:last-child) {
+	padding: 30px 48px;
+}
+
+.group-page-overlay-content > *:last-child {
+	border: none;
+	padding: 18px 48px;
+}
+
+.no-groups-message-list {
+	padding: 0 18px;
+	margin: 4px 0;
+}
