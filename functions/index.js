@@ -1,6 +1,6 @@
 /* eslint-disable indent */
 /* eslint-disable no-tabs */
-const functions = require("firebase-functions").region("europe-west2");//.region("europe-west2")
+const functions = require("firebase-functions");//.region("europe-west2")
 const admin = require("firebase-admin");
 admin.initializeApp();
 const db = admin.firestore();
@@ -64,8 +64,8 @@ exports.userDeleted = functions.auth.user().onDelete((user) => {
  * NOTE: can't be unit tested
  */
 exports.getGroupMembers = functions.https.onCall((data, context) => {
-	// const uid = context.auth.uid;
-	const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
+	const uid = context.auth.uid;
+	// const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
 
 	if (context.app == undefined && !LOCAL_TESTING) {
 		throw new functions.https.HttpsError(
@@ -146,8 +146,8 @@ exports.getGroupMembers = functions.https.onCall((data, context) => {
  * @return {string} The ID of the created progress document.
 */
 exports.createProgress = functions.https.onCall((data, context) => {
-	// const uid = context.auth.uid;
-	const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
+	const uid = context.auth.uid;
+	// const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
 
 	if (context.app == undefined && !LOCAL_TESTING) {
 		throw new functions.https.HttpsError(
@@ -383,8 +383,8 @@ function cleanseVocabString(item) {
  * @return {integer} totalIncorrect Total number of incorrect answers so far.
  */
 exports.processAnswer = functions.https.onCall((data, context) => {
-	// const uid = context.auth.uid;
-	const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
+	const uid = context.auth.uid;
+	// const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
 
 	if (context.app == undefined && !LOCAL_TESTING) {
 		throw new functions.https.HttpsError(
@@ -546,10 +546,10 @@ exports.processAnswer = functions.https.onCall((data, context) => {
  * @return {promise} The promise from setting the target user's admin custom auth claim.
 */
 exports.setAdmin = functions.https.onCall(async (data, context) => {
-	// const uid = context.auth.uid;
-	// const isAdmin = context.auth.tokens.admin;
-	const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";//nobVRmshkZNkrPbwgmPqNYrk55v2
-	const isAdmin = true;
+	const uid = context.auth.uid;
+	const isAdmin = context.auth.tokens.admin;
+	// const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";//nobVRmshkZNkrPbwgmPqNYrk55v2
+	// const isAdmin = true;
 
 	if (context.app == undefined && !LOCAL_TESTING) {
 		throw new functions.https.HttpsError(
@@ -581,12 +581,12 @@ exports.setAdmin = functions.https.onCall(async (data, context) => {
  * @return {boolean} true, to show the function has succeeded.
 */
 exports.addSetToGroup = functions.https.onCall((data, context) => {
-	// const uid = context.auth.uid;
-	// const isAdmin = context.auth.token.admin;
-	// const auth = context.auth;
-	const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
-	const isAdmin = false;
-	const auth = { uid: uid };
+	const uid = context.auth.uid;
+	const isAdmin = context.auth.token.admin;
+	const auth = context.auth;
+	// const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
+	// const isAdmin = false;
+	// const auth = { uid: uid };
 
 	if (context.app == undefined && !LOCAL_TESTING) {
 		throw new functions.https.HttpsError(
@@ -653,12 +653,12 @@ exports.addSetToGroup = functions.https.onCall((data, context) => {
  * @return {promise} The promise from setting the group's updated data.
 */
 exports.removeSetFromGroup = functions.https.onCall((data, context) => {
-	// const uid = context.auth.uid;
-	// const isAdmin = context.auth.token.admin;
-	// const auth = context.auth;
-	const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
-	const isAdmin = false;
-	const auth = { uid: uid };
+	const uid = context.auth.uid;
+	const isAdmin = context.auth.token.admin;
+	const auth = context.auth;
+	// const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
+	// const isAdmin = false;
+	// const auth = { uid: uid };
 
 	if (context.app == undefined && !LOCAL_TESTING) {
 		throw new functions.https.HttpsError(
@@ -783,8 +783,8 @@ async function generateJoinCode() {
  * @return {string} The ID of the new group's document in the groups collection.
 */
 exports.createGroup = functions.https.onCall(async (data, context) => {
-	// const uid = context.auth.uid;
-	const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
+	const uid = context.auth.uid;
+	// const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
 
 	if (context.app == undefined && !LOCAL_TESTING) {
 		throw new functions.https.HttpsError(
