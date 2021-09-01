@@ -10,39 +10,39 @@ html {
   color: var(--text-color);
 
   --default: #2a8c8c;
-  --default-tinted: #187474;
+  --default-tinted: #1d7e7e;
   --default-dark: #0a4a4a;
 
   --red: #b41313;
-  --red-tinted: #881010;
+  --red-tinted: #921515;
   --red-dark: #660b0b;
 
   --maroon: #a80c2e;
-  --maroon-tinted: #800923;
+  --maroon-tinted: #94102d;
   --maroon-dark: #5c0316;
 
   --green: #008612;
-  --green-tinted: #007710;
+  --green-tinted: #048b16;
   --green-dark: #005e0c;
 
   --light-blue: #0085ad;
-  --light-blue-tinted: #006786;
+  --light-blue-tinted: #05789b;
   --light-blue-dark: #004c63;
 
   --pink: #a327a3;
-  --pink-tinted: #801580;
+  --pink-tinted: #961d96;
   --pink-dark: #521452;
   
   --yellow: #948500;
-  --yellow-tinted: #756a00;
+  --yellow-tinted: #918305;
   --yellow-dark: #423c00;
   
   --orange: #dd5e0a;
-  --orange-tinted: #af4a07;
+  --orange-tinted: #c5570d;
   --orange-dark: #8d3a03;
 }
 
-html * {
+#root * {
 	transition: background-color 0.5s;
 }
 
@@ -291,11 +291,11 @@ label, p, input[type=text], main > span, main div > span {
   flex-wrap: wrap;
   column-gap: 16px;
   padding: 16px 24px;
-  background-color: var(--primary-color);
+  background-color: var(--primary-color-dark);
   text-align: center;
 }
 
-.cookie-notice > p {
+.cookie-notice > div > p {
   margin: 8px 0 6px 0;
 }
 
@@ -303,9 +303,9 @@ label, p, input[type=text], main > span, main div > span {
   color: inherit;
 }
 
-.cookie-notice > .button {
-  background-color: var(--text-color);
-  color: var(--primary-color);
+.cookie-notice > .button.button--round {
+  background-color: var(--primary-color);
+  color: var(--text-color);
   padding: 6px;
 }
 
@@ -315,4 +315,5 @@ label, p, input[type=text], main > span, main div > span {
 
 .cookie-notice > .button:hover {
   color: var(--text-color-tinted);
+  background-color: var(--primary-color-tinted);
 }
