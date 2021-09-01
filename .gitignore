@@ -7,6 +7,7 @@
 
 # testing
 /coverage
+/.firebase/
 
 # production
 /build
@@ -31,4 +32,4 @@ firestore-debug.log
 ui-debug.log
 
 # VS Code Counter extension
-.VSCodeCounter/
+/.VSCodeCounter/
