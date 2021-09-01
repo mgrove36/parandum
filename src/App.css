@@ -290,6 +290,7 @@ label, p, input[type=text], main > span, main div > span {
   justify-content: center;
   flex-wrap: wrap;
   column-gap: 16px;
+  row-gap: 2px;
   padding: 16px 24px;
   background-color: var(--primary-color-dark);
   text-align: center;
