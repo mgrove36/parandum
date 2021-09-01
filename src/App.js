@@ -135,7 +135,7 @@ class App extends React.Component {
       this.root.animate({
         marginBottom: [`${this.root.marginBottom}px`, `${this.cookieNotice.offsetHeight}px`],
       }, {
-        duration: 1000,
+        duration: 500,
         easing: "ease-in-out",
         iterations: 1,
         fill: "forwards",
