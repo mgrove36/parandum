@@ -10,7 +10,6 @@ import { CloseRounded as CloseRoundedIcon } from "@material-ui/icons";
 import "firebase/auth";
 
 export default function Login(props) {
-	const auth = props.auth;
 	const uiConfig = {
 		signInFlow: 'redirect',
 		signInSuccessUrl: '/',
@@ -33,7 +32,7 @@ export default function Login(props) {
 			<Link to="/" className="overlay"></Link>
 			<div className="overlay-content login-overlay-content">
 				<h1>Login</h1>
-				<StyledFirebaseAuth uiConfig={uiConfig} firebaseAuth={auth} />
+				<StyledFirebaseAuth uiConfig={uiConfig} firebaseAuth={props.firebase.auth()} />
 				<Link className="popup-close-button" to="/">
 					<CloseRoundedIcon />
 				</Link>

@@ -201,7 +201,7 @@ class App extends React.Component {
               <>
                 <Switch>
                   <Route path="/" exact>
-                    <LoggedInHome db={db} functions={functions} user={this.state.user} />
+                    <LoggedInHome db={db} firebase={firebase} functions={functions} user={this.state.user} />
                   </Route>
                   <Route path="/sets/:setId" exact>
                     <SetPage db={db} functions={functions} user={this.state.user} />

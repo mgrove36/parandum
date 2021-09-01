@@ -48,7 +48,7 @@ export default withRouter(class LoggedInHome extends React.Component {
 				{
 					type: "button",
 					name: "Logout",
-					onClick: () => this.state.firebase.auth().signOut(),
+					onClick: () => this.props.firebase.auth().signOut(),
 					icon: <ExitToAppRoundedIcon />,
 					hideTextMobile: true,
 				}
