@@ -17,7 +17,7 @@ import History from "./History";
 import TermsOfService from "./TermsOfService";
 import PrivacyPolicy from "./PrivacyPolicy";
 import Button from "./Button";
-import { CheckCircleOutlineRounded as CheckCircleOutlineRoundedIcon } from "@material-ui/icons";
+import { CheckRounded as CheckRoundedIcon } from "@material-ui/icons";
 
 import Cookies from 'universal-cookie';
 
@@ -264,8 +264,8 @@ class App extends React.Component {
             </div>
             <Button
               onClick={this.acceptCookies}
-              icon={<CheckCircleOutlineRoundedIcon/>}
-              className="button--round button--no-background"
+              icon={<CheckRoundedIcon/>}
+              className="button--round"
             ></Button>
           </div>
         </Router>

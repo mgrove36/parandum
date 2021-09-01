@@ -289,7 +289,7 @@ label, p, input[type=text], main > span, main div > span {
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  column-gap: 12px;
+  column-gap: 16px;
   padding: 16px 24px;
   background-color: var(--primary-color);
   text-align: center;
@@ -301,6 +301,16 @@ label, p, input[type=text], main > span, main div > span {
 
 .cookie-notice a {
   color: inherit;
+}
+
+.cookie-notice > .button {
+  background-color: var(--text-color);
+  color: var(--primary-color);
+  padding: 6px;
+}
+
+.cookie-notice > .button svg {
+  width: 48px;
 }
 
 .cookie-notice > .button:hover {
