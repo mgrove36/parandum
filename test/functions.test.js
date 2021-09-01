@@ -12,21 +12,19 @@ const assert = require("assert");
 
 admin.initializeApp();
 const firestore = admin.firestore();
-// LOCAL TESTING:
-const firestoreEmulator = firebase.initializeAdminApp({ projectId: "parandum-learning" }).firestore();
 
-const userOne = "user_01";
+const userOne = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
 const userTwo = "user_02";
 const setOne = "set_01";
 const setTwo = "set_02";
 const vocabOne = "vocab_01";
 const termOne = "term_01";
 const definitionOne = "definition_01";
-const soundOne = "sound_01";
+const soundOne = true;
 const vocabTwo = "vocab_02";
 const termTwo = "term_02";
 const definitionTwo = "definition_02";
-const soundTwo = "sound_02";
+const soundTwo = true;
 const groupOne = "group_01";
 const doubleDefinitionOne = "definition/01";
 const doubleDefinitionTwo = "definition/02";
@@ -41,13 +39,13 @@ const progressVocabFour = userOne + "__" + vocabFour;
 describe("Parandum Cloud Functions", () => {
 
 	it("Can write & delete to/from online database", async () => {
-		await firebase.assertSucceeds(
+		firebase.assertSucceeds(
 			firestore.collection("testCollection").doc("testDoc").set({
 				"one": "1",
 				"two": "2",
 			})
 		);
-		await firebase.assertSucceeds(
+		firebase.assertSucceeds(
 			firestore.collection("testCollection").doc("testDoc").delete()
 		);
 	});
@@ -87,9 +85,9 @@ describe("Parandum Cloud Functions", () => {
 		const progressId = await createProgress(requestData);
 		const progressDocId = firestore.collection("progress").doc(progressId);
 
-		const snapAfter = await progressDocId.get().then((doc) => {
-			return doc.data();
-		});
+		const snapAfter = await progressDocId.get().then((doc) => doc.data());
+		const termOneSnapAfter = await progressDocId.collection("terms").doc(progressVocabOne).get().then((doc) => doc.data());
+		const definitionOneSnapAfter = await progressDocId.collection("definitions").doc(progressVocabOne).get().then((doc) => doc.data());
 
 		hamjest.assertThat(snapAfter.questions, hamjest.anyOf(
 			hamjest.is([progressVocabOne, progressVocabTwo]),
@@ -100,11 +98,21 @@ describe("Parandum Cloud Functions", () => {
 		assert.deepStrictEqual(snapAfter.current_correct, []);
 		assert.strictEqual(snapAfter.duration, null);
 		assert.strictEqual(snapAfter.progress, 0);
+		assert.deepStrictEqual(snapAfter.setIds, [setOne]);
 		assert.strictEqual(snapAfter.set_title, setOne);
 		assert.notStrictEqual(snapAfter.start_time, null);
 		assert.strictEqual(snapAfter.switch_language, false);
 		assert.strictEqual(snapAfter.uid, userOne);
 		assert.strictEqual(snapAfter.mode, "questions");
+
+		assert.deepStrictEqual(termOneSnapAfter, {
+			item: termOne,
+			sound: soundOne,
+		});
+		assert.deepStrictEqual(definitionOneSnapAfter, {
+			item: definitionOne,
+			sound: soundOne,
+		});
 	});
 
 	it("createProgress can create new questions mode progress file from multiple existing sets", async () => {
@@ -166,9 +174,7 @@ describe("Parandum Cloud Functions", () => {
 		const progressId = await createProgress(requestData);
 		const progressDocId = firestore.collection("progress").doc(progressId);
 
-		const snapAfter = await progressDocId.get().then((doc) => {
-			return doc.data();
-		});
+		const snapAfter = await progressDocId.get().then((doc) => doc.data());
 
 		assert.deepStrictEqual(snapAfter.questions.sort(), [progressVocabOne, progressVocabTwo, progressVocabThree, progressVocabFour])
 		assert.deepStrictEqual(snapAfter.correct, []);
@@ -176,7 +182,8 @@ describe("Parandum Cloud Functions", () => {
 		assert.deepStrictEqual(snapAfter.current_correct, []);
 		assert.strictEqual(snapAfter.duration, null);
 		assert.strictEqual(snapAfter.progress, 0);
-		assert.strictEqual(snapAfter.set_title, setOne + " & " + setTwo);
+		assert.deepStrictEqual(snapAfter.setIds, [setOne, setTwo]);
+		assert.strictEqual(snapAfter.set_title, `${setOne} & ${setTwo}`);
 		assert.notStrictEqual(snapAfter.start_time, null);
 		assert.strictEqual(snapAfter.switch_language, false);
 		assert.strictEqual(snapAfter.uid, userOne);
@@ -218,9 +225,7 @@ describe("Parandum Cloud Functions", () => {
 		const progressId = await createProgress(requestData);
 		const progressDocId = firestore.collection("progress").doc(progressId);
 
-		const snapAfter = await progressDocId.get().then((doc) => {
-			return doc.data();
-		});
+		const snapAfter = await progressDocId.get().then((doc) => doc.data());
 
 		hamjest.assertThat(snapAfter.questions, hamjest.anyOf(
 			hamjest.is([progressVocabOne, progressVocabTwo]),
@@ -231,6 +236,7 @@ describe("Parandum Cloud Functions", () => {
 		assert.deepStrictEqual(snapAfter.current_correct, []);
 		assert.strictEqual(snapAfter.duration, null);
 		assert.strictEqual(snapAfter.progress, 0);
+		assert.deepStrictEqual(snapAfter.setIds, [setOne]);
 		assert.strictEqual(snapAfter.set_title, setOne);
 		assert.notStrictEqual(snapAfter.start_time, null);
 		assert.strictEqual(snapAfter.switch_language, false);
@@ -271,7 +277,7 @@ describe("Parandum Cloud Functions", () => {
 			limit: 2,
 		};
 
-		return await firebase.assertSucceeds(createProgress(requestData));
+		firebase.assertSucceeds(createProgress(requestData));
 	});
 
 	it("createProgress can't create new progress file from non-public set they aren't the owner of", async () => {
@@ -292,13 +298,13 @@ describe("Parandum Cloud Functions", () => {
 			"definition": definitionTwo,
 			"sound": soundTwo,
 		};
-
+		
 		await firestore.collection("sets").doc(setTwo).set(setDataTwo);
 		await firestore.collection("sets").doc(setTwo)
 			.collection("vocab").doc(vocabOne).set(vocabDataOne);
 		await firestore.collection("sets").doc(setTwo)
 			.collection("vocab").doc(vocabTwo).set(vocabDataTwo);
-
+		
 		const requestData = {
 			switch_language: false,
 			sets: [setTwo],
@@ -306,7 +312,7 @@ describe("Parandum Cloud Functions", () => {
 			limit: 2,
 		};
 		
-		return await firebase.assertFails(createProgress(requestData));
+		firebase.assertFails(createProgress(requestData));
 	});
 
 	it("processAnswer updates progress documents appropriately when correct and incorrect answers provided", async () => {
@@ -338,9 +344,11 @@ describe("Parandum Cloud Functions", () => {
 		};
 		const definitionDataOne = {
 			"item": definitionOne,
+			"sound": soundOne,
 		};
 		const definitionDataTwo = {
 			"item": definitionTwo,
+			"sound": soundTwo,
 		};
 
 		const progressId = "progress_01";
@@ -372,6 +380,7 @@ describe("Parandum Cloud Functions", () => {
 				mode: "questions",
 				correct: false,
 				correctAnswers: [definitionOne],
+				currentVocabId: progressVocabOne,
 				moreAnswers: false,
 				nextPrompt: {
 					item: termOne,
@@ -387,6 +396,7 @@ describe("Parandum Cloud Functions", () => {
 				mode: "questions",
 				correct: false,
 				correctAnswers: [definitionOne],
+				currentVocabId: progressVocabOne,
 				moreAnswers: false,
 				nextPrompt: {
 					item: termTwo,
@@ -400,9 +410,7 @@ describe("Parandum Cloud Functions", () => {
 			})
 		));
 
-		const snapAfterIncorrectData = await progressDocId.get().then((doc) => {
-			return doc.data();
-		});
+		const snapAfterIncorrectData = await progressDocId.get().then((doc) => doc.data());
 
 		hamjest.assertThat(snapAfterIncorrectData, hamjest.anyOf(
 			hamjest.is({
@@ -449,9 +457,7 @@ describe("Parandum Cloud Functions", () => {
 			await processAnswer(firstTermAnswerRequestData);
 		}
 
-		const snapAfterCorrectData = await progressDocId.get().then((doc) => {
-			return doc.data();
-		});
+		const snapAfterCorrectData = await progressDocId.get().then((doc) => doc.data());
 
 		hamjest.assertThat(snapAfterCorrectData.correct, hamjest.anyOf(
 			hamjest.is([progressVocabOne, progressVocabTwo]),
@@ -470,6 +476,86 @@ describe("Parandum Cloud Functions", () => {
 		assert.strictEqual(snapAfterCorrectData.switch_language, false);
 		assert.strictEqual(snapAfterCorrectData.uid, userOne);
 		assert.strictEqual(snapAfterCorrectData.mode, "questions");
+	});
+
+	it("processAnswer returns correct data", async () => {
+		const processAnswer = test.wrap(cloudFunctions.processAnswer);
+
+		const progressData = {
+			correct: [],
+			current_correct: [],
+			duration: null,
+			incorrect: [],
+			progress: 0,
+			questions: [
+				progressVocabOne
+			],
+			set_title: setOne,
+			start_time: 1627308670962,
+			switch_language: false,
+			uid: userOne,
+			mode: "questions",
+		};
+		const termDataOne = {
+			"item": termOne,
+			"sound": soundOne,
+		};
+		const definitionDataOne = {
+			"item": definitionOne,
+			"sound": soundOne,
+		};
+
+		const progressId = "progress_01";
+		const progressDocId = firestore.collection("progress").doc(progressId);
+
+		await progressDocId.set(progressData);
+		await progressDocId.collection("terms").doc(progressVocabOne)
+			.set(termDataOne);
+		await progressDocId.collection("definitions").doc(progressVocabOne)
+			.set(definitionDataOne);
+
+		const correctAnswerRequestData = {
+			progressId: progressId,
+			answer: "definition_01",
+		};
+		const incorrectAnswerRequestData = {
+			progressId: progressId,
+			answer: "definition_02",
+		};
+
+		const returnAfterIncorrect = await processAnswer(incorrectAnswerRequestData);
+		const returnAfterCorrect = await processAnswer(correctAnswerRequestData);
+
+		assert.deepStrictEqual(returnAfterIncorrect, {
+			mode: "questions",
+			correct: false,
+			correctAnswers: [definitionOne],
+			currentVocabId: progressVocabOne,
+			moreAnswers: false,
+			nextPrompt: {
+				item: termOne,
+				sound: soundOne,
+				set_owner: userOne,
+			},
+			progress: 1,
+			totalQuestions: 2,
+			totalCorrect: 0,
+			totalIncorrect: 1,
+		});
+
+		assert.strictEqual(returnAfterCorrect.mode, "questions");
+		assert.strictEqual(returnAfterCorrect.correct, true)
+		assert.deepStrictEqual(returnAfterCorrect.correctAnswers, [definitionOne]);
+		assert.strictEqual(returnAfterCorrect.currentVocabId, progressVocabOne);
+		assert.notStrictEqual(returnAfterCorrect.duration, null);
+		assert.deepStrictEqual(returnAfterCorrect.incorrectAnswers, [progressVocabOne]);
+		assert.strictEqual(returnAfterCorrect.moreAnswers, false);
+		assert.strictEqual(returnAfterCorrect.nextPrompt, null);
+		assert.strictEqual(returnAfterCorrect.progress, 2);
+		assert.strictEqual(returnAfterCorrect.totalQuestions, 2);
+		assert.strictEqual(returnAfterCorrect.totalCorrect, 1);
+		assert.strictEqual(returnAfterCorrect.totalIncorrect, 1);
+		assert.strictEqual(returnAfterCorrect.mode, "questions");
 	});
 
 	it("processAnswer correctly handles correct and incorrect inputted answers when a vocab term has multiple required answers", async () => {
@@ -501,9 +587,11 @@ describe("Parandum Cloud Functions", () => {
 		};
 		const definitionDataOne = {
 			"item": doubleDefinitionOne,
+			"sound": soundOne,
 		};
 		const definitionDataTwo = {
 			"item": doubleDefinitionTwo,
+			"sound": soundTwo,
 		};
 
 		const progressId = "progress_01";
@@ -542,6 +630,7 @@ describe("Parandum Cloud Functions", () => {
 			mode: "questions",
 			correct: true,
 			correctAnswers: ["definition"],
+			currentVocabId: progressVocabOne,
 			moreAnswers: true,
 			nextPrompt: null,
 			progress: 0,
@@ -550,9 +639,7 @@ describe("Parandum Cloud Functions", () => {
 			totalIncorrect: 0,
 		});
 
-		const snapAfterTermOneAnswerOneData = await progressDocId.get().then((doc) => {
-			return doc.data();
-		});
+		const snapAfterTermOneAnswerOneData = await progressDocId.get().then((doc) => doc.data());
 
 		assert.deepStrictEqual(snapAfterTermOneAnswerOneData, {
 			correct: [],
@@ -573,9 +660,7 @@ describe("Parandum Cloud Functions", () => {
 
 		const returnAfterIncorrect = await processAnswer(secondTermAnswerTwoRequestData);
 
-		const snapAfterIncorrectData = await progressDocId.get().then((doc) => {
-			return doc.data();
-		});
+		const snapAfterIncorrectData = await progressDocId.get().then((doc) => doc.data());
 
 		hamjest.assertThat(snapAfterIncorrectData, hamjest.anyOf(
 			hamjest.is({
@@ -626,9 +711,7 @@ describe("Parandum Cloud Functions", () => {
 			await processAnswer(firstTermAnswerTwoRequestData);
 		}
 
-		const snapAfterCorrectData = await progressDocId.get().then((doc) => {
-			return doc.data();
-		});
+		const snapAfterCorrectData = await progressDocId.get().then((doc) => doc.data());
 
 		hamjest.assertThat(snapAfterCorrectData.correct, hamjest.anyOf(
 			hamjest.is([progressVocabOne, progressVocabTwo]),
@@ -678,9 +761,11 @@ describe("Parandum Cloud Functions", () => {
 		};
 		const definitionDataOne = {
 			"item": punctuationDefinitionOne,
+			"sound": soundOne,
 		};
 		const definitionDataTwo = {
 			"item": definitionTwo,
+			"sound": soundTwo,
 		};
 
 		const progressId = "progress_01";
@@ -707,18 +792,19 @@ describe("Parandum Cloud Functions", () => {
 	});
 
 	it("setAdmin can change other users' admin states", async () => {
-		// NOTE: admin uid is M3JPrFRH6Fdo8XMUbF0l2zVZUCH3
+		/** NOTE
+		 * Admin uid is M3JPrFRH6Fdo8XMUbF0l2zVZUCH3.
+		 * This uid should be set in the function's code during testing.
+		*/
 		
 		const setAdmin = test.wrap(cloudFunctions.setAdmin);
 		
 		const targetId = await admin.auth().createUser({
 			email: "user_01@mgrove.uk",
 			password: "user1234",
-		}).then((user) => {
-			return user.uid;
-		});
+		}).then((user) => user.uid);
 
-		await firebase.assertSucceeds(setAdmin({
+		firebase.assertSucceeds(await setAdmin({
 			targetUser: targetId,
 			adminState: true,
 		}));
@@ -726,7 +812,7 @@ describe("Parandum Cloud Functions", () => {
 		await admin.auth().deleteUser(targetId);
 	});
 
-	it("setAdmin can't change current user's admin state", async () => {
+	it("setAdmin can't change current user's admin state", () => {
 		/** NOTE
 		 * Admin uid is M3JPrFRH6Fdo8XMUbF0l2zVZUCH3.
 		 * This uid should be set in the function's code during testing.
@@ -734,9 +820,9 @@ describe("Parandum Cloud Functions", () => {
 
 		const setAdmin = test.wrap(cloudFunctions.setAdmin);
 
-		const targetId = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3"
+		const targetId = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
 
-		await firebase.assertFails(setAdmin({
+		firebase.assertFails(setAdmin({
 			targetUser: targetId,
 			adminState: false,
 		}));
@@ -781,7 +867,7 @@ describe("Parandum Cloud Functions", () => {
 		await firestore.collection("users").doc(userOne)
 			.collection("groups").doc(groupOne).set(userGroupDataOne);
 
-		await firebase.assertSucceeds(addSetToGroup({
+		firebase.assertSucceeds(addSetToGroup({
 			groupId: groupOne,
 			setId: setOne,
 		}));
@@ -826,7 +912,7 @@ describe("Parandum Cloud Functions", () => {
 		await firestore.collection("users").doc(userOne)
 			.collection("groups").doc(groupOne).set(userGroupDataOne);
 
-		await firebase.assertFails(addSetToGroup({
+		firebase.assertFails(addSetToGroup({
 			groupId: groupOne,
 			setId: setOne,
 		}));
@@ -871,7 +957,7 @@ describe("Parandum Cloud Functions", () => {
 		await firestore.collection("users").doc(userOne)
 			.collection("groups").doc(groupOne).set(userGroupDataOne);
 
-		await firebase.assertFails(addSetToGroup({
+		firebase.assertFails(addSetToGroup({
 			groupId: groupOne,
 			setId: setOne,
 		}));
@@ -1021,20 +1107,118 @@ describe("Parandum Cloud Functions", () => {
 		
 		const groupId = await createGroup(groupOne);
 		const groupDocId = firestore.collection("groups").doc(groupId);
-		const userGroupDocId = firestore.collection("users").doc(userOne).collection("groups").doc(groupId);
-
-		const snapGroupAfter = await groupDocId.get().then((doc) => {
-			return doc.data();
-		});
-
-		const snapUserGroupAfter = await userGroupDocId.get().then((doc) => {
-			return doc.data();
-		});
 		
+		const snapGroupAfter = await groupDocId.get().then((doc) => doc.data());
+
+		const userGroupDocId = firestore.collection("users").doc(userOne).collection("groups").doc(groupId);
+		const joinCodeDocId = firestore.collection("join_codes").doc(snapGroupAfter.join_code);
+
+		const snapUserGroupAfter = await userGroupDocId.get();
+		const joinCodeSnap = await joinCodeDocId.get();
+
 		assert.strictEqual(snapGroupAfter.display_name, groupOne);
 		assert.deepStrictEqual(snapGroupAfter.sets, []);
 		assert.deepStrictEqual(snapGroupAfter.users, {});
 		assert.notStrictEqual(snapGroupAfter.join_code, null);
-		assert.deepStrictEqual(snapUserGroupAfter, {role: "owner"});
+
+		assert.deepStrictEqual(snapUserGroupAfter.data(), {
+			role: "owner"
+		});
+
+		assert.deepStrictEqual(joinCodeSnap.data(), {
+			group: groupId,
+		});
 	});
+
+	/*xit("getGroupMembers returns group members correctly", async () => {
+		const getGroupMembers = test.wrap(cloudFunctions.getGroupMembers);
+
+		const userGroupDataOne = {
+			role: "owner",
+		};
+		const userGroupDataTwo = {
+			role: "collaborator",
+		};
+		const userGroupDataThree = {
+			role: "member",
+		};
+		
+		const userOneId = admin.auth().createUser({
+			email: "user_01@mgrove.uk",
+			password: "user1234",
+			displayName: "User 01",
+		}).then((user) => {
+			return user.uid;
+		});
+		const userTwoId = admin.auth().createUser({
+			email: "user_02@mgrove.uk",
+			password: "user1234",
+			displayName: "User 02",
+		}).then((user) => {
+			return user.uid;
+		});
+		const userThreeId = admin.auth().createUser({
+			email: "user_03@mgrove.uk",
+			password: "user1234",
+			displayName: "User 03",
+		}).then((user) => {
+			return user.uid;
+		});
+		
+		await Promise.all([
+			userOneId,
+			userTwoId,
+			userThreeId
+		]);
+
+		const groupDataOne = {
+			display_name: groupOne,
+			join_code: "abcd1234",
+			sets: [],
+			users: {
+				[userOneId]: "owner",
+				[userTwoId]: "collaborator",
+				[userThreeId]: "member",
+			},
+		};
+
+		await Promise.all([
+			firestore.collection("groups").doc(groupOne).set(groupDataOne),
+			firestore.collection("users").doc(userOneId)
+				.collection("groups").doc(groupOne).set(userGroupDataOne),
+			firestore.collection("users").doc(userTwoId)
+				.collection("groups").doc(groupOne).set(userGroupDataTwo),
+			firestore.collection("users").doc(userThreeId)
+				.collection("groups").doc(groupOne).set(userGroupDataThree),
+		]);
+
+		const returnData = await getGroupMembers(groupOne);
+
+		await Promise.all([
+			admin.auth().deleteUser(userOneId),
+			admin.auth().deleteUser(userTwoId),
+			admin.auth().deleteUser(userThreeId),
+		])
+
+		assert.deepStrictEqual(returnData, {
+			owners: [
+				{
+					uid: userOneId,
+					displayName: "User 01",
+				}
+			],
+			collaborators: [
+				{
+					uid: userTwoId,
+					displayName: "User 02",
+				}
+			],
+			members: [
+				{
+					uid: userThreeId,
+					displayName: "User 03",
+				}
+			],
+		});
+	});*/
 });
