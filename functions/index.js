@@ -1,12 +1,11 @@
 /* eslint-disable indent */
 /* eslint-disable no-tabs */
-const functions = require("firebase-functions");
+const functions = require("firebase-functions").region("europe-west2");//.region("europe-west2")
 const admin = require("firebase-admin");
-const { ChatSharp, DiscFull } = require("@material-ui/icons");
 admin.initializeApp();
 const db = admin.firestore();
 
-// TODO: set up App Check https://firebase.google.com/docs/app-check/cloud-functions
+const LOCAL_TESTING = false;
 
 /**
  * Randomises the items in an array.
@@ -26,8 +25,8 @@ function shuffleArray(array) {
  * NOTE: Can't be unit tested.
  * @return {promise} Promise from database write.
  */
-exports.userCreated = functions.auth.user().onCreate(async (user) => {
-	return await admin.auth().setCustomUserClaims(user.uid, {
+exports.userCreated = functions.auth.user().onCreate((user) => {
+	return admin.auth().setCustomUserClaims(user.uid, {
 		admin: false,
 	}).then(() => {
 		return db.collection("users").doc(user.uid).set({
@@ -42,9 +41,100 @@ exports.userCreated = functions.auth.user().onCreate(async (user) => {
  * NOTE: Can't be unit tested.
  * @return {promise} Promise from database delete.
  */
-exports.userDeleted = functions.auth.user().onDelete(async (user) => {
+exports.userDeleted = functions.auth.user().onDelete((user) => {
 	return db.collection("users").doc(user.uid).delete();
 });
+
+/**
+ * Retrieves the user IDs and display names of all users in the given group.
+ * @param {string} groupId The ID of the group whose users should be retrieved.
+ * @return {object} A dictionary of owners, contributors, and members of the group.
+ * @return {array} owners An array of objects, one for each user with the owner role for
+ * 					the specified set, containing the users' display names and user IDs.
+ * @return {string} owners[i].displayName The user's display name.
+ * @return {string} owners[i].uid The user's ID.
+ * @return {array} contributors An array of objects, one for each user with the contributor role
+ * 					for the specified set, containing the users' display names and user IDs.
+ * @return {string} contributors[i].displayName The user's display name.
+ * @return {string} contributors[i].uid The user's ID.
+ * @return {array} members An array of objects, one for each user with the member role for
+ * 					the specified set, containing the users' display names and user IDs.
+ * @return {string} members[i].displayName The user's display name.
+ * @return {string} members[i].uid The user's ID.
+ * NOTE: can't be unit tested
+ */
+exports.getGroupMembers = functions.https.onCall((data, context) => {
+	// const uid = context.auth.uid;
+	const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
+
+	if (context.app == undefined && !LOCAL_TESTING) {
+		throw new functions.https.HttpsError(
+			"failed-precondition",
+			"The function must be called from an App Check verified app.");
+	}
+
+	if (typeof data.groupId !== "string") {
+		throw new functions.https.HttpsError("invalid-argument", "Group ID must be a string");
+	}
+
+	return db.collection("groups")
+		.doc(data.groupId)
+		.get()
+		.then((groupDoc) => {
+			if (!groupDoc.data() || !groupDoc.data().users) {
+				throw new functions.https.HttpsError("failed-precondition", "Group just created so users can't yet be retrieved - the only user is the group creator");
+			}
+
+			const groupUsers = groupDoc.data().users;
+
+			if (groupUsers[uid] !== "owner") {
+				throw new functions.https.HttpsError("permission-denied", "You must be a group owner to retrieve group members' data");
+			}
+
+			let groupOwners = [];
+			let groupContributors = [];
+			let groupMembers = [];
+			
+			return Promise.all(Object.keys(groupUsers).map((userId) => {
+				return admin.auth()
+					.getUser(userId)
+					.then((userRecord) => {
+						if (groupUsers[userId] === "owner") {
+							groupOwners.push({
+								displayName: userRecord.displayName,
+								uid: userId,
+							});
+						} else if (groupUsers[userId] === "contributor") {
+							groupContributors.push({
+								displayName: userRecord.displayName,
+								uid: userId,
+							});
+						} else {
+							groupMembers.push({
+								displayName: userRecord.displayName,
+								uid: userId,
+							});
+						}
+					});
+			})).then(() => {
+				const sortArray = (arr) => arr.sort((a, b) => {
+					if (a.displayName < b.displayName) {
+						return -1;
+					}
+					if (a.displayName > b.displayName) {
+						return 1;
+					}
+					return 0;
+				});
+				
+				return {
+					owners: sortArray(groupOwners),
+					contributors: sortArray(groupContributors),
+					members: sortArray(groupMembers),
+				};
+			});
+		});
+})
 
 /**
  * Creates new progress document.
@@ -56,115 +146,135 @@ exports.userDeleted = functions.auth.user().onDelete(async (user) => {
  * @return {string} The ID of the created progress document.
 */
 exports.createProgress = functions.https.onCall((data, context) => {
-	const uid = context.auth.uid;
-	// const uid = "user_01";
+	// const uid = context.auth.uid;
+	const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
+
+	if (context.app == undefined && !LOCAL_TESTING) {
+		throw new functions.https.HttpsError(
+			"failed-precondition",
+			"The function must be called from an App Check verified app.");
+	}
 	
-	if (!data.sets || data.sets.length < 1) {
+	if (typeof data.sets !== "object" || data.sets.length < 1) {
 		throw new functions.https.HttpsError("invalid-argument", "At least one set must be provided");
-	} else if (Number.isInteger(data.limit) || data.limit < 1) {
+	}
+
+	if (typeof data.limit !== "number" || !Number.isInteger(data.limit) || data.limit < 1) {
 		throw new functions.https.HttpsError("invalid-argument", "Limit must be an integer greater than 0")
 	}
-	else {
-		return db.runTransaction( async (transaction) => {
-			const sets = data.sets;
-			const setsId = db.collection("sets");
-			let allSetTitles = [];
-			let allVocab = [];
+
+	if (typeof data.switch_language !== "boolean") {
+		throw new functions.https.HttpsError("invalid-argument", "switch_language must be a boolean");
+	}
+
+	if (data.mode !== "questions" && data.mode !== "lives") {
+		throw new functions.https.HttpsError("invalid-argument", "mode must be \"questions\" or \"lives\"");
+	}
 	
-			async function asyncForEach(array, callback) {
-				for (let index = 0; index < array.length; index++) {
-					await callback(array[index], index, array);
-				}
-			}
-	
-			await asyncForEach(sets, async (setId) => {
-				return transaction.get(setsId.doc(setId)).then((setDoc) => {
-					if (!setDoc.exists) {
-						throw new functions.https.HttpsError("not-found", "Set doesn't exist");
-					} else if (!setDoc.data().public && setDoc.data().owner !== uid) {
-						throw new functions.https.HttpsError("permission-denied", "Insufficient permissions to access set");
-					} else {
-						const setVocabCollectionId = db
+	return db.runTransaction(async (transaction) => {
+		const setsId = db.collection("sets");
+		let allSetTitles = [];
+		let allVocab = [];
+
+		await Promise.all(data.sets.map((setId) => {
+			return transaction.get(setsId.doc(setId)).then((setDoc) => {
+				if (!setDoc.exists) {
+					throw new functions.https.HttpsError("not-found", "Set doesn't exist");
+				} else if (!setDoc.data().public && setDoc.data().owner !== uid) {
+					throw new functions.https.HttpsError("permission-denied", "Insufficient permissions to access set");
+				} else {
+					const setVocabCollectionId = db
 						.collection("sets").doc(setId)
 						.collection("vocab");
+					
+					return transaction.get(setVocabCollectionId).then((setVocab) => {
+						if (setVocab.docs.length < 1) throw new functions.https.HttpsError("failed-precondition", "Set must have at least one term/definition pair");
 						
-						return transaction.get(setVocabCollectionId).then((setVocab) => {
-							allSetTitles.push(setDoc.data().title);
-	
-							return setVocab.docs.map((vocabDoc) => {
-								let newVocabData = vocabDoc;
-								newVocabData.vocabId = setDoc.data().owner + "__" + vocabDoc.id;
-								allVocab.push(newVocabData);
-							});
+						allSetTitles.push(setDoc.data().title);
+
+						return setVocab.docs.map((vocabDoc) => {
+							let newVocabData = vocabDoc;
+							newVocabData.vocabId = setDoc.data().owner + "__" + vocabDoc.id;
+							allVocab.push(newVocabData);
 						});
-					}
-				});
-			});
-	
-			const mode = data.mode;
-			const limit = data.limit;
-			const switchLanguage = data.switch_language;
-			const progressDocId = db
-				.collection("progress").doc();
-	
-			let setTitle;
-			if (allSetTitles.length > 1) {
-				setTitle = allSetTitles.slice(0, -1).join(", ") + " & " + allSetTitles.slice(-1);
-			} else {
-				setTitle = allSetTitles[0];
-			}
-	
-			let dataToSet = {
-				questions: [],
-				correct: [],
-				current_correct: [],
-				incorrect: [],
-				progress: 0,
-				start_time: Date.now(),
-				set_title: setTitle,
-				uid: uid,
-				switch_language: switchLanguage,
-				duration: null,
-				mode: mode,
-			}
-	
-			shuffleArray(allVocab).forEach((doc, index, array) => {
-				const vocabId = doc.vocabId;
-	
-				const terms = {
-					"item": doc.data().term,
-					"sound": doc.data().sound,
-				};
-				const definitions = {
-					"item": doc.data().definition,
-				};
-	
-				dataToSet.questions.push(vocabId);
-	
-				transaction.set(
-					progressDocId.collection("terms").doc(vocabId),
-					terms
-				);
-				transaction.set(
-					progressDocId.collection("definitions").doc(vocabId),
-					definitions
-				);
-	
-				if (mode == "questions" && index >= limit - 1) {
-					array.length = index + 1;
+					});
 				}
 			});
-	
-			if (mode === "lives") dataToSet.lives = limit;
-	
+		}));
+
+		const mode = data.mode;
+		const limit = data.limit;
+		const switchLanguage = data.switch_language;
+		const progressDocId = db
+			.collection("progress").doc();
+
+		let setTitle;
+		if (allSetTitles.length > 1) {
+			setTitle = allSetTitles.slice(0, -1).join(", ") + " & " + allSetTitles.slice(-1);
+		} else {
+			setTitle = allSetTitles[0];
+		}
+
+		let dataToSet = {
+			questions: [],
+			correct: [],
+			current_correct: [],
+			incorrect: [],
+			progress: 0,
+			start_time: Date.now(),
+			set_title: setTitle,
+			uid: uid,
+			switch_language: switchLanguage,
+			duration: null,
+			mode: mode,
+			setIds: data.sets.sort((a, b) => {
+				if (a < b) {
+					return -1;
+				}
+				if (a > b) {
+					return 1;
+				}
+				return 0;
+			}),
+		}
+
+		shuffleArray(allVocab).forEach((doc, index, array) => {
+			const vocabId = doc.vocabId;
+
+			const terms = {
+				"item": doc.data().term,
+				"sound": doc.data().sound,
+			};
+			const definitions = {
+				"item": doc.data().definition,
+				"sound": doc.data().sound,
+			};
+
+			dataToSet.questions.push(vocabId);
+
 			transaction.set(
-				progressDocId,
-				dataToSet
+				progressDocId.collection("terms").doc(vocabId),
+				terms
 			);
-	
-			return progressDocId.id;
+			transaction.set(
+				progressDocId.collection("definitions").doc(vocabId),
+				definitions
+			);
+
+			if (mode == "questions" && index >= limit - 1) {
+				array.length = index + 1;
+			}
 		});
-	}
+
+		if (mode === "lives") dataToSet.lives = limit;
+
+		transaction.set(
+			progressDocId,
+			dataToSet
+		);
+
+		return progressDocId.id;
+	});
 });
 
 /**
@@ -175,7 +285,7 @@ exports.createProgress = functions.https.onCall((data, context) => {
  *//*
 exports.getPrompt = functions.https.onCall((data, context) => {
 	// const uid = context.auth.uid;
-	const uid = "user_01";
+	const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
 
 	const progressId = data;
 	
@@ -259,19 +369,28 @@ function cleanseVocabString(item) {
  * @return {array} correctAnswers An array of correct answers for the question just answered. If not all correct
  * 					answers have yet been given, and the current answer is correct, this only contains the correct
  * 					answers given so far.
- * @return {integer} lives Total number of lives available in this test. Only returned if mode is "lives".
+ * @return {string} currentVocabId The vocab ID of the vocab item currently being evaluated.
+ * @return {integer} duration The time taken for the test to be completed. Only returned when the test is complete.
+ * @return {array} incorrectAnswers The vocab IDs of all incorrect answers given (including repeats for multiple incorrect answers). Only returned when the test is complete.
  * @return {boolean} moreAnswers Whether or not there are more answers required for the current prompt.
  * @return {object} nextPrompt Details of the next prompt, if relevant. Null if last question has been answered.
  * @return {string} nextPrompt.item The term/definition prompt for the next question.
- * @return {string} nextPrompt.sound The file ID for the next question's sound file. Null if language is switched.
+ * @return {boolean} nextPrompt.sound Whether the next prompt has an associated sound file. Null if language is switched.
+ * @return {boolean} nextPrompt.set_owner User ID of the owner of the sound file associated with the next prompt. Null if there is no sound file.
  * @return {integer} progress Total number of questions answered so far.
  * @return {integer} totalQuestions Total number of questions in the set (including duplicates after incorrect answers).
  * @return {integer} totalCorrect Total number of correct answers so far.
  * @return {integer} totalIncorrect Total number of incorrect answers so far.
  */
 exports.processAnswer = functions.https.onCall((data, context) => {
-	const uid = context.auth.uid;
-	// const uid = "user_01";
+	// const uid = context.auth.uid;
+	const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
+
+	if (context.app == undefined && !LOCAL_TESTING) {
+		throw new functions.https.HttpsError(
+			"failed-precondition",
+			"The function must be called from an App Check verified app.");
+	}
 
 	const progressId = data.progressId;
 	const inputAnswer = data.answer;
@@ -288,8 +407,8 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 			} else if (progressDoc.data().progress >= progressDoc.data().questions.length || (progressDoc.data().mode === "lives" && progressDoc.data().incorrect.length >= progressDoc.data().lives)) {
 				throw new functions.https.HttpsError("permission-denied", "Progress already completed")
 			} else {
-				currentIndex = progressDoc.data().progress;
-				currentVocab = progressDoc.data().questions[currentIndex];
+				const currentIndex = progressDoc.data().progress;
+				const currentVocab = progressDoc.data().questions[currentIndex];
 
 				let answerDocId;
 
@@ -326,6 +445,7 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 						mode: mode,
 						correct: isCorrectAnswer,
 						correctAnswers: splitCorrectAnswers,
+						currentVocabId: currentVocab,
 						moreAnswers: false,
 						nextPrompt: null,
 						progress: docData.progress,
@@ -364,13 +484,12 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 						returnData.totalIncorrect = docData.incorrect.length;
 					}
 
-					if (mode === "lives") returnData.lives = docData.lives;
-
 					if (!returnData.moreAnswers) {
 						if (docData.progress >= docData.questions.length || (mode === "lives" && docData.incorrect.length >= docData.lives)) {
 							const duration = Date.now() - docData.start_time;
 							docData.duration = duration;
 							returnData.duration = duration;
+							returnData.incorrectAnswers = docData.incorrect;
 	
 							transaction.set(progressDocId, docData);
 							return returnData;
@@ -427,10 +546,16 @@ exports.processAnswer = functions.https.onCall((data, context) => {
  * @return {promise} The promise from setting the target user's admin custom auth claim.
 */
 exports.setAdmin = functions.https.onCall(async (data, context) => {
-	const uid = context.auth.uid;
-	const isAdmin = context.auth.tokens.admin;
-	// const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
-	// const isAdmin = true;
+	// const uid = context.auth.uid;
+	// const isAdmin = context.auth.tokens.admin;
+	const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";//nobVRmshkZNkrPbwgmPqNYrk55v2
+	const isAdmin = true;
+
+	if (context.app == undefined && !LOCAL_TESTING) {
+		throw new functions.https.HttpsError(
+			"failed-precondition",
+			"The function must be called from an App Check verified app.");
+	}
 
 	const targetUser = data.targetUser;
 	const adminState = data.adminState;
@@ -453,15 +578,21 @@ exports.setAdmin = functions.https.onCall(async (data, context) => {
  * @param {object} data The data passed to the function.
  * @param {string} data.groupId The ID of the group to which the set should be added.
  * @param {boolean} data.setId The ID of the set that should be added to the group.
- * @return {promise} The promise from setting the group's updated data.
+ * @return {boolean} true, to show the function has succeeded.
 */
 exports.addSetToGroup = functions.https.onCall((data, context) => {
-	const uid = context.auth.uid;
-	const isAdmin = context.auth.token.admin;
-	const auth = context.auth;
-	// const uid = "user_01";
-	// const isAdmin = false;
-	// const auth = { uid: uid };
+	// const uid = context.auth.uid;
+	// const isAdmin = context.auth.token.admin;
+	// const auth = context.auth;
+	const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
+	const isAdmin = false;
+	const auth = { uid: uid };
+
+	if (context.app == undefined && !LOCAL_TESTING) {
+		throw new functions.https.HttpsError(
+			"failed-precondition",
+			"The function must be called from an App Check verified app.");
+	}
 
 	const groupId = data.groupId;
 	const setId = data.setId;
@@ -473,6 +604,7 @@ exports.addSetToGroup = functions.https.onCall((data, context) => {
 		return transaction.get(setDocId).then((setDoc) => {
 			return transaction.get(userGroupDocId).then((userGroupDoc) => {
 				const userRole = userGroupDoc.data().role;
+
 				if (auth && (setDoc.data().public || setDoc.data().owner == uid) && (userRole == "contributor" || userRole == "owner" || isAdmin)) {
 					let setDocData = setDoc.data();
 					if (setDocData.groups != null && setDocData.groups.includes(groupId)) {
@@ -489,14 +621,20 @@ exports.addSetToGroup = functions.https.onCall((data, context) => {
 							setDocData.groups.push(groupId);
 							groupDocData.sets.push(setId);
 
-							transaction.set(
-								setDocId,
-								setDocData,
-							);
-							return transaction.set(
-								groupDocId,
-								groupDocData,
-							);
+							setDocData.public = true;
+
+							return Promise.all(
+								[
+									transaction.set(
+										setDocId,
+										setDocData,
+									),
+									transaction.set(
+										groupDocId,
+										groupDocData,
+									)
+								]
+							).then(() => true);
 						});
 					}
 				} else {
@@ -515,12 +653,18 @@ exports.addSetToGroup = functions.https.onCall((data, context) => {
  * @return {promise} The promise from setting the group's updated data.
 */
 exports.removeSetFromGroup = functions.https.onCall((data, context) => {
-	const uid = context.auth.uid;
-	const isAdmin = context.auth.token.admin;
-	const auth = context.auth;
-	// const uid = "user_01";
-	// const isAdmin = false;
-	// const auth = { uid: uid };
+	// const uid = context.auth.uid;
+	// const isAdmin = context.auth.token.admin;
+	// const auth = context.auth;
+	const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
+	const isAdmin = false;
+	const auth = { uid: uid };
+
+	if (context.app == undefined && !LOCAL_TESTING) {
+		throw new functions.https.HttpsError(
+			"failed-precondition",
+			"The function must be called from an App Check verified app.");
+	}
 
 	const groupId = data.groupId;
 	const setId = data.setId;
@@ -542,14 +686,16 @@ exports.removeSetFromGroup = functions.https.onCall((data, context) => {
 							let groupDocData = groupDoc.data();
 							groupDocData.sets = groupDocData.sets.filter(item => item !== setId);
 
-							transaction.set(
-								setDocId,
-								setDocData,
-							);
-							return transaction.set(
-								groupDocId,
-								groupDocData,
-							);
+							return Promise.all([
+								transaction.set(
+									setDocId,
+									setDocData,
+								),
+								transaction.set(
+									groupDocId,
+									groupDocData,
+								)
+							]).then(() => true);
 						});
 					}
 				} else {
@@ -563,33 +709,57 @@ exports.removeSetFromGroup = functions.https.onCall((data, context) => {
 /**
  * Changes an existing user's membership status of a group in the groups collection
  * in Firestore, after it has been changed in the users collection.
- * NOTE: Can't be unit tested.
- * @return {promise} The promise from setting the group's updated data.
+ * @param {object} change The change object from the function trigger.
+ * @param {object} context The context object from the function trigger.
+ * @return {boolean} Returns true on completion.
 */
-exports.userGroupRoleChanged = functions.firestore.document("users/{userId}/groups/{groupId}")
-	.onWrite((change, context) => {
-		return db.runTransaction((transaction) => {
-			const groupDocId = db.collection("groups").doc(context.params.groupId);
-			return transaction.get(groupDocId).then((groupDoc) => {
-				let groupData = groupDoc.data();
-				if (typeof groupData === "undefined") {
-					throw new functions.https.HttpsError("not-found", "Group doesn't exist");
-				}
-				if (typeof groupData.users === "undefined") {
-					groupData.users = {};
-				}
-				
-				if (change.after.data().role) {
-					groupData.users[context.params.userId] = change.after.data().role;
-				} else {
-					delete groupData.users[context.params.userId];
-				}
-				return transaction.set(
-					groupDocId,
-					groupData
-				);
-			});
+async function updateUserGroupRole(snap, context) {
+	await db.runTransaction((transaction) => {
+		const groupDocId = db.collection("groups").doc(context.params.groupId);
+		return transaction.get(groupDocId).then((groupDoc) => {
+			let groupData = groupDoc.data();
+			if (typeof groupData === "undefined") {
+				throw new functions.https.HttpsError("not-found", "Group doesn't exist");
+			}
+			if (typeof groupData.users === "undefined") {
+				groupData.users = {};
+			}
+
+			if (typeof snap !== "undefined" && typeof snap.data() !== "undefined" && typeof snap.data().role !== "undefined") {
+				groupData.users[context.params.userId] = snap.data().role;
+			} else {
+				delete groupData.users[context.params.userId];
+			}
+			return transaction.set(
+				groupDocId,
+				groupData
+			);
 		});
+	});
+
+	return true;
+}
+
+/**
+ * Changes an existing user's membership status of a group in the groups collection
+ * in Firestore, after it has been created in the users collection.
+ * NOTE: Can't be unit tested.
+ * @return {boolean} Returns true on completion.
+*/
+exports.userGroupRoleCreated = functions.firestore.document("users/{userId}/groups/{groupId}")
+	.onCreate(async (snap, context) => {
+		return updateUserGroupRole(snap, context);
+	});
+
+/**
+ * Changes an existing user's membership status of a group in the groups collection
+ * in Firestore, after it has been updated in the users collection.
+ * NOTE: Can't be unit tested.
+ * @return {boolean} Returns true on completion.
+*/
+exports.userGroupRoleUpdated = functions.firestore.document("users/{userId}/groups/{groupId}")
+	.onUpdate(async (change, context) => {
+		return updateUserGroupRole(change.after, context);
 	});
 
 /**
@@ -613,8 +783,14 @@ async function generateJoinCode() {
  * @return {string} The ID of the new group's document in the groups collection.
 */
 exports.createGroup = functions.https.onCall(async (data, context) => {
-	const uid = context.auth.uid;
-	// const uid = "user_01";
+	// const uid = context.auth.uid;
+	const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
+
+	if (context.app == undefined && !LOCAL_TESTING) {
+		throw new functions.https.HttpsError(
+			"failed-precondition",
+			"The function must be called from an App Check verified app.");
+	}
 
 	const joinCode = await generateJoinCode();
 
@@ -625,8 +801,12 @@ exports.createGroup = functions.https.onCall(async (data, context) => {
 		join_code: joinCode,
 	});
 
-	await db.collection("users").doc(uid).collection("groups").doc(groupDoc.id).set({
+	db.collection("users").doc(uid).collection("groups").doc(groupDoc.id).set({
 		role: "owner",
+	});
+
+	db.collection("join_codes").doc(joinCode).set({
+		group: groupDoc.id,
 	});
 
 	return groupDoc.id;
@@ -635,16 +815,17 @@ exports.createGroup = functions.https.onCall(async (data, context) => {
 /**
  * Cleans up database after group is deleted - removes group references from user groups collections.
  * NOTE: Can't be unit tested.
- * @return {promise} The promise from deleting the user's group data.
+ * @return {boolean} Returns true on completion.
 */
 exports.groupDeleted = functions.firestore.document("groups/{groupId}")
 	.onDelete(async (snap, context) => {
 		let batch = db.batch();
 		const users = snap.data().users;
+		const sets = snap.data().sets;
 		const joinCode = snap.data().join_code;
 
 		let counter = 0;
-		for (let [userId, role] of Object.entries(users)) {
+		for (userId of Object.keys(users)) {
 			batch.delete(
 				db.collection("users").doc(userId).collection("groups").doc(context.params.groupId)
 			);
@@ -657,26 +838,71 @@ exports.groupDeleted = functions.firestore.document("groups/{groupId}")
 
 		batch.delete(db.collection("join_codes").doc(joinCode));
 
-		return await batch.commit();
+		await Promise.all([
+			batch.commit(),
+			Promise.all(sets.map((setId) => {
+				return db.runTransaction((transaction) => {
+					return transaction.get(
+							db.collection("sets")
+							.doc(setId)
+						)
+						.then((setDoc) => {
+							let data = setDoc.data();
+							if (!data.groups) {
+								data.groups = [];
+							} else {
+								data.groups.splice(data.groups.indexOf(context.params.groupId), 1);
+							}
+							transaction
+								.set(
+									db.collection("sets")
+										.doc(setId),
+									data
+								);
+						});
+				});
+			}))
+		]);
+
+		return true;
 	});
 
 /**
- * Cleans up database after group is deleted - removes group references from user groups collections.
+ * Cleans up database after set is deleted - removes vocab subcollection.
+ * NOTE: Can't be unit tested.
+ * @return {promise} Returns true on completion.
+*/
+exports.setDeleted = functions.firestore.document("sets/{setId}")
+	.onDelete(async (snap, context) => {
+		await deleteCollection(
+			db,
+			"/sets/" + context.params.setId + "/vocab",
+			500
+		);
+
+		return true;
+	});
+
+/**
+ * Cleans up database after progress record is deleted - removes vocab subcollections.
  * NOTE: Can't be unit tested.
  * @return {boolean} Returns true on completion.
 */
 exports.progressDeleted = functions.firestore.document("progress/{progressId}")
-	.onDelete((snap, context) => {
-		deleteCollection(
-			db,
-			"/progress/" + context.params.progressId + "/terms",
-			500
-		);
-		deleteCollection(
-			db,
-			"/progress/" + context.params.progressId + "/definitions",
-			500
-		);
+	.onDelete(async (snap, context) => {
+		await Promise.all([
+			deleteCollection(
+				db,
+				"/progress/" + context.params.progressId + "/terms",
+				500
+			),
+			deleteCollection(
+				db,
+				"/progress/" + context.params.progressId + "/definitions",
+				500
+			)
+		]);
+
 		return true;
 	});
 
