@@ -4,7 +4,7 @@ import NavBar from "./NavBar";
 import Footer from "./Footer";
 import { Link } from "react-router-dom";
 
-export default function TermsOfService(props) {
+export default function TermsOfService() {
 	const navbarItems = [
 		{
 			type: "link",
@@ -13,11 +13,6 @@ export default function TermsOfService(props) {
 			hideTextMobile: true,
 		}
 	];
-
-	props.logEvent("select_content", {
-		content_type: "main_page",
-		item_id: "tos",
-	});
 
 	return (
 		<div>

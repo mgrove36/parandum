@@ -109,11 +109,6 @@ export default withRouter(class EditSet extends Component {
 				setInaccessible: true,
 			});
 		});
-
-		this.props.logEvent("select_content", {
-			content_type: "edit_set",
-			item_id: this.props.match.params.setId,
-		});
 	}
 
 	componentWillUnmount = () => {

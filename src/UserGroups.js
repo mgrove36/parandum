@@ -76,11 +76,6 @@ export default withRouter(class UserGroups extends Component {
 
 			this.setState(newState);
 		});
-
-		this.props.logEvent("select_content", {
-			content_type: "main_page",
-			item_id: "groups",
-		});
 	}
 
 	componentWillUnmount() {
@@ -117,9 +112,6 @@ export default withRouter(class UserGroups extends Component {
 
 			this.state.functions.createGroup(this.state.groupName)
 				.then((result) => {
-					this.props.logEvent("join_group", {
-						group_id: result.data,
-					});
 					this.props.history.push(`/groups/${result.data}`);
 					this.stopCreateGroupLoading();
 				}).catch((error) => {
@@ -144,9 +136,6 @@ export default withRouter(class UserGroups extends Component {
 						.set({
 							role: "member",
 						}).then(() => {
-							this.props.logEvent("join_group", {
-								group_id: joinCodeDoc.data().group,
-							});
 							this.props.history.push(`/groups/${joinCodeDoc.data().group}`);
 							this.stopJoinGroupLoading();
 						});

@@ -160,11 +160,6 @@ export default withRouter(class LoggedInHome extends React.Component {
 		]).then(() => {
 			this.setState(newState);
 		});
-
-		this.props.logEvent("select_content", {
-			content_type: "main_page",
-			item_id: "logged_in_home",
-		});
 	}
 
 	componentWillUnmount() {

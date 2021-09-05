@@ -3,7 +3,7 @@ import NavBar from './NavBar';
 import Footer from "./Footer";
 import { HomeRounded as HomeRoundedIcon } from "@material-ui/icons";
 
-export default function Error404(props) {
+export default function PageNotFound() {
 	const navbarItems = [
 		{
 			type: "link",
@@ -14,11 +14,6 @@ export default function Error404(props) {
 	];
 
 	document.title = "Error 404 | Parandum";
-
-	props.logEvent("select_content", {
-		content_type: "main_page",
-		item_id: "error_404",
-	});
 
 	return (
 		<div>

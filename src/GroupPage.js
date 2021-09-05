@@ -119,11 +119,6 @@ export default withRouter(class GroupPage extends Component {
 						this.setState(newState);
 					});
 			});
-
-		this.props.logEvent("select_content", {
-			content_type: "group",
-			item_id: this.props.match.params.groupId,
-		});
 	}
 
 	componentWillUnmount() {

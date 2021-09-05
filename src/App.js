@@ -26,7 +26,6 @@ import "firebase/auth";
 import "firebase/functions";
 import "firebase/app-check";
 import "firebase/firestore";
-import "firebase/analytics";
 
 // TODO: app check debug token set in index.html - remove before deploy
 
@@ -72,7 +71,6 @@ const themes = [
 ];
 
 const db = firebase.firestore();
-const analytics = firebase.analytics();
 
 class App extends React.Component {
   constructor(props) {
@@ -90,29 +88,17 @@ class App extends React.Component {
         user: userData,
       };
 
-      if (userData) {
-        if (firebase.auth().currentUser.metadata.creationTime ===
-          firebase.auth().currentUser.metadata.lastSignInTime) {
-            analytics.logEvent("sign_up", {
-              method: userData.providerId,
-            });
-        } else {
-          analytics.logEvent("login", {
-            method: userData.providerId,
-          });
-        }
-        await firebase.firestore()
-          .collection("users")
-          .doc(userData.uid)
-          .get()
-          .then((userDoc) => {
-            newState.sound = userDoc.data().sound;
-            newState.theme = userDoc.data().theme;
-          }).catch((error) => {
-            newState.sound = true;
-            newState.theme = "default";
-          });
-      }
+      if (userData) await firebase.firestore()
+        .collection("users")
+        .doc(userData.uid)
+        .get()
+        .then((userDoc) => {
+          newState.sound = userDoc.data().sound;
+          newState.theme = userDoc.data().theme;
+        }).catch((error) => {
+          newState.sound = true;
+          newState.theme = "default";
+        });
       
       this.setState(newState);
     });
@@ -217,40 +203,40 @@ class App extends React.Component {
               <>
                 <Switch>
                   <Route path="/" exact>
-                    <LoggedInHome db={db} firebase={firebase} functions={functions} user={this.state.user} logEvent={analytics.logEvent} />
+                    <LoggedInHome db={db} firebase={firebase} functions={functions} user={this.state.user} />
                   </Route>
                   <Route path="/sets/:setId" exact>
-                    <SetPage db={db} functions={functions} user={this.state.user} logEvent={analytics.logEvent} />
+                    <SetPage db={db} functions={functions} user={this.state.user} />
                   </Route>
                   <Route path="/groups" exact>
-                    <UserGroups db={db} functions={functions} user={this.state.user} logEvent={analytics.logEvent} />
+                    <UserGroups db={db} functions={functions} user={this.state.user} />
                   </Route>
                   <Route path="/groups/:groupId" exact>
-                    <GroupPage db={db} functions={functions} user={this.state.user} logEvent={analytics.logEvent} />
+                    <GroupPage db={db} functions={functions} user={this.state.user} />
                   </Route>
                   <Route path="/settings">
-                    <Settings db={db} user={this.state.user} sound={this.state.sound} handleSoundChange={this.handleSoundChange} theme={this.state.theme} handleThemeChange={this.handleThemeChange} themes={themes} logEvent={analytics.logEvent} />
+                    <Settings db={db} user={this.state.user} sound={this.state.sound} handleSoundChange={this.handleSoundChange} theme={this.state.theme} handleThemeChange={this.handleThemeChange} themes={themes} />
                   </Route>
                   <Route path="/progress/:progressId" exact>
-                    <Progress db={db} functions={functions} user={this.state.user} sound={this.state.sound} handleSoundChange={this.handleSoundChange} theme={this.state.theme} handleThemeChange={this.handleThemeChange} themes={themes} logEvent={analytics.logEvent} />
+                    <Progress db={db} functions={functions} user={this.state.user} sound={this.state.sound} handleSoundChange={this.handleSoundChange} theme={this.state.theme} handleThemeChange={this.handleThemeChange} themes={themes} />
                   </Route>
                   <Route path="/create-set" exact>
-                    <CreateSet db={db} user={this.state.user} logEvent={analytics.logEvent} />
+                    <CreateSet db={db} user={this.state.user} />
                   </Route>
                   <Route path="/my-sets" exact>
-                    <UserSets db={db} functions={functions} user={this.state.user} logEvent={analytics.logEvent} />
+                    <UserSets db={db} functions={functions} user={this.state.user} />
                   </Route>
                   <Route path="/sets/:setId/edit" exact>
-                    <EditSet db={db} user={this.state.user} logEvent={analytics.logEvent} />
+                    <EditSet db={db} user={this.state.user} />
                   </Route>
                   <Route path="/history" exact>
-                    <History db={db} user={this.state.user} logEvent={analytics.logEvent} />
+                    <History db={db} user={this.state.user} />
                   </Route>
                   <Route path="/tos" exact>
-                    <TermsOfService logEvent={analytics.logEvent} />
+                    <TermsOfService />
                   </Route>
                   <Route path="/privacy" exact>
-                    <PrivacyPolicy logEvent={analytics.logEvent} />
+                    <PrivacyPolicy />
                   </Route>
                   <Redirect from="/login" to="/" />
                   <Route>
@@ -265,7 +251,7 @@ class App extends React.Component {
                       <Home db={db} />
                     </Route>
                     <Route path="/login">
-                      <Login db={db} firebase={firebase} logEvent={analytics.logEvent} />
+                      <Login db={db} firebase={firebase} />
                     </Route>
                     <Route>
                       <Error404 />
