@@ -77,6 +77,11 @@ export default class History extends Component {
 			}).catch((error) => {
 				console.log(`Couldn't retrieve progress history: ${error}`);
 			});
+
+		this.props.logEvent("select_content", {
+			content_type: "main_page",
+			item_id: "history",
+		});
 	}
 
 	componentWillUnmount() {

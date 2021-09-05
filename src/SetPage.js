@@ -95,6 +95,11 @@ export default withRouter(class SetPage extends React.Component {
 			});
 			console.log(`Can't access set: ${error}`);
 		});
+
+		this.props.logEvent("select_content", {
+			content_type: "set",
+			item_id: this.props.match.params.setId,
+		});
 	}
 
 	componentWillUnmount() {

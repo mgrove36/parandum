@@ -26,6 +26,11 @@ export default function Login(props) {
 	document.body.style.overflow = "hidden";
 	document.title = "Login | Parandum";
 
+	props.logEvent("select_content", {
+		content_type: "main_page",
+		item_id: "login",
+	});
+
 	return (
 		<>
 			<Home />

@@ -182,6 +182,11 @@ export default withRouter(class Progress extends React.Component {
 		this.setState(newState, () => {
 			if (!setDone) this.answerInput.focus()
 		});
+
+		this.props.logEvent("select_content", {
+			content_type: "progress",
+			item_id: this.props.match.params.progressId,
+		});
 	}
 
 	componentWillUnmount() {

@@ -51,6 +51,11 @@ export default withRouter(class UserSets extends Component {
 				userSets: querySnapshot.docs,
 			})
 		});
+
+		this.props.logEvent("select_content", {
+			content_type: "main_page",
+			item_id: "sets",
+		});
 	}
 
 	componentWillUnmount() {

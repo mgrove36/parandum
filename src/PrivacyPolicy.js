@@ -3,7 +3,7 @@ import { HomeRounded as HomeRoundedIcon } from "@material-ui/icons";
 import NavBar from "./NavBar";
 import Footer from "./Footer";
 
-export default function PrivacyPolicy() {
+export default function PrivacyPolicy(props) {
 	const navbarItems = [
 		{
 			type: "link",
@@ -12,6 +12,11 @@ export default function PrivacyPolicy() {
 			hideTextMobile: true,
 		}
 	];
+
+	props.logEvent("select_content", {
+		content_type: "main_page",
+		item_id: "privacy",
+	});
 
 	return (
 		<div>
