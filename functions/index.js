@@ -5,7 +5,7 @@ const admin = require("firebase-admin");
 admin.initializeApp();
 const db = admin.firestore();
 
-const LOCAL_TESTING = true;
+const LOCAL_TESTING = false;
 
 /**
  * Randomises the items in an array.
@@ -350,7 +350,7 @@ function arraysHaveSameMembers(arr1, arr2) {
  */
 function cleanseVocabString(item) {
 	const chars = /[ °"§%()\[\]{}=\\?´`'#<>|,;.:+_-]+/g;
-	return data.replace(chars, "");
+	return item.replace(chars, "");
 }
 
 /**
