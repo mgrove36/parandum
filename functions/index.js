@@ -354,7 +354,7 @@ function cleanseVocabString(item) {
 	let newString = item;
 
 	chars.split("").forEach((char) => {
-		newString = newString.replace(char, "");
+		newString = newString.replaceAll(char, "");
 	});
 
 	return newString;
