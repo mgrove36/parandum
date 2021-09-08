@@ -5,7 +5,7 @@ const admin = require("firebase-admin");
 admin.initializeApp();
 const db = admin.firestore();
 
-const LOCAL_TESTING = false;
+const LOCAL_TESTING = true;
 
 /**
  * Randomises the items in an array.
@@ -359,6 +359,11 @@ function cleanseVocabString(item) {
 
 	return newString;
 }
+
+exports.cleanseVocabString = functions.https.onCall((data, context) => {
+	const chars = /[ °"§%()\[\]{}=\\?´`'#<>|,;.:+_-]+/g;
+	return data.replace(chars, "");
+})
 
 /**
  * Processes a response to a question in a vocab set.
