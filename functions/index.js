@@ -349,21 +349,9 @@ function arraysHaveSameMembers(arr1, arr2) {
  * @return {string} The original string with the unwanted characters removed.
  */
 function cleanseVocabString(item) {
-	const chars = " .,()-_'\"";
-
-	let newString = item;
-
-	chars.split("").forEach((char) => {
-		newString = newString.replace(new RegExp(char, 'g'), "");
-	});
-
-	return newString;
-}
-
-exports.cleanseVocabString = functions.https.onCall((data, context) => {
 	const chars = /[ °"§%()\[\]{}=\\?´`'#<>|,;.:+_-]+/g;
 	return data.replace(chars, "");
-})
+}
 
 /**
  * Processes a response to a question in a vocab set.
