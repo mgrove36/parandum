@@ -25,7 +25,11 @@ export default function Home() {
 			<main>
 				<div className="description-section">
 					<h1>Parandum</h1>
-					<p>The next-generation ad-free language-learning platform</p>
+					<p>A language-learning platform built by Matthew Grove. With current support for sharing sets and use on mobile, more features are coming soon!</p>
+					<br/>
+					<p>To get started, click login 👆</p>
+					<br/>
+					<p>If you have any feedback, please feel free to email me at <a href="mailto:parandum@mgrove.uk">parandum@mgrove.uk</a>.</p>
 				</div>
 			</main>
 			<Footer />
