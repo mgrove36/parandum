@@ -57,6 +57,7 @@ export default class History extends Component {
 							progress: (data.progress / data.questions.length * 100).toFixed(2),
 							mark: (data.progress > 0 ? data.correct.length / data.progress * 100 : 0).toFixed(2),
 							mode: data.mode,
+							correct: data.correct.length,
 						});
 					} else {
 						return incomplete.push({
@@ -66,6 +67,7 @@ export default class History extends Component {
 							progress: (data.progress / data.questions.length * 100).toFixed(2),
 							mark: (data.progress > 0 ? data.correct.length / data.progress * 100 : 0).toFixed(2),
 							mode: data.mode,
+							correct: data.correct.length,
 						});
 					}
 				});
@@ -116,6 +118,7 @@ export default class History extends Component {
 									<h3>Set</h3>
 									<h3>Progress</h3>
 									<h3>Mark</h3>
+									<h3>Grade</h3>
 									<h3>Mode</h3>
 								</div>
 								{
@@ -131,6 +134,7 @@ export default class History extends Component {
 												}
 											</Link>
 											<p>{progressItem.progress}%</p>
+											<p>{progressItem.correct}/{progressItem.progress}</p>
 											<p>{progressItem.mark}%</p>
 											<p>
 												{
@@ -174,6 +178,7 @@ export default class History extends Component {
 												}
 											</Link>
 											<p>{progressItem.progress}%</p>
+											<p>{progressItem.correct}/{progressItem.progress}</p>
 											<p>{progressItem.mark}%</p>
 											{
 												progressItem.mode === "questions"
