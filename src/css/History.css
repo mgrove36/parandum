@@ -1,24 +1,3 @@
-.progress-history-container {
-	display: table;
-	table-layout: auto;
-	column-gap: 10px;
-	width: 100%;
-	row-gap: 8px;
-}
-
-.progress-history-container > div {
-	display: table-row;
-}
-
-.progress-history-container > div > * {
-	display: table-cell;
-	word-wrap: break-word;
-	padding-top: 2px;
-	padding-bottom: 2px;
-	text-decoration: none;
-	color: inherit;
-}
-
 .history-sections {
 	display: flex;
 	flex-direction: column;
