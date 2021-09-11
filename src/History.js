@@ -168,7 +168,7 @@ export default class History extends Component {
 							</div>
 							<div className="stat-row stat-row--inline">
 								<h1>{this.state.personalSetsCount}</h1>
-								<p>personal set{ this.state.personalSetsCount > 1 && "s"}</p>
+								<p>personal set{ this.state.personalSetsCount !== 1 && "s"}</p>
 							</div>
 						</div>
 
