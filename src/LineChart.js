@@ -40,9 +40,6 @@ export default function LineChart (props) {
 			x: {
 				show: false,
 			},
-			y: {
-				show: false,
-			},
 		},
 		stroke: {
 			width: 3,
