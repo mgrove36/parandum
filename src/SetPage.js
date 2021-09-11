@@ -114,7 +114,7 @@ export default withRouter(class SetPage extends React.Component {
 				sets: [this.props.match.params.setId],
 				switch_language: false,
 				mode: "questions",
-				limit: 10,
+				limit: 1000,
 			}).then((result) => {
 				const progressId = result.data;
 				this.stopLoading();

@@ -145,8 +145,8 @@ export default withRouter(class LoggedInHome extends React.Component {
 					id: doc.id,
 					setTitle: data.set_title,
 					switchLanguage: data.switch_language,
-					percentage: (data.progress / data.questions.length * 100).toFixed(2),
-					mark: (data.progress > 0 ? data.correct.length / data.progress * 100 : 0).toFixed(2),
+					percentageProgress: (data.progress / data.questions.length * 100).toFixed(2),
+					grade: (data.progress > 0 ? data.correct.length / data.progress * 100 : 0).toFixed(2),
 					mode: data.mode,
 					correct: data.correct.length,
 					progress: data.progress,
@@ -183,7 +183,7 @@ export default withRouter(class LoggedInHome extends React.Component {
 				sets: selections,
 				switch_language: false,
 				mode: "questions",
-				limit: 10,
+				limit: 1000,
 			}).then((result) => {
 				const progressId = result.data;
 				this.stopLoading();
@@ -220,7 +220,7 @@ export default withRouter(class LoggedInHome extends React.Component {
 				let newState = {
 					progressHistoryIncomplete: this.state.progressHistoryIncomplete,
 				};
-				newState.progressHistoryIncomplete.splice(progressIndex);
+				delete newState.progressHistoryIncomplete[progressIndex];
 				this.setState(newState);
 			});
 	}
@@ -282,9 +282,9 @@ export default withRouter(class LoggedInHome extends React.Component {
 													<SwapHorizRoundedIcon />
 												}
 											</Link>
-											<p>{progressItem.percentage}%</p>
+											<p>{progressItem.percentageProgress}%</p>
 											<p>{progressItem.correct}/{progressItem.progress}</p>
-											<p>{progressItem.mark}%</p>
+											<p>{progressItem.grade}%</p>
 											<p>
 												{
 													progressItem.mode === "questions"
