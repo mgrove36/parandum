@@ -157,6 +157,7 @@ export default class History extends Component {
 									<h3>Set</h3>
 									<h3>Progress</h3>
 									<h3>Mark</h3>
+									<h3>Grade</h3>
 									<h3>Mode</h3>
 								</div>
 								{
