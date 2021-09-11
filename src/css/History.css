@@ -3,7 +3,6 @@
 	table-layout: auto;
 	column-gap: 10px;
 	width: 100%;
-	margin-top: 24px;
 	row-gap: 8px;
 }
 
@@ -18,4 +17,20 @@
 	padding-bottom: 2px;
 	text-decoration: none;
 	color: inherit;
+}
+
+.history-sections {
+	display: flex;
+	flex-direction: column;
+}
+
+.history-sections > div {
+	flex-grow: 1;
+}
+
+.historical-user-stats-container {
+	display: flex;
+	flex-direction: row;
+	column-gap: 48px;
+	flex-wrap: wrap;
 }
