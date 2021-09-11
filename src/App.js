@@ -19,6 +19,8 @@ import PrivacyPolicy from "./PrivacyPolicy";
 import Button from "./Button";
 import { CheckRounded as CheckRoundedIcon } from "@material-ui/icons";
 
+import RouteChangeTracker from './RouteChangeTracker';
+
 import Cookies from 'universal-cookie';
 
 import firebase from "firebase/app";
@@ -197,6 +199,7 @@ class App extends React.Component {
     return (
       <div className={this.state.theme}>
         <Router>
+          <RouteChangeTracker />
             {
               this.state.user !== null
               ?

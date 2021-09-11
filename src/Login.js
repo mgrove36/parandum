@@ -22,8 +22,7 @@ export default function Login(props) {
 			signInSuccessWithAuthResult: () => false,
 		},
 	};
-
-	document.body.style.overflow = "hidden";
+	
 	document.title = "Login | Parandum";
 
 	return (
