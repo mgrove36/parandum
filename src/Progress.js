@@ -7,9 +7,11 @@ import LinkButton from "./LinkButton";
 import Error404 from "./Error404";
 import SettingsContent from "./SettingsContent";
 import Footer from "./Footer";
+import LineChart from './LineChart';
 
 import "./css/PopUp.css";
 import "./css/Progress.css";
+import "./css/Chart.css";
 
 export default withRouter(class Progress extends React.Component {
 	constructor(props) {
@@ -60,6 +62,7 @@ export default withRouter(class Progress extends React.Component {
 			themeInput: this.props.theme,
 			setIds: [],
 			attemptNumber: 1,
+			attemptHistory: {},
 		};
 		
 		let isMounted = true;
@@ -145,6 +148,12 @@ export default withRouter(class Progress extends React.Component {
 				.get()
 				.then((querySnapshot) => {
 					newState.attemptNumber = querySnapshot.docs.map((doc) => doc.id).indexOf(this.props.match.params.progressId) + 1;
+					if (newState.attemptNumber > 1)
+						newState.attemptHistory = querySnapshot.docs.filter((doc) => doc.data().duration !== null)
+							.map((doc) => ({
+								x: new Date(doc.data().start_time),
+								y: (doc.data().correct.length / doc.data().questions.length * 100),
+							}));
 				}));
 
 			if (incorrectAnswers.length > 0) {
@@ -181,6 +190,11 @@ export default withRouter(class Progress extends React.Component {
 
 		this.setState(newState, () => {
 			if (!setDone) this.answerInput.focus()
+		});
+
+		this.props.logEvent("select_content", {
+			content_type: "progress",
+			item_id: this.props.match.params.progressId,
 		});
 	}
 
@@ -310,8 +324,13 @@ export default withRouter(class Progress extends React.Component {
 							.orderBy("start_time")
 							.get()
 							.then((querySnapshot) => {
-								console.log(querySnapshot);
 								newState.attemptNumber = querySnapshot.docs.map((doc) => doc.id).indexOf(this.props.match.params.progressId) + 1;
+								if (newState.attemptNumber > 1)
+									newState.attemptHistory = querySnapshot.docs.filter((doc) => doc.data().duration !== null)
+										.map((doc) => ({
+											x: new Date(doc.data().start_time),
+											y: (doc.data().correct.length / doc.data().questions.length * 100),
+										}));
 							}));
 					}
 
@@ -517,8 +536,14 @@ export default withRouter(class Progress extends React.Component {
 										</div>
 									</>
 								}
-								{/* TODO: provide the attempt number -- .get() where array-contains-all array of setIds from original sets? would mean a new field in db and adjusting cloud fns again */}
-								
+
+								{this.state.attemptNumber > 1 &&
+									<>
+										<h2 className="chart-title">History</h2>
+										<LineChart data={this.state.attemptHistory} />
+									</>
+								}
+
 								<div className="progress-end-button-container">
 									<LinkButton
 										to="/"
