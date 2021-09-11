@@ -145,10 +145,11 @@ export default withRouter(class LoggedInHome extends React.Component {
 					id: doc.id,
 					setTitle: data.set_title,
 					switchLanguage: data.switch_language,
-					progress: (data.progress / data.questions.length * 100).toFixed(2),
+					percentage: (data.progress / data.questions.length * 100).toFixed(2),
 					mark: (data.progress > 0 ? data.correct.length / data.progress * 100 : 0).toFixed(2),
 					mode: data.mode,
 					correct: data.correct.length,
+					progress: data.progress,
 				});
 			})
 		})
@@ -281,7 +282,7 @@ export default withRouter(class LoggedInHome extends React.Component {
 													<SwapHorizRoundedIcon />
 												}
 											</Link>
-											<p>{progressItem.progress}%</p>
+											<p>{progressItem.percentage}%</p>
 											<p>{progressItem.correct}/{progressItem.progress}</p>
 											<p>{progressItem.mark}%</p>
 											<p>

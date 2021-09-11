@@ -48,27 +48,21 @@ export default class History extends Component {
 
 				querySnapshot.docs.map((doc) => {
 					const data = doc.data();
+					const pushData = {
+						id: doc.id,
+						setTitle: data.set_title,
+						switchLanguage: data.switch_language,
+						percentage: (data.progress / data.questions.length * 100).toFixed(2),
+						mark: (data.progress > 0 ? data.correct.length / data.progress * 100 : 0).toFixed(2),
+						mode: data.mode,
+						correct: data.correct.length,
+						progress: data.progress,
+					};
 
 					if (data.duration !== null) {
-						return complete.push({
-							id: doc.id,
-							setTitle: data.set_title,
-							switchLanguage: data.switch_language,
-							progress: (data.progress / data.questions.length * 100).toFixed(2),
-							mark: (data.progress > 0 ? data.correct.length / data.progress * 100 : 0).toFixed(2),
-							mode: data.mode,
-							correct: data.correct.length,
-						});
+						return complete.push(pushData);
 					} else {
-						return incomplete.push({
-							id: doc.id,
-							setTitle: data.set_title,
-							switchLanguage: data.switch_language,
-							progress: (data.progress / data.questions.length * 100).toFixed(2),
-							mark: (data.progress > 0 ? data.correct.length / data.progress * 100 : 0).toFixed(2),
-							mode: data.mode,
-							correct: data.correct.length,
-						});
+						return incomplete.push(pushData);
 					}
 				});
 
@@ -133,7 +127,7 @@ export default class History extends Component {
 													<SwapHorizRoundedIcon />
 												}
 											</Link>
-											<p>{progressItem.progress}%</p>
+											<p>{progressItem.percentage}%</p>
 											<p>{progressItem.correct}/{progressItem.progress}</p>
 											<p>{progressItem.mark}%</p>
 											<p>
@@ -177,7 +171,7 @@ export default class History extends Component {
 													<SwapHorizRoundedIcon />
 												}
 											</Link>
-											<p>{progressItem.progress}%</p>
+											<p>{progressItem.percentage}%</p>
 											<p>{progressItem.correct}/{progressItem.progress}</p>
 											<p>{progressItem.mark}%</p>
 											{
