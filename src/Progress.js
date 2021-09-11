@@ -8,6 +8,7 @@ import Error404 from "./Error404";
 import SettingsContent from "./SettingsContent";
 import Footer from "./Footer";
 import LineChart from './LineChart';
+import ProgressStats from './ProgressStats';
 
 import "./css/PopUp.css";
 import "./css/Progress.css";
@@ -63,6 +64,8 @@ export default withRouter(class Progress extends React.Component {
 			setIds: [],
 			attemptNumber: 1,
 			attemptHistory: {},
+			questions: [],
+			originalTotalQuestions: 1,
 		};
 		
 		let isMounted = true;
@@ -98,6 +101,7 @@ export default withRouter(class Progress extends React.Component {
 				mode: data.mode,
 				nextPrompt: null,
 				setIds: data.setIds,
+				originalTotalQuestions: [...new Set(data.questions)].length,
 			};
 
 			if (data.lives) {
@@ -189,7 +193,7 @@ export default withRouter(class Progress extends React.Component {
 		}
 
 		this.setState(newState, () => {
-			if (!setDone) this.answerInput.focus()
+			if (!setDone) this.answerInput.focus();
 		});
 
 		this.props.logEvent("select_content", {
@@ -380,7 +384,9 @@ export default withRouter(class Progress extends React.Component {
 
 					await Promise.all(promises);
 	
-					this.setState(newState);
+					this.setState(newState, () => {
+						if (!newState.duration) this.answerInput.focus()
+					});
 				}).catch((error) => {
 					console.log(`Couldn't process answer: ${error}`);
 					this.setState({
@@ -443,11 +449,11 @@ export default withRouter(class Progress extends React.Component {
 				:
 				<>
 					<NavBar items={this.state.navbarItems} />
-					<main>
-						{
-							this.state.currentAnswerStatus === null
-							?
-							<>
+					{
+						this.state.currentAnswerStatus === null
+						?
+						<main className="progress-container">
+							<div>
 								<p className="current-prompt">{this.state.currentPrompt}</p>
 								<form className="answer-input-container" onSubmit={(e) => e.preventDefault()} >
 									<input type="submit" className="form-submit" onClick={this.showNextItem} />
@@ -467,95 +473,97 @@ export default withRouter(class Progress extends React.Component {
 										loading={this.state.loading}
 									></Button>
 								</form>
-									<div className="correct-answers">
+								<div className="correct-answers">
+									{
+										this.state.currentCorrect && this.state.currentCorrect.length > 0
+											?
+											<>
+												<h2>
+													{
+														this.state.moreAnswers
+															?
+															"Correct so far:"
+															:
+															"Answers:"
+													}
+												</h2>
+												{this.state.currentCorrect.map((vocab, index) =>
+													<p key={index}>{vocab}</p>
+												)}
+											</>
+											:
+											""
+									}
+								</div>
+							</div>
+						</main>
+						:
+						this.state.nextPrompt === null && !this.state.moreAnswers
+						?
+						<main>
+							{/* DONE */}
+							<h1>{this.state.setTitle}</h1>
+							<div className="stat-row stat-row--inline">
+								<p>You got</p>
+								<h1>{`${(this.state.correct / this.state.totalQuestions * 100).toFixed(2)}%`}</h1>
+							</div>
+							<div className="stat-row stat-row--inline">
+								<h1>{`${this.state.correct} of ${this.state.totalQuestions}`}</h1>
+								<p>marks</p>
+							</div>
+							<div className="stat-row stat-row--inline">
+								<p>You took</p>
+								<h1>{this.msToTime(this.state.duration)}</h1>
+							</div>
+							<div className="stat-row stat-row--inline stat-row--no-gap">
+								<p>Attempt #</p>
+								<h1>{this.state.attemptNumber}</h1>
+							</div>
+							{
+								this.state.incorrectAnswers && Object.keys(this.state.incorrectAnswers).length > 0 &&
+								<>
+									<h2>Incorrect answers:</h2>
+									<div className="progress-end-incorrect-answers">
+										<div>
+											<h3>Prompt</h3>
+											<h3>Answer</h3>
+											<h3>Mistakes</h3>
+										</div>
 										{
-											this.state.currentCorrect && this.state.currentCorrect.length > 0
-												?
-												<>
-													<h2>
-														{
-															this.state.moreAnswers
-																?
-																"Correct so far:"
-																:
-																"Answers:"
-														}
-													</h2>
-													{this.state.currentCorrect.map((vocab, index) =>
-														<p key={index}>{vocab}</p>
-													)}
-												</>
-												:
-												""
+											Object.keys(this.state.incorrectAnswers).map(key =>
+												[key, this.state.incorrectAnswers[key].count])
+													.sort((a,b) => b[1] - a[1]).map(item =>
+														<div key={item[0]}>
+															<p>{this.state.incorrectAnswers[item[0]].prompt ? this.state.incorrectAnswers[item[0]].prompt : ""}</p>
+															<p>{this.state.incorrectAnswers[item[0]].answer ? this.state.incorrectAnswers[item[0]].answer.join("/") : ""}</p>
+															<p>{this.state.incorrectAnswers[item[0]].count}</p>
+														</div>
+											)
 										}
 									</div>
-							</>
-							:
-							this.state.nextPrompt === null && !this.state.moreAnswers
-							?
-							<>
-								{/* DONE */}
-								<h1>{this.state.setTitle}</h1>
-								<div className="stat-row stat-row--inline">
-									<p>You got</p>
-									<h1>{`${(this.state.correct / this.state.totalQuestions * 100).toFixed(2)}%`}</h1>
-								</div>
-								<div className="stat-row stat-row--inline">
-									<h1>{`${this.state.correct} of ${this.state.totalQuestions}`}</h1>
-									<p>marks</p>
-								</div>
-								<div className="stat-row stat-row--inline">
-									<p>You took</p>
-									<h1>{this.msToTime(this.state.duration)}</h1>
-								</div>
-								<div className="stat-row stat-row--inline stat-row--no-gap">
-									<p>Attempt #</p>
-									<h1>{this.state.attemptNumber}</h1>
-								</div>
-								{
-									this.state.incorrectAnswers && Object.keys(this.state.incorrectAnswers).length > 0 &&
-									<>
-										<h2>Incorrect answers:</h2>
-										<div className="progress-end-incorrect-answers">
-											<div>
-												<h3>Prompt</h3>
-												<h3>Answer</h3>
-												<h3>Mistakes</h3>
-											</div>
-											{
-												Object.keys(this.state.incorrectAnswers).map(key =>
-													[key, this.state.incorrectAnswers[key].count])
-														.sort((a,b) => b[1] - a[1]).map(item =>
-															<div key={item[0]}>
-																<p>{this.state.incorrectAnswers[item[0]].prompt ? this.state.incorrectAnswers[item[0]].prompt : ""}</p>
-																<p>{this.state.incorrectAnswers[item[0]].answer ? this.state.incorrectAnswers[item[0]].answer.join("/") : ""}</p>
-																<p>{this.state.incorrectAnswers[item[0]].count}</p>
-															</div>
-												)
-											}
-										</div>
-									</>
-								}
+								</>
+							}
 
-								{this.state.attemptNumber > 1 &&
-									<>
-										<h2 className="chart-title">History</h2>
-										<LineChart data={this.state.attemptHistory} />
-									</>
-								}
+							{this.state.attemptNumber > 1 &&
+								<>
+									<h2 className="chart-title">History</h2>
+									<LineChart data={this.state.attemptHistory} />
+								</>
+							}
 
-								<div className="progress-end-button-container">
-									<LinkButton
-										to="/"
-										className="progress-end-button"
-									>
-										Done
-									</LinkButton>
-								</div>
-							</>
-							:
-							<>
-								{/* ANSWER PROCESSED */}
+							<div className="progress-end-button-container">
+								<LinkButton
+									to="/"
+									className="progress-end-button"
+								>
+									Done
+								</LinkButton>
+							</div>
+						</main>
+						:
+						<main className="progress-container">
+							{/* ANSWER PROCESSED */}
+							<div>
 								<p className="current-prompt">{this.state.currentPrompt}</p>
 												<form className="answer-input-container answer-input-container--answer-entered" onSubmit={(e) => e.preventDefault()} >
 									<input type="submit" className="form-submit" onClick={this.showNextItem} />
@@ -564,6 +572,7 @@ export default withRouter(class Progress extends React.Component {
 										name="answer_input"
 										className={`answer-input ${this.state.currentAnswerStatus ? "answer-input--correct" : "answer-input--incorrect"}`}
 										value={this.state.answerInput}
+										ref={inputEl => (this.answerInput = inputEl)}
 										readOnly
 									/>
 									<Button
@@ -596,9 +605,20 @@ export default withRouter(class Progress extends React.Component {
 										""
 									}
 								</div>
-							</>
-						}
-					</main>
+							</div>
+						</main>
+					}
+					{
+						(this.state.currentAnswerStatus === null ||
+							!(this.state.nextPrompt === null && !this.state.moreAnswers)) &&
+							<ProgressStats
+								correct={this.state.correct}
+								incorrect={this.state.incorrect}
+								totalVocabItems={this.state.originalTotalQuestions}
+								progress={this.state.progress}
+								grade={this.state.totalQuestions > 0 ? this.state.correct / this.state.totalQuestions * 100 : 0}
+							/>
+					}
 					<Footer />
 
 					{

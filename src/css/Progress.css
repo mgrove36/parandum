@@ -79,6 +79,51 @@ input.answer-input--incorrect {
 	display: none;
 }
 
+.progress-container {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	height: 100%;
+}
+
+.progress-stats {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+  	margin: 0 24px;
+}
+
+.progress-stat-row-container {
+	display: flex;
+	flex-direction: row;
+	column-gap: 48px;
+	margin-bottom: 12px;
+	flex-wrap: wrap;
+}
+
+.progress-bar {
+	width: 100%;
+	border: 1px solid var(--overlay-color);
+	border-radius: 16px;
+}
+
+.progress-bar > div {
+	height: 100%;
+	background-color: var(--primary-color);
+	border-radius: 16px 0 0 16px;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	align-items: center;
+	justify-content: flex-start;
+}
+
+.progress-bar > div > p {
+	padding-left: 8px;
+	margin: 0 0 -2px 0;
+}
+
+
 @media screen and (max-width: 720px) {
 	.progress-end-button-container > .button {
 		margin: 24px;
