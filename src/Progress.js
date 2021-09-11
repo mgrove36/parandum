@@ -503,21 +503,23 @@ export default withRouter(class Progress extends React.Component {
 						<main>
 							{/* DONE */}
 							<h1>{this.state.setTitle}</h1>
-							<div className="stat-row stat-row--inline">
-								<p>You got</p>
-								<h1>{`${(this.state.correct / this.state.totalQuestions * 100).toFixed(2)}%`}</h1>
-							</div>
-							<div className="stat-row stat-row--inline">
-								<h1>{`${this.state.correct} of ${this.state.totalQuestions}`}</h1>
-								<p>marks</p>
-							</div>
-							<div className="stat-row stat-row--inline">
-								<p>You took</p>
-								<h1>{this.msToTime(this.state.duration)}</h1>
-							</div>
-							<div className="stat-row stat-row--inline stat-row--no-gap">
-								<p>Attempt #</p>
-								<h1>{this.state.attemptNumber}</h1>
+							<div className="progress-stat-row-container">
+								<div className="stat-row stat-row--inline">
+									<p>You got</p>
+									<h1>{`${(this.state.correct / this.state.totalQuestions * 100).toFixed(2)}%`}</h1>
+								</div>
+								<div className="stat-row stat-row--inline">
+									<h1>{`${this.state.correct} of ${this.state.totalQuestions}`}</h1>
+									<p>marks</p>
+								</div>
+								<div className="stat-row stat-row--inline">
+									<p>You took</p>
+									<h1>{this.msToTime(this.state.duration)}</h1>
+								</div>
+								<div className="stat-row stat-row--inline stat-row--no-gap">
+									<p>Attempt #</p>
+									<h1>{this.state.attemptNumber}</h1>
+								</div>
 							</div>
 							{
 								this.state.incorrectAnswers && Object.keys(this.state.incorrectAnswers).length > 0 &&
