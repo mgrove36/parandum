@@ -180,25 +180,27 @@ exports.createProgress = functions.https.onCall((data, context) => {
 			return transaction.get(setsId.doc(setId)).then((setDoc) => {
 				if (!setDoc.exists) {
 					throw new functions.https.HttpsError("not-found", "Set doesn't exist");
-				} else if (!setDoc.data().public && setDoc.data().owner !== uid) {
-					throw new functions.https.HttpsError("permission-denied", "Insufficient permissions to access set");
-				} else {
-					const setVocabCollectionId = db
-						.collection("sets").doc(setId)
-						.collection("vocab");
-					
-					return transaction.get(setVocabCollectionId).then((setVocab) => {
-						if (setVocab.docs.length < 1) throw new functions.https.HttpsError("failed-precondition", "Set must have at least one term/definition pair");
-						
-						allSetTitles.push(setDoc.data().title);
-
-						return setVocab.docs.map((vocabDoc) => {
-							let newVocabData = vocabDoc;
-							newVocabData.vocabId = setDoc.data().owner + "__" + vocabDoc.id;
-							allVocab.push(newVocabData);
-						});
-					});
 				}
+				if (!setDoc.data().public && setDoc.data().owner !== uid) {
+					throw new functions.https.HttpsError("permission-denied", "Insufficient permissions to access set");
+				}
+				const setVocabCollectionId = db
+					.collection("sets").doc(setId)
+					.collection("vocab");
+				
+				return transaction.get(setVocabCollectionId).then((setVocab) => {
+					if (setVocab.docs.length < 1) {
+						throw new functions.https.HttpsError("failed-precondition", "Set must have at least one term/definition pair");
+					}
+					
+					allSetTitles.push(setDoc.data().title);
+
+					return setVocab.docs.map((vocabDoc) => {
+						let newVocabData = vocabDoc;
+						newVocabData.vocabId = setDoc.data().owner + "__" + vocabDoc.id;
+						allVocab.push(newVocabData);
+					});
+				});
 			});
 		}));
 
@@ -238,9 +240,23 @@ exports.createProgress = functions.https.onCall((data, context) => {
 			}),
 		}
 
-		shuffleArray(allVocab).forEach((doc, index, array) => {
-			let batch = db.batch();
+		return {
+			allVocab: allVocab,
+			dataToSet: dataToSet,
+			mode: mode,
+			progressDocId: progressDocId,
+			limit: limit,
+		}
+	}).then(async (data) => {
+		let batches = [db.batch()];
+		let promises = [];
 
+		shuffleArray(data.allVocab).forEach(async (doc, index, array) => {
+			if (index % 248 === 0) {
+				promises.push(batches[batches.length - 1].commit());
+				batches.push(db.batch());
+			}
+			
 			const vocabId = doc.vocabId;
 
 			const terms = {
@@ -252,45 +268,37 @@ exports.createProgress = functions.https.onCall((data, context) => {
 				"sound": doc.data().sound,
 			};
 
-			dataToSet.questions.push(vocabId);
+			data.dataToSet.questions.push(vocabId);
 
-			if (index > 248) {
-				batch.set(
-					progressDocId.collection("terms").doc(vocabId),
-					terms
-				);
-				batch.set(
-					progressDocId.collection("definitions").doc(vocabId),
-					definitions
-				);
-			} else {
-				transaction.set(
-					progressDocId.collection("terms").doc(vocabId),
-					terms
-				);
-				transaction.set(
-					progressDocId.collection("definitions").doc(vocabId),
-					definitions
-				);
-			}
+			batches[batches.length - 1].set(
+				data.progressDocId.collection("terms").doc(vocabId),
+				terms
+			);
+			batches[batches.length - 1].set(
+				data.progressDocId.collection("definitions").doc(vocabId),
+				definitions
+			);
 
-			if ((mode == "questions" && index >= limit - 1) || index === array.length - 1) {
+			if ((data.mode == "questions" && index >= data.limit - 1) || index === array.length - 1) {
 				array.length = index + 1;
-				batch.commit();
 			}
 		});
 
-		if (mode === "lives") {
-			dataToSet.lives = limit;
-			dataToSet.start_lives = limit;
+		if (data.mode === "lives") {
+			data.dataToSet.lives = data.limit;
+			data.dataToSet.start_lives = data.limit;
 		}
 
-		transaction.set(
-			progressDocId,
-			dataToSet
+		batches[batches.length - 1].set(
+			data.progressDocId,
+			data.dataToSet
 		);
 
-		return progressDocId.id;
+		promises.push(batches[batches.length - 1].commit());
+
+		await Promise.all(promises);
+
+		return data.progressDocId.id;
 	});
 });
 
