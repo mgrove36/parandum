@@ -264,14 +264,14 @@ exports.createProgress = functions.https.onCall((data, context) => {
 					definitions
 				);
 			} else {
-			transaction.set(
-				progressDocId.collection("terms").doc(vocabId),
-				terms
-			);
-			transaction.set(
-				progressDocId.collection("definitions").doc(vocabId),
-				definitions
-			);
+				transaction.set(
+					progressDocId.collection("terms").doc(vocabId),
+					terms
+				);
+				transaction.set(
+					progressDocId.collection("definitions").doc(vocabId),
+					definitions
+				);
 			}
 
 			if ((mode == "questions" && index >= limit - 1) || index === array.length - 1) {
@@ -280,7 +280,10 @@ exports.createProgress = functions.https.onCall((data, context) => {
 			}
 		});
 
-		if (mode === "lives") dataToSet.lives = limit;
+		if (mode === "lives") {
+			dataToSet.lives = limit;
+			dataToSet.start_lives = limit;
+		}
 
 		transaction.set(
 			progressDocId,
@@ -379,6 +382,7 @@ function cleanseVocabString(item) {
  * @return {string} currentVocabId The vocab ID of the vocab item currently being evaluated.
  * @return {integer} duration The time taken for the test to be completed. Only returned when the test is complete.
  * @return {array} incorrectAnswers The vocab IDs of all incorrect answers given (including repeats for multiple incorrect answers). Only returned when the test is complete.
+ * @return {integer} lives The total number of lives remaining. Only returned if mode is "lives".
  * @return {boolean} moreAnswers Whether or not there are more answers required for the current prompt.
  * @return {object} nextPrompt Details of the next prompt, if relevant. Null if last question has been answered.
  * @return {string} nextPrompt.item The term/definition prompt for the next question.
@@ -411,7 +415,7 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 				throw new functions.https.HttpsError("not-found", "Progress record " + progressId + " doesn't exist")
 			} else if (uid !== progressDoc.data().uid) {
 				throw new functions.https.HttpsError("permission-denied", "Wrong user's progress");
-			} else if (progressDoc.data().progress >= progressDoc.data().questions.length || (progressDoc.data().mode === "lives" && progressDoc.data().incorrect.length >= progressDoc.data().lives)) {
+			} else if (progressDoc.data().progress >= progressDoc.data().questions.length || (progressDoc.data().mode === "lives" && progressDoc.data().lives <= 0)) {
 				throw new functions.https.HttpsError("permission-denied", "Progress already completed")
 			} else {
 				const currentIndex = progressDoc.data().progress;
@@ -462,6 +466,10 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 					}
 
 					if (isCorrectAnswer) {
+						if (mode === "lives") {
+							returnData.lives = docData.lives;
+						}
+
 						if (!prevCorrect) {
 							docData.current_correct = [splitCorrectAnswers[correctAnswerIndex]];
 						} else if (!prevCorrect.includes(splitCorrectAnswers[correctAnswerIndex])) {
@@ -479,8 +487,11 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 							returnData.correctAnswers = docData.current_correct;
 						}
 					} else {
-						docData.progress++;
-						returnData.progress = docData.progress;
+						if (mode === "lives") {
+							returnData.lives = --docData.lives;
+						}
+
+						returnData.progress = ++docData.progress;
 						docData.incorrect.push(currentVocab);
 						docData.questions.push(currentVocab);
 						const doneQuestions = docData.questions.slice(0, docData.progress);
@@ -492,12 +503,14 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 					}
 
 					if (!returnData.moreAnswers) {
-						if (docData.progress >= docData.questions.length || (mode === "lives" && docData.incorrect.length >= docData.lives)) {
+						if (docData.progress >= docData.questions.length || (mode === "lives" && docData.lives <= 0)) {
 							const duration = Date.now() - docData.start_time;
 							docData.duration = duration;
 							returnData.duration = duration;
 							returnData.incorrectAnswers = docData.incorrect;
 	
+							if (mode === "lives" && docData.lives <= 0) docData.questions.length = returnData.totalQuestions = docData.progress;
+							
 							transaction.set(progressDocId, docData);
 							return returnData;
 						} else {
