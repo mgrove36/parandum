@@ -264,16 +264,12 @@ export default withRouter(class SetPage extends React.Component {
 				this.setState({
 					loading: true,
 				})
-				const setIds = Object.keys(this.state.selections)
-					.filter(x => this.state.selections[x]);
 
-				const totalTestQuestions = (await Promise.all(setIds.map((setId) =>
-					this.state.db.collection("sets")
-						.doc(setId)
-						.collection("vocab")
-						.get()
-						.then(querySnapshot => querySnapshot.docs.length)
-				))).reduce((a, b) => a + b);
+				const totalTestQuestions = await this.state.db.collection("sets")
+					.doc(this.props.match.params.setId)
+					.collection("vocab")
+					.get()
+					.then(querySnapshot => querySnapshot.docs.length);
 
 				this.setState({
 					showTestStart: false,
@@ -488,7 +484,7 @@ export default withRouter(class SetPage extends React.Component {
 								onSliderChange={this.changeSliderValue}
 								switchLanguage={this.state.switchLanguage}
 								handleSwitchLanguageChange={this.handleSwitchLanguageChange}
-								loading={this.state.loading}
+									loading={this.state.loading}
 							/>
 						}
 						{
