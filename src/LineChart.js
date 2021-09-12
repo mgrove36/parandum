@@ -43,6 +43,7 @@ export default function LineChart (props) {
 		},
 		stroke: {
 			width: 3,
+			curve: 'smooth',
 		},
 		grid: {
 			borderColor: getComputedStyle(
