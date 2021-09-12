@@ -239,6 +239,8 @@ exports.createProgress = functions.https.onCall((data, context) => {
 		}
 
 		shuffleArray(allVocab).forEach((doc, index, array) => {
+			let batch = db.batch();
+
 			const vocabId = doc.vocabId;
 
 			const terms = {
@@ -252,6 +254,16 @@ exports.createProgress = functions.https.onCall((data, context) => {
 
 			dataToSet.questions.push(vocabId);
 
+			if (index > 248) {
+				batch.set(
+					progressDocId.collection("terms").doc(vocabId),
+					terms
+				);
+				batch.set(
+					progressDocId.collection("definitions").doc(vocabId),
+					definitions
+				);
+			} else {
 			transaction.set(
 				progressDocId.collection("terms").doc(vocabId),
 				terms
