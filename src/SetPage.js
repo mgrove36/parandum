@@ -6,6 +6,10 @@ import Button from "./Button";
 import LinkButton from "./LinkButton";
 import Error404 from "./Error404";
 import Footer from "./Footer";
+import TestStart from './TestStart';
+import ClassicTestStart from './ClassicTestStart';
+import LivesTestStart from './LivesTestStart';
+import CountdownTestStart from './CountdownTestStart';
 
 import "./css/PopUp.css";
 import "./css/SetPage.css";
@@ -43,6 +47,12 @@ export default withRouter(class SetPage extends React.Component {
 			groups: {},
 			currentSetGroups: [],
 			showDeleteConfirmation: false,
+			showTestStart: false,
+			showClassicTestStart: false,
+			showLivesTestStart: false,
+			sliderValue: 1,
+			switchLanguage: false,
+			totalTestQuestions: 1,
 		};
 
 		let isMounted = true;
@@ -113,13 +123,13 @@ export default withRouter(class SetPage extends React.Component {
 		});
 	}
 	
-	startTest = () => {
+	startTest = (mode) => {
 		if (this.state.canStartTest) {
 			this.state.functions.createProgress({
 				sets: [this.props.match.params.setId],
-				switch_language: false,
-				mode: "questions",
-				limit: 1000,
+				switch_language: this.state.switchLanguage,
+				mode: mode,
+				limit: this.state.sliderValue,
 			}).then((result) => {
 				const progressId = result.data;
 				this.stopLoading();
@@ -233,6 +243,94 @@ export default withRouter(class SetPage extends React.Component {
 			});
 	}
 
+	showTestStart = () => {
+		if (this.state.canStartTest) {
+			this.setState({
+				showTestStart: true,
+				totalTestQuestions: 1,
+			});
+		}
+	}
+
+	hideTestStart = () => {
+		this.setState({
+			showTestStart: false,
+		});
+	}
+
+	showIndividualTestPrompt = async (mode) => {
+		if (!this.state.loading) {
+			if (mode === "classic") {
+				this.setState({
+					loading: true,
+				})
+				const setIds = Object.keys(this.state.selections)
+					.filter(x => this.state.selections[x]);
+
+				const totalTestQuestions = (await Promise.all(setIds.map((setId) =>
+					this.state.db.collection("sets")
+						.doc(setId)
+						.collection("vocab")
+						.get()
+						.then(querySnapshot => querySnapshot.docs.length)
+				))).reduce((a, b) => a + b);
+
+				this.setState({
+					showTestStart: false,
+					showClassicTestStart: true,
+					sliderValue: totalTestQuestions,
+					switchLanguage: false,
+					totalTestQuestions: totalTestQuestions,
+					loading: false,
+				});
+			} else if (mode === "lives") {
+				this.setState({
+					showTestStart: false,
+					showLivesTestStart: true,
+					switchLanguage: false,
+					sliderValue: 5,
+				});
+			} else {
+				// countdown
+				// this.setState({
+				// 	showTestStart: false,
+				// 	showCountdownTestStart: true,
+				//	switchLanguage: false,
+				// });
+			}
+		}
+	}
+
+	hideClassicTestStart = () => {
+		this.setState({
+			showClassicTestStart: false,
+		});
+	}
+
+	hideLivesTestStart = () => {
+		this.setState({
+			showLivesTestStart: false,
+		});
+	}
+
+	hideCountdownTestStart = () => {
+		this.setState({
+			showCountdownTestStart: false,
+		});
+	}
+
+	changeSliderValue = (value) => {
+		if (value >= 1 && value <= 999) this.setState({
+			sliderValue: value,
+		});
+	}
+
+	handleSwitchLanguageChange = (event) => {
+		this.setState({
+			switchLanguage: event.target.checked,
+		});
+	}
+
 	render() {
 		return (
 			<div>
@@ -251,7 +349,7 @@ export default withRouter(class SetPage extends React.Component {
 									{
 										this.state.set.public
 										?
-										<span className="set-cloud-icon"><CloudQueueRoundedIcon /></span>
+										<span className="title-icon"><CloudQueueRoundedIcon /></span>
 										:
 										""
 									}
@@ -259,7 +357,7 @@ export default withRouter(class SetPage extends React.Component {
 								<div className="button-container">	
 									<Button
 										loading={this.state.loading}
-										onClick={() => this.startTest()}
+										onClick={this.showTestStart}
 										icon={<PlayArrowRoundedIcon />}
 											disabled={!this.state.canStartTest}
 											className="button--round"
@@ -370,6 +468,48 @@ export default withRouter(class SetPage extends React.Component {
 									</div>
 								</div>
 							</>
+						}
+
+						{
+							this.state.showTestStart &&
+							<TestStart
+								hideTestStart={this.hideTestStart}
+								showIndividualTestPrompt={this.showIndividualTestPrompt}
+								loading={this.state.loading}
+							/>
+						}
+						{
+							this.state.showClassicTestStart &&
+							<ClassicTestStart
+								hide={this.hideClassicTestStart}
+								startTest={this.startTest}
+								max={this.state.totalTestQuestions}
+								sliderValue={this.state.sliderValue}
+								onSliderChange={this.changeSliderValue}
+								switchLanguage={this.state.switchLanguage}
+								handleSwitchLanguageChange={this.handleSwitchLanguageChange}
+								loading={this.state.loading}
+							/>
+						}
+						{
+							this.state.showLivesTestStart &&
+							<LivesTestStart
+								hide={this.hideLivesTestStart}
+								startTest={this.startTest}
+								max={20}
+								sliderValue={this.state.sliderValue}
+								onSliderChange={this.changeSliderValue}
+								switchLanguage={this.state.switchLanguage}
+								handleSwitchLanguageChange={this.handleSwitchLanguageChange}
+								loading={this.state.loading}
+							/>
+						}
+						{
+							this.state.showCountdownTestStart &&
+							<CountdownTestStart
+								hide={this.hideCountdownTestStart}
+								startTest={this.startTest}
+							/>
 						}
 					</>
 				}

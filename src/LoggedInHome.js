@@ -12,9 +12,16 @@ import "firebase/functions";
 import Button from './Button';
 import LinkButton from './LinkButton';
 import Footer from "./Footer";
+import TestStart from './TestStart';
+import ClassicTestStart from './ClassicTestStart';
+import LivesTestStart from './LivesTestStart';
+import CountdownTestStart from './CountdownTestStart';
 import "./css/Form.css";
 import "./css/History.css";
 import "./css/LoggedInHome.css";
+import "./css/PopUp.css";
+import "./css/OptionsListOverlay.css";
+import "./css/SliderOverlay.css";
 
 import { withRouter } from "react-router-dom";
 
@@ -54,6 +61,12 @@ export default withRouter(class LoggedInHome extends React.Component {
 				}
 			],
 			progressHistoryIncomplete: [],
+			showTestStart: false,
+			showClassicTestStart: false,
+			showLivesTestStart: false,
+			sliderValue: 1,
+			switchLanguage: false,
+			totalTestQuestions: 1,
 		};
 
 		let isMounted = true;
@@ -177,15 +190,15 @@ export default withRouter(class LoggedInHome extends React.Component {
 		});
 	}
 
-	startTest = () => {
+	startTest = (mode) => {
 		if (this.state.canStartTest) {
 			const selections = Object.keys(this.state.selections)
 				.filter(x => this.state.selections[x]);
 			this.state.functions.createProgress({
 				sets: selections,
-				switch_language: false,
-				mode: "questions",
-				limit: 1000,
+				switch_language: this.state.switchLanguage,
+				mode: mode,
+				limit: this.state.sliderValue,
 			}).then((result) => {
 				const progressId = result.data;
 				this.stopLoading();
@@ -231,6 +244,94 @@ export default withRouter(class LoggedInHome extends React.Component {
 			});
 	}
 
+	showTestStart = () => {
+		if (this.state.canStartTest) {
+			this.setState({
+				showTestStart: true,
+				totalTestQuestions: 1,
+			});
+		}
+	}
+
+	hideTestStart = () => {
+		this.setState({
+			showTestStart: false,
+		});
+	}
+
+	showIndividualTestPrompt = async (mode) => {
+		if (!this.state.loading) {
+			if (mode === "classic") {
+				this.setState({
+					loading: true,
+				})
+				const setIds = Object.keys(this.state.selections)
+					.filter(x => this.state.selections[x]);
+
+					const totalTestQuestions = (await Promise.all(setIds.map((setId) =>
+					this.state.db.collection("sets")
+					.doc(setId)
+					.collection("vocab")
+					.get()
+					.then(querySnapshot => querySnapshot.docs.length)
+				))).reduce((a, b) => a + b);
+				
+				this.setState({
+					showTestStart: false,
+					showClassicTestStart: true,
+					sliderValue: totalTestQuestions,
+					switchLanguage: false,
+					totalTestQuestions: totalTestQuestions,
+					loading: false,
+				});
+			} else if (mode === "lives") {
+				this.setState({
+					showTestStart: false,
+					showLivesTestStart: true,
+					switchLanguage: false,
+					sliderValue: 5,
+				});
+			} else {
+				// countdown
+				// this.setState({
+					// 	showTestStart: false,
+					// 	showCountdownTestStart: true,
+					//	switchLanguage: false,
+					// });
+			}
+		}
+	}
+
+	hideClassicTestStart = () => {
+		this.setState({
+			showClassicTestStart: false,
+		});
+	}
+
+	hideLivesTestStart = () => {
+		this.setState({
+			showLivesTestStart: false,
+		});
+	}
+
+	hideCountdownTestStart = () => {
+		this.setState({
+			showCountdownTestStart: false,
+		});
+	}
+
+	changeSliderValue = (value) => {
+		if (value >= 1 && value <= 999) this.setState({
+			sliderValue: value,
+		});
+	}
+
+	handleSwitchLanguageChange = (event) => {
+		this.setState({
+			switchLanguage: event.target.checked,
+		});
+	}
+
 	render() {
 		return (
 			<div>
@@ -241,8 +342,7 @@ export default withRouter(class LoggedInHome extends React.Component {
 						<h1>Study</h1>
 						<div className="button-container buttons--desktop">
 							<Button
-								onClick={this.startTest}
-								loading={this.state.loading}
+								onClick={this.showTestStart}
 								disabled={!this.state.canStartTest}
 							>
 								Test ({Object.values(this.state.selections).filter(x => x === true).length})
@@ -264,17 +364,39 @@ export default withRouter(class LoggedInHome extends React.Component {
 						</div>
 						<LinkButton id="create-set-button-mobile" to="/create-set" icon={<AddRoundedIcon />} className="button--round buttons--mobile"></LinkButton>
 					</div>
+					<div className="page-header page-header--left buttons--mobile">
+						<Button
+							onClick={this.showTestStart}
+							disabled={!this.state.canStartTest}
+						>
+							Test ({Object.values(this.state.selections).filter(x => x === true).length})
+						</Button>
+						<LinkButton
+							to="/groups"
+						>
+							Groups
+						</LinkButton>
+						{
+							this.state.userSets && this.state.userSets.length > 0 &&
+							<LinkButton
+								to="/my-sets"
+							>
+								My Sets
+							</LinkButton>
+						}
+					</div>
 					{
 						this.state.progressHistoryIncomplete.length > 0 &&
 						<>
 							<h2>Incomplete Tests</h2>
-							<div className="progress-history-container">
+							<div className="progress-history-container progress-history-container--incomplete">
 								<div>
 									<h3>Set</h3>
 									<h3>Progress</h3>
 									<h3>Mark</h3>
 									<h3>Grade</h3>
 									<h3>Mode</h3>
+									<span></span>
 								</div>
 								{
 									this.state.progressHistoryIncomplete.map((progressItem) =>
@@ -313,28 +435,6 @@ export default withRouter(class LoggedInHome extends React.Component {
 							</div>
 						</>
 					}
-					<div className="page-header page-header--left buttons--mobile">
-						<Button
-							onClick={this.startTest}
-							loading={this.state.loading}
-							disabled={!this.state.canStartTest}
-							>
-							Test ({Object.values(this.state.selections).filter(x => x === true).length})
-						</Button>
-						<LinkButton
-							to="/groups"
-							>
-							Groups
-						</LinkButton>
-						{
-							this.state.userSets && this.state.userSets.length > 0 &&
-							<LinkButton
-								to="/my-sets"
-							>
-								My Sets
-							</LinkButton>
-						}
-					</div>
 					<p id="page-intro" className="page-intro">
 						{
 							this.state.userSets && this.state.userSets.length > 0
@@ -440,6 +540,48 @@ export default withRouter(class LoggedInHome extends React.Component {
 					</div>
 				</main>
 				<Footer />
+
+				{
+					this.state.showTestStart &&
+					<TestStart
+						hideTestStart={this.hideTestStart}
+						showIndividualTestPrompt={this.showIndividualTestPrompt}
+						loading={this.state.loading}
+					/>
+				}
+				{
+					this.state.showClassicTestStart &&
+					<ClassicTestStart
+						hide={this.hideClassicTestStart}
+						startTest={this.startTest}
+						max={this.state.totalTestQuestions}
+						sliderValue={this.state.sliderValue}
+						onSliderChange={this.changeSliderValue}
+						switchLanguage={this.state.switchLanguage}
+						handleSwitchLanguageChange={this.handleSwitchLanguageChange}
+						loading={this.state.loading}
+					/>
+				}
+				{
+					this.state.showLivesTestStart &&
+					<LivesTestStart
+						hide={this.hideLivesTestStart}
+						startTest={this.startTest}
+						max={20}
+						sliderValue={this.state.sliderValue}
+						onSliderChange={this.changeSliderValue}
+						switchLanguage={this.state.switchLanguage}
+						handleSwitchLanguageChange={this.handleSwitchLanguageChange}
+						loading={this.state.loading}
+					/>
+				}
+				{
+					this.state.showCountdownTestStart &&
+					<CountdownTestStart
+						hide={this.hideCountdownTestStart}
+						startTest={this.startTest}
+					/>
+				}
 			</div>
 		)
 	}

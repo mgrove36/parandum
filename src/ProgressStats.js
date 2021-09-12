@@ -10,7 +10,17 @@ export default function ProgressStats(props) {
 				</div>
 				<div className="stat-row stat-row--inline">
 					<h1>{props.correct}</h1>
-					<p>correct</p>
+					{
+						props.maxQuestions
+						?
+						<>
+							<p>correct of</p>
+							<h1>{props.maxQuestions}</h1>
+							<p>possible questions</p>
+						</>
+						:
+						<p>correct</p>
+					}
 				</div>
 				<div className="stat-row stat-row--inline">
 					<h1>{props.incorrect}</h1>
@@ -22,8 +32,8 @@ export default function ProgressStats(props) {
 				</div>
 			</div>
 			<div className="progress-bar">
-				<div style={{ width: props.correct > 0 && props.totalVocabItems > 0 ? `${(props.correct / props.totalVocabItems * 100)}%` : "0" }}>
-					<p>{props.correct}/{props.totalVocabItems}</p>
+				<div style={{ width: props.progressNumerator > 0 && props.progressDenominator > 0 ? `${(props.progressNumerator / props.progressDenominator * 100)}%` : "0" }}>
+					<p>{props.progressNumerator}/{props.progressDenominator}</p>
 				</div>
 			</div>
 		</div>

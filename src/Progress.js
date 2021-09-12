@@ -1,6 +1,6 @@
 import React from 'react';
 import { withRouter } from "react-router-dom";
-import { HomeRounded as HomeRoundedIcon, ArrowForwardRounded as ArrowForwardRoundedIcon, SettingsRounded as SettingsRoundedIcon, CloseRounded as CloseRoundedIcon } from "@material-ui/icons";
+import { HomeRounded as HomeRoundedIcon, ArrowForwardRounded as ArrowForwardRoundedIcon, SettingsRounded as SettingsRoundedIcon, CloseRounded as CloseRoundedIcon, PeopleRounded as PeopleRoundedIcon, QuestionAnswerRounded as QuestionAnswerRoundedIcon } from "@material-ui/icons";
 import NavBar from "./NavBar";
 import Button from "./Button";
 import LinkButton from "./LinkButton";
@@ -66,6 +66,9 @@ export default withRouter(class Progress extends React.Component {
 			attemptHistory: {},
 			questions: [],
 			originalTotalQuestions: 1,
+			lives: 1,
+			startLives: null,
+			setComplete: false,
 		};
 		
 		let isMounted = true;
@@ -102,10 +105,12 @@ export default withRouter(class Progress extends React.Component {
 				nextPrompt: null,
 				setIds: data.setIds,
 				originalTotalQuestions: [...new Set(data.questions)].length,
+				setComplete: data.duration !== null,
 			};
 
 			if (data.lives) {
 				newState.lives = data.lives;
+				newState.startLives = data.start_lives;
 			}
 
 			return [ newState, data.duration !== null, data.incorrect, data.duration ];
@@ -152,7 +157,7 @@ export default withRouter(class Progress extends React.Component {
 				.get()
 				.then((querySnapshot) => {
 					newState.attemptNumber = querySnapshot.docs.map((doc) => doc.id).indexOf(this.props.match.params.progressId) + 1;
-					if (newState.attemptNumber > 1)
+					if (querySnapshot.docs.length > 1)
 						newState.attemptHistory = querySnapshot.docs.filter((doc) => doc.data().duration !== null)
 							.map((doc) => ({
 								x: new Date(doc.data().start_time),
@@ -308,8 +313,10 @@ export default withRouter(class Progress extends React.Component {
 							progress_id: this.props.match.params.progressId,
 						});
 					}
+
+					if (this.state.mode === "lives") newState.lives = data.lives;
 	
-					if (data.correct && !data.moreAnswers && this.state.incorrectAnswers[data.currentVocabId]) {
+					if ((data.correct || data.lives === 0) && !data.moreAnswers && this.state.incorrectAnswers[data.currentVocabId]) {
 						// all answers to question given correctly
 						// answer was previously wrong
 						// store correct answer
@@ -318,10 +325,11 @@ export default withRouter(class Progress extends React.Component {
 					} else if (!data.correct) {
 						// incorrect answer given
 						// store prompt and count=0
+						// store answer if in lives mode and no lives left
 						newState.incorrectAnswers = this.state.incorrectAnswers;
 						newState.incorrectAnswers[data.currentVocabId] = {
 							prompt: this.state.currentPrompt,
-							answer: "",
+							answer: data.lives === 0 ? data.correctAnswers : "",
 							count: 0,
 						};
 					}
@@ -343,7 +351,7 @@ export default withRouter(class Progress extends React.Component {
 							.get()
 							.then((querySnapshot) => {
 								newState.attemptNumber = querySnapshot.docs.map((doc) => doc.id).indexOf(this.props.match.params.progressId) + 1;
-								if (newState.attemptNumber > 1)
+								if (querySnapshot.docs.length > 1)
 									newState.attemptHistory = querySnapshot.docs.filter((doc) => doc.data().duration !== null)
 										.map((doc) => ({
 											x: new Date(doc.data().start_time),
@@ -360,7 +368,7 @@ export default withRouter(class Progress extends React.Component {
 						}
 
 						data.incorrectAnswers.map((vocabId) => {
-							if (newState.incorrectAnswers[vocabId]) {
+							if (newState.incorrectAnswers[vocabId] && newState.incorrectAnswers[vocabId].answer !== "") {
 								// already been logged including prompt and correct answer
 								newState.incorrectAnswers[vocabId].count++;
 							} else {
@@ -429,15 +437,16 @@ export default withRouter(class Progress extends React.Component {
 				loading: false,
 				canProceed: true,
 			};
-	
+
 			if (!this.state.moreAnswers) {
+				if (this.state.nextPrompt === null) newState.setComplete = true;
 				newState.currentCorrect = [];
 				newState.currentPrompt = this.state.nextPrompt;
 				newState.currentSound = this.state.nextSound;
 				newState.currentSetOwner = this.state.nextSetOwner;
 			}
 			
-			this.setState(newState, () => (this.isMounted) && this.answerInput.focus());
+			this.setState(newState, () => (this.isMounted && !this.state.setComplete) && this.answerInput.focus());
 		}
 	}
 
@@ -464,7 +473,7 @@ export default withRouter(class Progress extends React.Component {
 				<>
 					<NavBar items={this.state.navbarItems} />
 					{
-						this.state.currentAnswerStatus === null
+						this.state.currentAnswerStatus === null && !this.state.setComplete
 						?
 						<main className="progress-container">
 							<div>
@@ -512,11 +521,24 @@ export default withRouter(class Progress extends React.Component {
 							</div>
 						</main>
 						:
-						this.state.nextPrompt === null && !this.state.moreAnswers
+						this.state.nextPrompt === null && !this.state.moreAnswers && this.state.setComplete
 						?
 						<main>
 							{/* DONE */}
-							<h1>{this.state.setTitle}</h1>
+							<div className="page-header">
+								<h1>
+									{this.state.setTitle}
+									<span className="title-icon">
+										{
+											this.state.mode === "questions"
+											?
+											<QuestionAnswerRoundedIcon />
+											:
+											<PeopleRoundedIcon />
+										}
+									</span>
+								</h1>
+							</div>
 							<div className="progress-stat-row-container">
 								<div className="stat-row stat-row--inline">
 									<p>You got</p>
@@ -534,6 +556,14 @@ export default withRouter(class Progress extends React.Component {
 									<p>Attempt #</p>
 									<h1>{this.state.attemptNumber}</h1>
 								</div>
+								{
+									this.state.startLives &&
+									<div className="stat-row stat-row--inline">
+										<p>with</p>
+										<h1>{this.state.startLives}</h1>
+										<p>lives</p>
+									</div>
+								}
 							</div>
 							{
 								this.state.incorrectAnswers && Object.keys(this.state.incorrectAnswers).length > 0 &&
@@ -560,7 +590,7 @@ export default withRouter(class Progress extends React.Component {
 								</>
 							}
 
-							{this.state.attemptNumber > 1 &&
+							{Object.keys(this.state.attemptHistory).length > 1 &&
 								<>
 									<h2 className="chart-title">History</h2>
 									<LineChart data={this.state.attemptHistory} />
@@ -625,14 +655,15 @@ export default withRouter(class Progress extends React.Component {
 						</main>
 					}
 					{
-						(this.state.currentAnswerStatus === null ||
-							!(this.state.nextPrompt === null && !this.state.moreAnswers)) &&
+						!this.state.setComplete &&
 							<ProgressStats
 								correct={this.state.correct}
 								incorrect={this.state.incorrect}
-								totalVocabItems={this.state.originalTotalQuestions}
+								progressNumerator={this.state.mode === "lives" ? this.state.lives : this.state.correct}
+								progressDenominator={this.state.mode === "lives" ? this.state.startLives : this.state.originalTotalQuestions}
 								progress={this.state.progress}
-								grade={this.state.totalQuestions > 0 ? this.state.correct / this.state.totalQuestions * 100 : 0}
+								grade={(this.state.correct + this.state.incorrect) > 0 ? this.state.correct / (this.state.correct + this.state.incorrect) * 100 : 0}
+								maxQuestions={this.state.mode === "lives" ? this.state.originalTotalQuestions : null}
 							/>
 					}
 					<Footer />
