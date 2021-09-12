@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { HomeRounded as HomeRoundedIcon } from "@material-ui/icons";
 import NavBar from "./NavBar";
 import Button from "./Button";
-import { withRouter, Link } from "react-router-dom";
+import { withRouter } from "react-router-dom";
 import SettingsContent from "./SettingsContent";
 import Footer from "./Footer";
 
