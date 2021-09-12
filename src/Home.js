@@ -19,7 +19,7 @@ export default function Home(props) {
 	document.title = "Parandum";
 
 	useEffect(() => {
-		props.logEvent("page_view");
+		if (props.logEvent) props.logEvent("page_view");
 	});
 
 	return (
