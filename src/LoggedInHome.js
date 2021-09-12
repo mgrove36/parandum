@@ -226,7 +226,7 @@ export default withRouter(class LoggedInHome extends React.Component {
 				let newState = {
 					progressHistoryIncomplete: this.state.progressHistoryIncomplete,
 				};
-				delete newState.progressHistoryIncomplete[progressIndex];
+				newState.progressHistoryIncomplete.splice(progressIndex, 1);
 				this.setState(newState);
 			});
 	}
