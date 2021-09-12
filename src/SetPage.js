@@ -95,6 +95,11 @@ export default withRouter(class SetPage extends React.Component {
 			});
 			console.log(`Can't access set: ${error}`);
 		});
+
+		this.props.logEvent("select_content", {
+			content_type: "set",
+			item_id: this.props.match.params.setId,
+		});
 	}
 
 	componentWillUnmount() {
@@ -119,6 +124,10 @@ export default withRouter(class SetPage extends React.Component {
 				const progressId = result.data;
 				this.stopLoading();
 				this.props.history.push("/progress/" + progressId);
+
+				this.props.logEvent("start_test", {
+					progress_id: progressId,
+				});
 			}).catch((error) => {
 				console.log(`Couldn't start test: ${error}`);
 				this.stopLoading();

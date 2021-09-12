@@ -298,6 +298,16 @@ export default withRouter(class Progress extends React.Component {
 						loading: false,
 						canProceed: true,
 					};
+
+					if (data.correct) {
+						this.props.logEvent("correct_answer", {
+							progress_id: this.props.match.params.progressId,
+						});
+					} else {
+						this.props.logEvent("incorrect_answer", {
+							progress_id: this.props.match.params.progressId,
+						});
+					}
 	
 					if (data.correct && !data.moreAnswers && this.state.incorrectAnswers[data.currentVocabId]) {
 						// all answers to question given correctly
@@ -321,6 +331,10 @@ export default withRouter(class Progress extends React.Component {
 					if (data.duration) {
 						// test done
 						newState.duration = data.duration;
+
+						this.props.logEvent("test_complete", {
+							progress_id: this.props.match.params.progressId,
+						});
 
 						promises.push(this.state.db.collection("progress")
 							.where("uid", "==", this.state.user.uid)

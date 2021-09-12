@@ -162,6 +162,8 @@ export default withRouter(class LoggedInHome extends React.Component {
 		]).then(() => {
 			this.setState(newState);
 		});
+
+		this.props.logEvent("page_view");
 	}
 
 	componentWillUnmount() {
@@ -188,6 +190,10 @@ export default withRouter(class LoggedInHome extends React.Component {
 				const progressId = result.data;
 				this.stopLoading();
 				this.props.history.push("/progress/" + progressId);
+
+				this.props.logEvent("start_test", {
+					progress_id: progressId,
+				});
 			}).catch((error) => {
 				console.log(`Couldn't start test: ${error}`);
 				this.stopLoading();

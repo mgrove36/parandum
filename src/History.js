@@ -39,27 +39,27 @@ export default class History extends Component {
 
 	componentDidMount() {
 		document.title = "History | Parandum";
-
+		
 		const userSets = this.state.db
-			.collection("sets")
-			.where("owner", "==", this.state.user.uid)
-			.orderBy("title", "asc")
-			.get();
+		.collection("sets")
+		.where("owner", "==", this.state.user.uid)
+		.orderBy("title", "asc")
+		.get();
 		
 		this.state.db.collection("progress")
-			.where("uid", "==", this.state.user.uid)
-			.orderBy("start_time", "desc")
-			.get()
-			.then(async (querySnapshot) => {
-				let complete = [];
-				let incomplete = [];
+		.where("uid", "==", this.state.user.uid)
+		.orderBy("start_time", "desc")
+		.get()
+		.then(async (querySnapshot) => {
+			let complete = [];
+			let incomplete = [];
 				let totalCorrect = 0;
 				let totalIncorrect = 0;
 				let totalMarks = 0;
 				let totalTime = 0;
 				let totalPercentage = 0;
 				let userMarkHistory = [];
-
+				
 				querySnapshot.docs.map((doc) => {
 					const data = doc.data();
 					const pushData = {
@@ -72,7 +72,7 @@ export default class History extends Component {
 						correct: data.correct.length,
 						progress: data.progress,
 					};
-
+					
 					totalCorrect += data.correct.length;
 					totalIncorrect += data.incorrect.length;
 					totalMarks += data.progress;
@@ -89,7 +89,7 @@ export default class History extends Component {
 						return incomplete.push(pushData);
 					}
 				});
-
+				
 				this.setState({
 					progressHistoryComplete: complete,
 					progressHistoryIncomplete: incomplete,
@@ -105,6 +105,8 @@ export default class History extends Component {
 			}).catch((error) => {
 				console.log(`Couldn't retrieve progress history: ${error}`);
 			});
+	
+			this.props.logEvent("page_view");
 	}
 
 	componentWillUnmount() {

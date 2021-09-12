@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useEffect } from "react";
 import { HomeRounded as HomeRoundedIcon } from "@material-ui/icons";
 import NavBar from "./NavBar";
 import Footer from "./Footer";
 import { Link } from "react-router-dom";
 
-export default function TermsOfService() {
+export default function TermsOfService(props) {
 	const navbarItems = [
 		{
 			type: "link",
@@ -13,6 +13,10 @@ export default function TermsOfService() {
 			hideTextMobile: true,
 		}
 	];
+
+	useEffect(() => {
+		props.logEvent("page_view");
+	});
 
 	return (
 		<div>

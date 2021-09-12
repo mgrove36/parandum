@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useEffect } from "react";
 import { HomeRounded as HomeRoundedIcon } from "@material-ui/icons";
 import NavBar from "./NavBar";
 import Footer from "./Footer";
 
-export default function PrivacyPolicy() {
+export default function PrivacyPolicy(props) {
 	const navbarItems = [
 		{
 			type: "link",
@@ -12,6 +12,10 @@ export default function PrivacyPolicy() {
 			hideTextMobile: true,
 		}
 	];
+
+	useEffect(() => {
+		props.logEvent("page_view");
+	});
 
 	return (
 		<div>

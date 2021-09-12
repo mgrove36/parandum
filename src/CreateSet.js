@@ -47,6 +47,8 @@ export default withRouter(class CreateSet extends React.Component {
 	componentDidMount() {
 		document.title = "Create Set | Parandum";
 		this.setNameInput.focus();
+
+		this.props.logEvent("page_view");
 	}
 
 	componentWillUnmount() {

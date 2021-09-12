@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from "react";
 import Home from './Home';
 import StyledFirebaseAuth from 'react-firebaseui/StyledFirebaseAuth';
 import "./css/Login.css";
@@ -24,6 +24,10 @@ export default function Login(props) {
 	};
 	
 	document.title = "Login | Parandum";
+
+	useEffect(() => {
+		props.logEvent("page_view");
+	});
 
 	return (
 		<>

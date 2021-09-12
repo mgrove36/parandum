@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useEffect } from "react";
 import "@material-ui/core";
 import { AccountCircleRounded as AccountCircleIcon } from "@material-ui/icons";
 import "./css/Home.css";
 import NavBar from './NavBar';
 import Footer from "./Footer";
 
-export default function Home() {
+export default function Home(props) {
 	const navbarItems = [
 		{
 			type: "link",
@@ -17,6 +17,10 @@ export default function Home() {
 	];
 	
 	document.title = "Parandum";
+
+	useEffect(() => {
+		props.logEvent("page_view");
+	});
 
 	return (
 		<div>

@@ -37,6 +37,8 @@ export default withRouter(class Settings extends Component {
 
 	componentDidMount() {
 		document.title = "Settings | Parandum";
+
+		this.props.logEvent("page_view");
 	}
 
 	componentWillUnmount() {

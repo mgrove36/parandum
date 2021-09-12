@@ -76,6 +76,8 @@ export default withRouter(class UserGroups extends Component {
 
 			this.setState(newState);
 		});
+
+		this.props.logEvent("page_view");
 	}
 
 	componentWillUnmount() {
@@ -114,6 +116,10 @@ export default withRouter(class UserGroups extends Component {
 				.then((result) => {
 					this.props.history.push(`/groups/${result.data}`);
 					this.stopCreateGroupLoading();
+
+					this.props.logEvent("create_group", {
+						group_id: result.data,
+					});
 				}).catch((error) => {
 					console.log(`Couldn't create group: ${error}`);
 					this.stopCreateGroupLoading();
