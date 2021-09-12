@@ -1,7 +1,5 @@
 import React from 'react';
 import { Link } from "react-router-dom";
-import BannerLogo from "./images/banner.png";
-import SmallLogo from "./images/logo.png";
 import "./css/NavBar.css";
 import Button from "./Button";
 import LinkButton from "./LinkButton";
@@ -11,8 +9,8 @@ export default function Navbar(props) {
 	return (
 		<nav>
 			<Link to="/">
-				<img className="navbar-logo" id="banner-logo" src={BannerLogo} alt="Parandum Logo" />
-				<img className="navbar-logo" id="small-logo" src={SmallLogo} alt="Parandum Logo" />
+				<img className="navbar-logo" id="banner-logo" src={"/banner.png"} alt="Parandum Logo" />
+				<img className="navbar-logo" id="small-logo" src={"/logo.png"} alt="Parandum Logo" />
 			</Link>
 
 			{ navbarItems ?
