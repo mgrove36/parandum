@@ -75,6 +75,7 @@ const themes = [
 
 const db = firebase.firestore();
 
+// stop automatic logging of page views
 window.dataLayer = window.dataLayer || [];
 function gtag() {window.dataLayer.push(arguments); }
 gtag('set', {'send_page_view': false });
