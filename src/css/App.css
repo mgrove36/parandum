@@ -196,6 +196,8 @@ input[type=text]:focus {
 
 .page-header > h1 {
   margin: 0;
+	word-wrap: break-word;
+  word-break: break-all;
 }
 
 .page-header > h2 {
@@ -203,6 +205,8 @@ input[type=text]:focus {
   flex: 1;
   display: flex;
   flex-direction: row;
+	word-wrap: break-word;
+  word-break: break-all;
 }
 
 .page-header > .button {
@@ -243,6 +247,8 @@ label > span:last-child, label > a:last-child {
 label > a {
   color: inherit;
   text-decoration: none;
+	word-wrap: break-word;
+  word-break: break-all;
 }
 
 label, p, input[type=text], main > span, main div > span {
@@ -325,9 +331,7 @@ label, p, input[type=text], main > span, main div > span {
 .progress-history-container {
 	display: table;
 	table-layout: auto;
-	column-gap: 10px;
 	width: 100%;
-	row-gap: 8px;
   margin-bottom: 10px;
 }
 
@@ -342,4 +346,16 @@ label, p, input[type=text], main > span, main div > span {
 	padding-bottom: 2px;
 	text-decoration: none;
 	color: inherit;
+  border-left: 8px solid transparent;
+}
+
+.progress-history-container > div > *:first-child {
+  border-left: 0;
+  word-break: break-all;
+}
+
+@media screen and (max-width: 420px) {
+  .progress-history-container > div > *:nth-child(2), .progress-history-container > div > *:nth-last-child(3) {
+    display: none;
+  }
 }
