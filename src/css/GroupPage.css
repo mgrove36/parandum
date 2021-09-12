@@ -52,29 +52,3 @@
 .group-set-link--enabled > svg {
 	margin-left: 8px;
 }
-
-.group-page-overlay-content {
-	width: fit-content;
-	height: fit-content;
-	padding: 0;
-}
-
-.group-page-overlay-content > * {
-	border-bottom: 1px solid var(--overlay-color);
-	cursor: pointer;
-	margin: 0;
-}
-
-.group-page-overlay-content > *:not(:last-child) {
-	padding: 30px 48px;
-}
-
-.group-page-overlay-content > *:last-child {
-	border: none;
-	padding: 18px 48px;
-}
-
-.no-groups-message-list {
-	padding: 0 18px;
-	margin: 4px 0;
-}

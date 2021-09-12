@@ -192,90 +192,93 @@ export default class History extends Component {
 								<div>
 									{
 										this.state.progressHistoryIncomplete.length > 0 &&
-										<div className="progress-history-container">
+										<>
 											<h2>Incomplete</h2>
-											<div>
-												<h3>Set</h3>
-												<h3>Progress</h3>
-												<h3>Mark</h3>
-												<h3>Grade</h3>
-												<h3>Mode</h3>
+											<div className="progress-history-container progress-history-container--incomplete">
+												<div>
+													<h3>Set</h3>
+													<h3>Progress</h3>
+													<h3>Mark</h3>
+													<h3>Grade</h3>
+													<h3>Mode</h3>
+													<span></span>
+												</div>
+												{
+													this.state.progressHistoryIncomplete.map((progressItem) =>
+														<div key={progressItem.id}>
+															<Link
+																to={`/progress/${progressItem.id}`}
+															>
+																{progressItem.setTitle}
+																{
+																	progressItem.switchLanguage &&
+																	<SwapHorizRoundedIcon />
+																}
+															</Link>
+															<p>{progressItem.percentageProgress}%</p>
+															<p>{progressItem.correct}/{progressItem.progress}</p>
+															<p>{progressItem.grade}%</p>
+															<p>
+																{
+																	progressItem.mode === "questions"
+																	?
+																	<QuestionAnswerRoundedIcon />
+																	:
+																	<PeopleRoundedIcon />
+																}
+															</p>
+															<p>
+																<Button
+																	className="button--no-background"
+																	onClick={() => this.deleteProgress(progressItem.id)}
+																	icon={<DeleteRoundedIcon />}
+																></Button>
+															</p>
+														</div>
+													)
+												}
 											</div>
-											{
-												this.state.progressHistoryIncomplete.map((progressItem) =>
-													<div key={progressItem.id}>
-														<Link
-															to={`/progress/${progressItem.id}`}
-														>
-															{progressItem.setTitle}
-															{
-																progressItem.switchLanguage &&
-																<SwapHorizRoundedIcon />
-															}
-														</Link>
-														<p>{progressItem.percentageProgress}%</p>
-														<p>{progressItem.correct}/{progressItem.progress}</p>
-														<p>{progressItem.grade}%</p>
-														<p>
-															{
-																progressItem.mode === "questions"
-																?
-																<QuestionAnswerRoundedIcon />
-																:
-																<PeopleRoundedIcon />
-															}
-														</p>
-														<p>
-															<Button
-																className="button--no-background"
-																onClick={() => this.deleteProgress(progressItem.id)}
-																icon={<DeleteRoundedIcon />}
-															></Button>
-														</p>
-													</div>
-												)
-											}
-										</div>
+										</>
 									}
 									{
 										this.state.progressHistoryComplete.length > 0 &&
-										<div className="progress-history-container">
+										<>
 											<h2>Completed</h2>
-											<div>
-												<h3>Set</h3>
-												<h3>Progress</h3>
-												<h3>Mark</h3>
-												<h3>Grade</h3>
-												<h3>Mode</h3>
+											<div className="progress-history-container progress-history-container--complete">
+												<div>
+													<h3>Set</h3>
+													<h3>Mark</h3>
+													<h3>Grade</h3>
+													<h3>Mode</h3>
+												</div>
+												{
+													this.state.progressHistoryComplete.map((progressItem) =>
+														<div key={progressItem.id}>
+															<Link
+																to={`/progress/${progressItem.id}`}
+															>
+																{progressItem.setTitle}
+																{
+																	progressItem.switchLanguage &&
+																	<SwapHorizRoundedIcon />
+																}
+															</Link>
+															<p>{progressItem.correct}/{progressItem.progress}</p>
+															<p>{progressItem.grade}%</p>
+															<p>
+																{
+																	progressItem.mode === "questions"
+																	?
+																	<QuestionAnswerRoundedIcon />
+																	:
+																	<PeopleRoundedIcon />
+																}
+															</p>
+														</div>
+													)	
+												}
 											</div>
-											{
-												this.state.progressHistoryComplete.map((progressItem) =>
-													<div key={progressItem.id}>
-														<Link
-															to={`/progress/${progressItem.id}`}
-														>
-															{progressItem.setTitle}
-															{
-																progressItem.switchLanguage &&
-																<SwapHorizRoundedIcon />
-															}
-														</Link>
-														<p>{progressItem.percentageProgress}%</p>
-														<p>{progressItem.correct}/{progressItem.progress}</p>
-														<p>{progressItem.grade}%</p>
-														<p>
-															{
-																progressItem.mode === "questions"
-																?
-																<QuestionAnswerRoundedIcon />
-																:
-																<PeopleRoundedIcon />
-															}
-														</p>
-													</div>
-												)	
-											}
-										</div>
+										</>
 									}
 								</div>
 								:

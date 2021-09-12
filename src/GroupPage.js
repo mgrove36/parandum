@@ -7,6 +7,7 @@ import Footer from "./Footer";
 
 import "./css/GroupPage.css";
 import "./css/ConfirmationDialog.css";
+import "./css/OptionsListOverlay.css";
 
 import Loader from "./puff-loader.svg"
 
@@ -530,7 +531,7 @@ export default withRouter(class GroupPage extends Component {
 										this.state.editingUser &&
 										<>
 											<div className="overlay" onClick={this.hideEditUserRole}></div>
-											<div className="overlay-content group-page-overlay-content">
+											<div className="overlay-content options-list-overlay-content">
 												{
 													["Owner", "Contributor", "Member", "Remove"].map((role) =>
 														<h3

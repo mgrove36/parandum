@@ -168,7 +168,7 @@ button:focus-visible, a:focus-visible {
   outline: 1px solid var(--text-color-tinted);
 }
 
-input[type=text] {
+input {
 	border-top: none;
 	border-right: none;
 	border-left: none;
@@ -179,8 +179,18 @@ input[type=text] {
   min-width: 100px;
 }
 
-input[type=text]:focus {
+input:focus {
   outline: none;
+}
+
+input[type="number"] {
+  -webkit-appearance: textfield;
+     -moz-appearance: textfield;
+          appearance: textfield;
+}
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none;
 }
 
 .page-header {
@@ -254,6 +264,10 @@ label > a {
 label, p, input[type=text], main > span, main div > span {
   margin-top: 8px;
   margin-bottom: 8px;
+}
+
+label .MuiIconButton-label > input {
+  z-index: -1;
 }
 
 .stat-row {
@@ -342,8 +356,8 @@ label, p, input[type=text], main > span, main div > span {
 .progress-history-container > div > * {
 	display: table-cell;
 	word-wrap: break-word;
-	padding-top: 2px;
-	padding-bottom: 2px;
+	padding-top: 6px;
+	padding-bottom: 6px;
 	text-decoration: none;
 	color: inherit;
   border-left: 8px solid transparent;
@@ -357,13 +371,27 @@ label, p, input[type=text], main > span, main div > span {
   text-align: left;
 }
 
+.progress-history-container > div:first-child > * {
+	padding-top: 0;
+}
+
+.progress-history-container > div > *:first-child > svg {
+  vertical-align: top;
+  margin-left: 4px;
+}
+
 .progress-history-container .button.button--no-background {
   padding: 0;
   margin: 0;
 }
 
+.title-icon {
+	color: var(--text-color-tinted);
+	margin-left: 12px;
+}
+
 @media screen and (max-width: 420px) {
-  .progress-history-container > div > *:nth-child(2), .progress-history-container > div > *:nth-last-child(3) {
+  .progress-history-container > div > *:nth-child(2), .progress-history-container--complete > div > *:nth-last-child(3), .progress-history-container--incomplete > div > *:nth-last-child(4) {
     display: none;
   }
 }
