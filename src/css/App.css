@@ -137,6 +137,9 @@ footer {
   margin: 24px;
   font-size: 14px;
   color: var(--text-color-tinted);
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
 }
 
 html, body, footer, .firebaseui-container, .mdl-button, .mdl-textfield__input {
