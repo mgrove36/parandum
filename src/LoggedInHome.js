@@ -67,6 +67,7 @@ export default withRouter(class LoggedInHome extends React.Component {
 			sliderValue: 1,
 			switchLanguage: false,
 			totalTestQuestions: 1,
+			pendingDeletions: {},
 		};
 
 		let isMounted = true;
@@ -231,17 +232,36 @@ export default withRouter(class LoggedInHome extends React.Component {
 	}
 
 	deleteProgress = (progressId) => {
-		this.state.db.collection("progress")
+		if (this.state.pendingDeletions[progressId] !== true) {
+			let pendingDeletions = this.state.pendingDeletions;
+			pendingDeletions[progressId] = true;
+			
+			this.setState({
+				pendingDeletions: pendingDeletions,
+			});
+			
+			this.state.db.collection("progress")
 			.doc(progressId)
 			.delete()
 			.then(() => {
 				const progressIndex = this.state.progressHistoryIncomplete.map((obj) => obj.id).indexOf(progressId);
 				let newState = {
-					progressHistoryIncomplete: this.state.progressHistoryIncomplete,
-				};
-				newState.progressHistoryIncomplete.splice(progressIndex, 1);
-				this.setState(newState);
-			});
+						progressHistoryIncomplete: this.state.progressHistoryIncomplete,
+					};
+					newState.progressHistoryIncomplete.splice(progressIndex, 1);
+					newState.pendingDeletions = this.state.pendingDeletions;
+					delete pendingDeletions[progressId];
+					this.setState(newState);
+				})
+				.catch((error) => {
+					console.log(`Couldn't delete progress: ${error}`);
+					let pendingDeletions = this.state.pendingDeletions;
+					delete pendingDeletions[progressId];
+					this.setState({
+						pendingDeletions: pendingDeletions,
+					});
+				});
+		}
 	}
 
 	showTestStart = () => {
@@ -427,6 +447,8 @@ export default withRouter(class LoggedInHome extends React.Component {
 													className="button--no-background"
 													onClick={() => this.deleteProgress(progressItem.id)}
 													icon={<DeleteRoundedIcon />}
+													disabled={this.state.pendingDeletions[progressItem.id] === true}
+													loading={this.state.pendingDeletions[progressItem.id] === true}
 												></Button>
 											</p>
 										</div>

@@ -65,6 +65,7 @@ export default function ClassicTestStart(props) {
 					icon={<ArrowForwardRoundedIcon />}
 					className="button--round continue-button"
 					loading={props.loading}
+					disabled={props.disabled}
 				></Button>
 
 				<Button

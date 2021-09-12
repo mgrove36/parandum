@@ -485,6 +485,7 @@ export default withRouter(class SetPage extends React.Component {
 								switchLanguage={this.state.switchLanguage}
 								handleSwitchLanguageChange={this.handleSwitchLanguageChange}
 									loading={this.state.loading}
+									disabled={!this.state.canStartTest}
 							/>
 						}
 						{
@@ -498,6 +499,7 @@ export default withRouter(class SetPage extends React.Component {
 								switchLanguage={this.state.switchLanguage}
 								handleSwitchLanguageChange={this.handleSwitchLanguageChange}
 								loading={this.state.loading}
+								disabled={!this.state.canStartTest}
 							/>
 						}
 						{
