@@ -24,6 +24,14 @@ export default class History extends Component {
 			],
 			progressHistoryComplete: [],
 			progressHistoryIncomplete: [],
+			totalTime: 0,
+			totalCorrect: 0,
+			totalIncorrect: 0,
+			totalMarks: 0,
+			totalPercentage: 0,
+			totalCompleteTests: 0,
+			userMarkHistory: [],
+			personalSetsCount: 0,
 		};
 
 		let isMounted = true;
@@ -157,7 +165,7 @@ export default class History extends Component {
 								<p>incorrect</p>
 							</div>
 							<div className="stat-row stat-row--inline">
-								<h1>{`${(this.state.totalPercentage / this.state.totalCompleteTests).toFixed(2)}%`}</h1>
+								<h1>{`${(this.state.totalCompleteTests > 0 ? (this.state.totalPercentage / this.state.totalCompleteTests) : 0).toFixed(2)}%`}</h1>
 								<p>average</p>
 							</div>
 							<div className="stat-row stat-row--inline">
