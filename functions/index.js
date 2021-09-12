@@ -272,9 +272,11 @@ exports.createProgress = functions.https.onCall((data, context) => {
 				progressDocId.collection("definitions").doc(vocabId),
 				definitions
 			);
+			}
 
-			if (mode == "questions" && index >= limit - 1) {
+			if ((mode == "questions" && index >= limit - 1) || index === array.length - 1) {
 				array.length = index + 1;
+				batch.commit();
 			}
 		});
 
