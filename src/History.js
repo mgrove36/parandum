@@ -225,11 +225,13 @@ export default class History extends Component {
 																<PeopleRoundedIcon />
 															}
 														</p>
-														<Button
-															className="button--no-background"
-															onClick={() => this.deleteProgress(progressItem.id)}
-															icon={<DeleteRoundedIcon />}
-														></Button>
+														<p>
+															<Button
+																className="button--no-background"
+																onClick={() => this.deleteProgress(progressItem.id)}
+																icon={<DeleteRoundedIcon />}
+															></Button>
+														</p>
 													</div>
 												)
 											}
@@ -261,13 +263,15 @@ export default class History extends Component {
 														<p>{progressItem.percentageProgress}%</p>
 														<p>{progressItem.correct}/{progressItem.progress}</p>
 														<p>{progressItem.grade}%</p>
-														{
-															progressItem.mode === "questions"
-															?
-															<QuestionAnswerRoundedIcon />
-															:
-															<PeopleRoundedIcon />
-														}
+														<p>
+															{
+																progressItem.mode === "questions"
+																?
+																<QuestionAnswerRoundedIcon />
+																:
+																<PeopleRoundedIcon />
+															}
+														</p>
 													</div>
 												)	
 											}

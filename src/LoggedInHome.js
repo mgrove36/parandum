@@ -300,11 +300,13 @@ export default withRouter(class LoggedInHome extends React.Component {
 														<PeopleRoundedIcon />
 												}
 											</p>
-											<Button
-												className="button--no-background"
-												onClick={() => this.deleteProgress(progressItem.id)}
-												icon={<DeleteRoundedIcon />}
-											></Button>
+											<p>
+												<Button
+													className="button--no-background"
+													onClick={() => this.deleteProgress(progressItem.id)}
+													icon={<DeleteRoundedIcon />}
+												></Button>
+											</p>
 										</div>
 									)
 								}

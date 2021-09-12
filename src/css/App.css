@@ -347,11 +347,19 @@ label, p, input[type=text], main > span, main div > span {
 	text-decoration: none;
 	color: inherit;
   border-left: 8px solid transparent;
+  text-align: center;
+  vertical-align: top;
 }
 
 .progress-history-container > div > *:first-child {
   border-left: 0;
   word-break: break-all;
+  text-align: left;
+}
+
+.progress-history-container .button.button--no-background {
+  padding: 0;
+  margin: 0;
 }
 
 @media screen and (max-width: 420px) {
