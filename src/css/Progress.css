@@ -111,7 +111,6 @@ input.answer-input--incorrect {
 .progress-bar > div {
 	height: 100%;
 	background-color: var(--primary-color);
-	border-radius: 16px 0 0 16px;
 	display: flex;
 	flex-direction: row;
 	flex-wrap: nowrap;
