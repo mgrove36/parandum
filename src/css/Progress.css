@@ -9,6 +9,7 @@
 	max-width: 500px;
 	flex-grow: 1;
 	margin-right: 8px;
+	font-size: 24px;
 }
 
 .answer-input-container.answer-input-container--answer-entered > input {
@@ -21,6 +22,10 @@ input.answer-input--correct {
 
 input.answer-input--incorrect {
 	color: #ff5252;
+}
+
+.current-prompt {
+	font-size: 24px;
 }
 
 .progress-end-incorrect-answers {
