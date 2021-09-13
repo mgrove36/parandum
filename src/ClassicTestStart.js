@@ -57,7 +57,7 @@ export default function ClassicTestStart(props) {
 						onChange={props.handleSwitchLanguageChange}
 						inputProps={{ 'aria-label': 'checkbox' }}
 					/>
-					<span>Swap terms &amp; definitions</span>
+					<span>Switch language</span>
 				</label>
 
 				<Button
