@@ -380,9 +380,9 @@ export default withRouter(class LoggedInHome extends React.Component {
 									My Sets
 								</LinkButton>
 							}
-							<LinkButton id="create-set-button-desktop" to="/create-set" icon={<AddRoundedIcon/>} className="button--round"></LinkButton>
+							<LinkButton id="create-set-button-desktop" to="/create-set" icon={<AddRoundedIcon/>} className="button--round" title="Create set"></LinkButton>
 						</div>
-						<LinkButton id="create-set-button-mobile" to="/create-set" icon={<AddRoundedIcon />} className="button--round buttons--mobile"></LinkButton>
+						<LinkButton id="create-set-button-mobile" to="/create-set" icon={<AddRoundedIcon />} className="button--round buttons--mobile" title="Create set"></LinkButton>
 					</div>
 					<div className="page-header page-header--left buttons--mobile">
 						<Button
