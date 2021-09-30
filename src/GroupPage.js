@@ -382,6 +382,7 @@ export default withRouter(class GroupPage extends Component {
 										onClick={this.showDeleteGroup}
 										icon={<DeleteRoundedIcon />}
 										className="button--round"
+										title="Delete group"
 									></Button>
 								}
 							</div>
@@ -425,6 +426,7 @@ export default withRouter(class GroupPage extends Component {
 															icon={<DeleteRoundedIcon />}
 															loading={this.state.sets[setId].loading}
 															disabled={this.state.sets[setId].loading}
+															title="Remove set"
 														></Button>
 													}
 												</div>

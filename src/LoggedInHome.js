@@ -449,6 +449,7 @@ export default withRouter(class LoggedInHome extends React.Component {
 													icon={<DeleteRoundedIcon />}
 													disabled={this.state.pendingDeletions[progressItem.id] === true}
 													loading={this.state.pendingDeletions[progressItem.id] === true}
+													title="Delete"
 												></Button>
 											</p>
 										</div>

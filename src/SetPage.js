@@ -355,13 +355,15 @@ export default withRouter(class SetPage extends React.Component {
 										loading={this.state.loading}
 										onClick={this.showTestStart}
 										icon={<PlayArrowRoundedIcon />}
-											disabled={!this.state.canStartTest}
-											className="button--round"
+										disabled={!this.state.canStartTest}
+										className="button--round"
+										title="Start test"
 									></Button>
 									<Button
 										onClick={() => this.showAddSetToGroup()}
 										icon={<GroupAddRoundedIcon />}
-											className="button--round"
+										className="button--round"
+										title="Add to group"
 									></Button>
 									{
 										this.state.set.owner === this.state.user.uid &&
@@ -369,6 +371,7 @@ export default withRouter(class SetPage extends React.Component {
 											to={`/sets/${this.props.match.params.setId}/edit`}
 											icon={<EditRoundedIcon />}
 											className="button--round"
+											title="Edit"
 										></LinkButton>
 									}
 									{
@@ -377,6 +380,7 @@ export default withRouter(class SetPage extends React.Component {
 											onClick={() => this.showDeleteSet()}
 											icon={<DeleteRoundedIcon />}
 											className="button--round"
+											title="Delete"
 										></Button>
 									}
 								</div>
@@ -484,8 +488,8 @@ export default withRouter(class SetPage extends React.Component {
 								onSliderChange={this.changeSliderValue}
 								switchLanguage={this.state.switchLanguage}
 								handleSwitchLanguageChange={this.handleSwitchLanguageChange}
-									loading={this.state.loading}
-									disabled={!this.state.canStartTest}
+								loading={this.state.loading}
+								disabled={!this.state.canStartTest}
 							/>
 						}
 						{

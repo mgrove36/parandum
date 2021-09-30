@@ -232,6 +232,7 @@ export default class History extends Component {
 																	className="button--no-background"
 																	onClick={() => this.deleteProgress(progressItem.id)}
 																	icon={<DeleteRoundedIcon />}
+																	title="Delete"
 																></Button>
 															</p>
 														</div>

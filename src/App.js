@@ -294,6 +294,7 @@ class App extends React.Component {
               onClick={this.acceptCookies}
               icon={<CheckRoundedIcon/>}
               className="button--round"
+              title="Accept"
             ></Button>
           </div>
         </Router>
