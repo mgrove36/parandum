@@ -322,6 +322,9 @@ export default withRouter(class Progress extends React.Component {
 						// store correct answer
 						newState.incorrectAnswers = this.state.incorrectAnswers;
 						newState.incorrectAnswers[data.currentVocabId].answer = data.correctAnswers;
+					} else if (data.correct && data.moreAnswers) {
+						newState.answerInput = "";
+						newState.currentAnswerStatus = null;
 					} else if (!data.correct) {
 						// incorrect answer given
 						// store prompt and count=0
@@ -611,7 +614,7 @@ export default withRouter(class Progress extends React.Component {
 							{/* ANSWER PROCESSED */}
 							<div>
 								<p className="current-prompt">{this.state.currentPrompt}</p>
-												<form className="answer-input-container answer-input-container--answer-entered" onSubmit={(e) => e.preventDefault()} >
+								<form className="answer-input-container answer-input-container--answer-entered" onSubmit={(e) => e.preventDefault()} >
 									<input type="submit" className="form-submit" onClick={this.showNextItem} />
 									<input
 										type="text"
