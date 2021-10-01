@@ -169,7 +169,7 @@ button:focus-visible, a:focus-visible {
 }
 
 input {
-	border-top: none;
+  border-top: none;
 	border-right: none;
 	border-left: none;
 	border-bottom: 2px solid var(--overlay-color);
@@ -177,6 +177,7 @@ input {
 	color: var(--text-color);
 	font: inherit;
   min-width: 100px;
+  width: 0;
 }
 
 input:focus {
@@ -388,6 +389,10 @@ label .MuiIconButton-label > input {
 .title-icon {
 	color: var(--text-color-tinted);
 	margin-left: 12px;
+}
+
+.hide {
+  visibility: hidden;
 }
 
 @media screen and (max-width: 420px) {

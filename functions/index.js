@@ -1,6 +1,6 @@
 /* eslint-disable indent */
 /* eslint-disable no-tabs */
-const functions = require("firebase-functions").region("europe-west2");//.region("europe-west2")
+const levenshtein = require('js-levenshtein');
 const admin = require("firebase-admin");
 admin.initializeApp();
 const db = admin.firestore();
@@ -238,6 +238,7 @@ exports.createProgress = functions.https.onCall((data, context) => {
 				}
 				return 0;
 			}),
+			typo: false,
 		}
 
 		return {
@@ -400,6 +401,7 @@ function cleanseVocabString(item) {
  * @return {integer} totalQuestions Total number of questions in the set (including duplicates after incorrect answers).
  * @return {integer} totalCorrect Total number of correct answers so far.
  * @return {integer} totalIncorrect Total number of incorrect answers so far.
+ * @return {boolean} typo Whether the inputted answer is likely to include a typo.
  */
 exports.processAnswer = functions.https.onCall((data, context) => {
 	const uid = context.auth.uid;
@@ -458,6 +460,24 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 						}
 					});
 
+					if (!isCorrectAnswer && !progressDoc.data().typo) {
+						let typo = false;
+						cleansedSplitCorrectAnswers.forEach((answer, index, array) => {
+							const levDistance = levenshtein(answer, cleansedInputAnswer);
+							if (levDistance <= 1 ||
+								answer.length > 5 && levDistance <= 3 ||
+								answer.length > 10 && levDistance <= 4) {
+									docData.typo = true;
+									transaction.set(progressDocId, docData);
+									typo = true;
+									array.length = index + 1;
+							}
+						});
+						if (typo) return {
+							typo: true,
+						};
+					}
+
 					let prevCorrect = progressDoc.data().current_correct;
 					
 					var returnData = {
@@ -471,7 +491,10 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 						totalQuestions: docData.questions.length,
 						totalCorrect: docData.correct.length,
 						totalIncorrect: docData.incorrect.length,
+						typo: false,
 					}
+
+					docData.typo = false;
 
 					if (isCorrectAnswer) {
 						if (mode === "lives") {

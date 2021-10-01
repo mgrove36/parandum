@@ -104,6 +104,7 @@ describe("Parandum Cloud Functions", () => {
 		assert.strictEqual(snapAfter.switch_language, false);
 		assert.strictEqual(snapAfter.uid, userOne);
 		assert.strictEqual(snapAfter.mode, "questions");
+		assert.strictEqual(snapAfter.typo, false);
 
 		assert.deepStrictEqual(termOneSnapAfter, {
 			item: termOne,
@@ -188,6 +189,7 @@ describe("Parandum Cloud Functions", () => {
 		assert.strictEqual(snapAfter.switch_language, false);
 		assert.strictEqual(snapAfter.uid, userOne);
 		assert.strictEqual(snapAfter.mode, "questions");
+		assert.strictEqual(snapAfter.typo, false);
 	});
 
 	it("createProgress can create new lives mode progress file from existing set", async () => {
@@ -243,6 +245,7 @@ describe("Parandum Cloud Functions", () => {
 		assert.strictEqual(snapAfter.uid, userOne);
 		assert.strictEqual(snapAfter.mode, "lives");
 		assert.strictEqual(snapAfter.lives, 2);
+		assert.strictEqual(snapAfter.typo, false);
 	});
 
 	it("createProgress can create new progress file from public set they aren't the owner of", async () => {
@@ -333,6 +336,7 @@ describe("Parandum Cloud Functions", () => {
 			switch_language: false,
 			uid: userOne,
 			mode: "questions",
+			typo: false,
 		};
 		const termDataOne = {
 			"item": termOne,
@@ -391,6 +395,7 @@ describe("Parandum Cloud Functions", () => {
 				totalQuestions: 3,
 				totalCorrect: 0,
 				totalIncorrect: 1,
+				typo: false,
 			}),
 			hamjest.is({
 				mode: "questions",
@@ -407,6 +412,7 @@ describe("Parandum Cloud Functions", () => {
 				totalQuestions: 3,
 				totalCorrect: 0,
 				totalIncorrect: 1,
+				typo: false,
 			})
 		));
 
@@ -429,6 +435,7 @@ describe("Parandum Cloud Functions", () => {
 				switch_language: false,
 				uid: userOne,
 				mode: "questions",
+				typo: false,
 			}),
 			hamjest.is({
 				correct: [],
@@ -446,6 +453,7 @@ describe("Parandum Cloud Functions", () => {
 				switch_language: false,
 				uid: userOne,
 				mode: "questions",
+				typo: false,
 			})
 		));
 
@@ -476,6 +484,7 @@ describe("Parandum Cloud Functions", () => {
 		assert.strictEqual(snapAfterCorrectData.switch_language, false);
 		assert.strictEqual(snapAfterCorrectData.uid, userOne);
 		assert.strictEqual(snapAfterCorrectData.mode, "questions");
+		assert.strictEqual(snapAfterCorrectData.typo, false);
 	});
 
 	it("processAnswer returns correct data", async () => {
@@ -495,6 +504,7 @@ describe("Parandum Cloud Functions", () => {
 			switch_language: false,
 			uid: userOne,
 			mode: "questions",
+			typo: false,
 		};
 		const termDataOne = {
 			"item": termOne,
@@ -541,6 +551,7 @@ describe("Parandum Cloud Functions", () => {
 			totalQuestions: 2,
 			totalCorrect: 0,
 			totalIncorrect: 1,
+			typo: false,
 		});
 
 		assert.strictEqual(returnAfterCorrect.mode, "questions");
@@ -576,6 +587,7 @@ describe("Parandum Cloud Functions", () => {
 			switch_language: false,
 			uid: userOne,
 			mode: "questions",
+			typo: false,
 		};
 		const termDataOne = {
 			"item": termOne,
@@ -637,6 +649,7 @@ describe("Parandum Cloud Functions", () => {
 			totalQuestions: 2,
 			totalCorrect: 0,
 			totalIncorrect: 0,
+			typo: false,
 		});
 
 		const snapAfterTermOneAnswerOneData = await progressDocId.get().then((doc) => doc.data());
@@ -656,6 +669,7 @@ describe("Parandum Cloud Functions", () => {
 			switch_language: false,
 			uid: userOne,
 			mode: "questions",
+			typo: false,
 		});
 
 		const returnAfterIncorrect = await processAnswer(secondTermAnswerTwoRequestData);
@@ -679,6 +693,7 @@ describe("Parandum Cloud Functions", () => {
 				switch_language: false,
 				uid: userOne,
 				mode: "questions",
+				typo: false,
 			}),
 			hamjest.is({
 				correct: [],
@@ -696,6 +711,7 @@ describe("Parandum Cloud Functions", () => {
 				switch_language: false,
 				uid: userOne,
 				mode: "questions",
+				typo: false,
 			})
 		));
 
@@ -730,6 +746,7 @@ describe("Parandum Cloud Functions", () => {
 		assert.strictEqual(snapAfterCorrectData.switch_language, false);
 		assert.strictEqual(snapAfterCorrectData.uid, userOne);
 		assert.strictEqual(snapAfterCorrectData.mode, "questions");
+		assert.strictEqual(snapAfterCorrectData.typo, false);
 	}).timeout(5000);
 
 	it("processAnswer ignores punctuation", async () => {
@@ -750,6 +767,7 @@ describe("Parandum Cloud Functions", () => {
 			switch_language: false,
 			uid: userOne,
 			mode: "questions",
+			typo: false,
 		};
 		const termDataOne = {
 			"item": termOne,

@@ -287,6 +287,15 @@ export default withRouter(class Progress extends React.Component {
 					answer: this.state.answerInput,
 					progressId: this.props.match.params.progressId,
 				}).then(async (result) => {
+					if (result.data.typo) {
+						this.setState({
+							typo: true,
+							loading: false,
+							canProceed: true,
+						});
+						return true;
+					}
+
 					const data = result.data;
 					let newState = {
 						currentAnswerStatus: data.correct,
@@ -302,6 +311,7 @@ export default withRouter(class Progress extends React.Component {
 						currentVocabId: data.currentVocabId,
 						loading: false,
 						canProceed: true,
+						typo: false,
 					};
 
 					if (data.correct) {
@@ -425,6 +435,7 @@ export default withRouter(class Progress extends React.Component {
 					answerInput: "",
 					loading: false,
 					canProceed: true,
+					typo: false,
 				});
 			}
 		}
@@ -499,6 +510,7 @@ export default withRouter(class Progress extends React.Component {
 										loading={this.state.loading}
 									></Button>
 								</form>
+								<p className={!this.state.typo ? "hide" : ""}>Are you sure?</p>
 								<div className="correct-answers">
 									{
 										this.state.currentCorrect && this.state.currentCorrect.length > 0
@@ -619,7 +631,7 @@ export default withRouter(class Progress extends React.Component {
 									<input
 										type="text"
 										name="answer_input"
-										className={`answer-input ${this.state.currentAnswerStatus ? "answer-input--correct" : "answer-input--incorrect"}`}
+										className={`answer-input ${this.state.currentAnswerStatus ? "answer--correct" : "answer--incorrect"}`}
 										value={this.state.answerInput}
 										ref={inputEl => (this.answerInput = inputEl)}
 										readOnly
@@ -632,7 +644,12 @@ export default withRouter(class Progress extends React.Component {
 										loading={this.state.loading}
 									></Button>
 								</form>
-								<div className={`correct-answers ${this.state.currentAnswerStatus ? "correct-answers--correct" : "correct-answers--incorrect"}`}>
+								<p className={this.state.currentAnswerStatus ? "answer--correct" : "answer--incorrect"}>
+									{
+										this.state.currentAnswerStatus ? "Correct!" : "Incorrect"
+									}
+								</p>
+								<div className="correct-answers">
 									{
 										this.state.currentCorrect
 										?

@@ -16,11 +16,11 @@
 	caret-color: transparent;
 }
 
-input.answer-input--correct {
+.answer--correct {
 	color: #3ac535;
 }
 
-input.answer-input--incorrect {
+.answer--incorrect {
 	color: #ff5252;
 }
 
