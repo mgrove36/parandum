@@ -121,6 +121,7 @@ class App extends React.Component {
       userDataPresent: false,
       sound: true,
       theme: "default",
+      coloredEdges: false,
       pageLoading: true,
     };
     
@@ -161,9 +162,11 @@ class App extends React.Component {
           .then((userDoc) => {
             newState.sound = userDoc.data().sound;
             newState.theme = userDoc.data().theme;
+            newState.coloredEdges = userDoc.data().coloredEdges;
           }).catch((error) => {
             newState.sound = true;
             newState.theme = "default";
+            newState.coloredEdges = false;
           });
       }
       
@@ -234,6 +237,17 @@ class App extends React.Component {
     });
   }
 
+  handleColoredEdgesChange = (newColoredEdges, globalChange = false) => {
+    if (globalChange) firebase.firestore().collection("users")
+      .doc(this.state.user.uid)
+      .update({
+        coloredEdges: newColoredEdges,
+      });
+    this.setState({
+      coloredEdges: newColoredEdges,
+    });
+  }
+
   acceptCookies = () => {
     window.removeEventListener('resize', this.updateCookieNoticeMargins);
     this.cookieNoticeHeight = this.cookieNotice.offsetHeight;
@@ -285,10 +299,14 @@ class App extends React.Component {
                   <GroupPage db={db} functions={functions} user={this.state.user} logEvent={analytics.logEvent} page={this.page} />
                 </Route>
                 <Route path="/settings">
-                  <Settings db={db} user={this.state.user} sound={this.state.sound} handleSoundChange={this.handleSoundChange} theme={this.state.theme} handleThemeChange={this.handleThemeChange} themes={themes} logEvent={analytics.logEvent} page={this.page} />
+                  <Settings db={db} user={this.state.user} sound={this.state.sound} coloredEdges={this.state.coloredEdges} handleColoredEdgesChange={this.handleColoredEdgesChange} handleSoundChange={this.handleSoundChange} theme={this.state.theme} handleThemeChange={this.handleThemeChange} themes={themes} logEvent={analytics.logEvent} page={this.page} />
                 </Route>
                 <Route path="/progress/:progressId" exact>
-                  <Progress db={db} functions={functions} user={this.state.user} sound={this.state.sound} handleSoundChange={this.handleSoundChange} theme={this.state.theme} handleThemeChange={this.handleThemeChange} themes={themes} logEvent={analytics.logEvent} page={this.page} />
+                  <Progress db={db} functions={functions} user={this.state.user} sound={this.state.sound} coloredEdges={this.state.coloredEdges} handleColoredEdgesChange={this.handleColoredEdgesChange} handleSoundChange={this.handleSoundChange} theme={this.state.theme} handleThemeChange={this.handleThemeChange} themes={themes} logEvent={analytics.logEvent} page={this.page} />
+                  {
+                    this.state.coloredEdges &&
+                    <div className="colored-edges"></div>
+                  }
               </Route>
                 <Route path="/create-set" exact>
                   <CreateSet db={db} user={this.state.user} logEvent={analytics.logEvent} page={this.page} />

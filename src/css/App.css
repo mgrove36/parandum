@@ -6,7 +6,8 @@ html {
   --background-color: #111111;
   --background-color-dark: #000000;
   --overlay-color: #333333;
-  background-color: var(--background-color);
+
+  height: 100%;
   color: var(--text-color);
 
   --default: #2a8c8c;
@@ -112,10 +113,6 @@ html {
   --primary-color-dark: var(--orange-dark);
 }
 
-html {
-  height: 100%;
-}
-
 body {
   max-width: 1080px;
   margin: auto;
@@ -126,6 +123,7 @@ body, #root, #root > div, #root > div > div:first-child {
   display: flex;
   flex-direction: column;
   flex: 1;
+  background-color: var(--background-color);
 }
 
 main {
@@ -408,6 +406,18 @@ label .MuiIconButton-label > input {
 .transparent {
   opacity: 0 !important;
 }
+
+.colored-edges {
+	z-index: -5;
+	background-color: var(--primary-color-dark);
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100vw;
+	height: 100vh;
+  opacity: 0.7;
+}
+
 
 @media screen and (max-width: 420px) {
   .progress-history-container > div > *:nth-child(2), .progress-history-container--complete > div > *:nth-last-child(3), .progress-history-container--incomplete > div > *:nth-last-child(4) {

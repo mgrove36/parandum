@@ -61,6 +61,7 @@ export default withRouter(class Progress extends React.Component {
 			showSettings: false,
 			soundInput: this.props.sound,
 			themeInput: this.props.theme,
+			coloredEdgesInput: this.props.coloredEdges,
 			setIds: [],
 			attemptNumber: 1,
 			attemptHistory: {},
@@ -232,9 +233,16 @@ export default withRouter(class Progress extends React.Component {
 		});
 	}
 
+	handleColoredEdgesInputChange = (event) => {
+		this.setState({
+			coloredEdgesInput: event.target.checked,
+		});
+	}
+
 	saveSettings = (globalChange) => {
 		this.props.handleSoundChange(this.state.soundInput, globalChange);
 		this.props.handleThemeChange(this.state.themeInput, globalChange);
+		this.props.handleColoredEdgesChange(this.state.coloredEdgesInput, globalChange);
 		this.hideSettings();
 	}
 
@@ -702,9 +710,11 @@ export default withRouter(class Progress extends React.Component {
 									saveSettings={this.saveSettings}
 									handleSoundInputChange={this.handleSoundInputChange}
 									handleThemeInputChange={this.handleThemeInputChange}
+									handleColoredEdgesInputChange={this.handleColoredEdgesInputChange}
 									themes={this.props.themes}
 									soundInput={this.state.soundInput}
 									themeInput={this.state.themeInput}
+									coloredEdgesInput={this.state.coloredEdgesInput}
 								/>
 
 

@@ -33,6 +33,7 @@ exports.userCreated = functions.auth.user().onCreate((user) => {
 		return db.collection("users").doc(user.uid).set({
 			sound: true,
 			theme: "default",
+			coloredEdges: false,
 		});
 	});
 });

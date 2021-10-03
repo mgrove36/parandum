@@ -61,11 +61,12 @@ service cloud.firestore {
 
 			function verifyFieldTypes() {
 				return verifyBoolType("sound") &&
+					verifyBoolType("coloredEdges") &&
 					verifyThemeValue();
 			}
 
 			function getPossibleFields() {
-				let requiredFields = ["sound", "theme"];
+				let requiredFields = ["sound", "theme", "coloredEdges"];
 				let optionalFields = [];
 				let allFields = requiredFields.concat(optionalFields);
 				return [requiredFields, allFields];

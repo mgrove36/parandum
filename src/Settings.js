@@ -22,6 +22,7 @@ export default withRouter(class Settings extends Component {
 			],
 			soundInput: this.props.sound,
 			themeInput: this.props.theme,
+			coloredEdgesInput: this.props.coloredEdges,
 		};
 
 		let isMounted = true;
@@ -60,9 +61,16 @@ export default withRouter(class Settings extends Component {
 		});
 	}
 
+	handleColoredEdgesInputChange = (event) => {
+		this.setState({
+			coloredEdgesInput: event.target.checked,
+		});
+	}
+
 	saveSettings = (globalChange) => {
 		this.props.handleSoundChange(this.state.soundInput, globalChange);
 		this.props.handleThemeChange(this.state.themeInput, globalChange);
+		this.props.handleColoredEdgesChange(this.state.coloredEdgesInput, globalChange);
 		this.props.history.push("/");
 	}
 
@@ -77,9 +85,11 @@ export default withRouter(class Settings extends Component {
 						saveSettings={this.saveSettings}
 						handleSoundInputChange={this.handleSoundInputChange}
 						handleThemeInputChange={this.handleThemeInputChange}
+						handleColoredEdgesInputChange={this.handleColoredEdgesInputChange}
 						themes={this.props.themes}
 						soundInput={this.state.soundInput}
 						themeInput={this.state.themeInput}
+						coloredEdgesInput={this.state.coloredEdgesInput}
 					/>
 
 					<div className="settings-save-container">

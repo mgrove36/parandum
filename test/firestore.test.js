@@ -51,20 +51,20 @@ describe("Parandum Firestore database", () => {
 
 	it("Can update current user's user collection", async () => {
 		const admin = getAdminFirestore();
-		await admin.collection("users").doc(myId).set({ sound: true });
+		await admin.collection("users").doc(myId).set({ sound: true, theme: "default", coloredEdges: false });
 
 		const db = getFirestore(myAuth);
 		const myTestDoc = db.collection("users").doc(myId);
-		await firebase.assertSucceeds(myTestDoc.update({ sound: false }));
+		await firebase.assertSucceeds(myTestDoc.update({ sound: false, theme: "pink", coloredEdges: true }));
 	});
 
 	it("Can't update current user's user collection with invalid data types", async () => {
 		const admin = getAdminFirestore();
-		await admin.collection("users").doc(myId).set({ sound: true, theme: "default" });
+		await admin.collection("users").doc(myId).set({ sound: true, theme: "default", coloredEdges: false });
 
 		const db = getFirestore(myAuth);
 		const myTestDoc = db.collection("users").doc(myId);
-		await firebase.assertFails(myTestDoc.update({ sound: 0, theme: 0 }));
+		await firebase.assertFails(myTestDoc.update({ sound: 0, theme: 0, coloredEdges: 0 }));
 	});
 
 	it("Can't update current user's user collection with invalid fields", async () => {
