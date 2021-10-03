@@ -1,7 +1,7 @@
 /* eslint-disable indent */
 /* eslint-disable no-tabs */
 const levenshtein = require('js-levenshtein');
-const functions = require("firebase-functions").region("europe-west2");//.region("europe-west2")
+const functions = require("firebase-functions");//.region("europe-west2")
 const admin = require("firebase-admin");
 admin.initializeApp();
 const db = admin.firestore();
@@ -402,7 +402,7 @@ function cleanseVocabString(item) {
  * @return {integer} totalQuestions Total number of questions in the set (including duplicates after incorrect answers).
  * @return {integer} totalCorrect Total number of correct answers so far.
  * @return {integer} totalIncorrect Total number of incorrect answers so far.
- * @return {boolean} typo Whether the inputted answer is likely to include a typo.
+ * @return {boolean} typo Whether the inputted answer is likely to include a typo (using Levenshtein distance or by detecting a null answer).
  */
 exports.processAnswer = functions.https.onCall((data, context) => {
 	const uid = context.auth.uid;
@@ -462,6 +462,13 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 					});
 
 					if (!isCorrectAnswer && !progressDoc.data().typo) {
+						if (cleansedInputAnswer === "") {
+							docData.typo = true;
+							transaction.set(progressDocId, docData);
+							return {
+								typo: true,
+							};
+						}
 						let typo = false;
 						cleansedSplitCorrectAnswers.forEach((answer, index, array) => {
 							const levDistance = levenshtein(answer, cleansedInputAnswer);
