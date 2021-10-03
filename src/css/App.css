@@ -294,21 +294,23 @@ label .MuiIconButton-label > input {
 
 .page-loader-container {
   width: 30%;
+  max-width: 150px;
   height: min-content;
   line-height: 0;
   border-radius: 150px;
   background: var(--primary-color-dark);
-}
-
-.page-loader {
   margin: auto;
-  width: 30%;
-  max-width: 150px;
   position: absolute;
   top: 0;
   right: 0;
   bottom: 0;
   left: 0;
+  z-index: 10;
+}
+
+.page-loader {
+  width: calc(100% - 32px);
+  padding: 16px;
 }
 
 .cookie-notice {
