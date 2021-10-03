@@ -10,5 +10,5 @@
 }
 
 .confirmation-dialog > .button-container {
-	justify-content: flex-end;
+	justify-content: space-between;
 }
