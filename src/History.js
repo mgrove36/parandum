@@ -31,6 +31,7 @@ export default class History extends Component {
 			totalPercentage: 0,
 			totalCompleteTests: 0,
 			userMarkHistory: [],
+			userSetHistory: [],
 			personalSetsCount: 0,
 		};
 
@@ -67,6 +68,7 @@ export default class History extends Component {
 			let totalTime = 0;
 			let totalPercentage = 0;
 			let userMarkHistory = [];
+			let userSetHistory = [];
 			
 			querySnapshot.docs.map((doc) => {
 				const data = doc.data();
@@ -92,6 +94,7 @@ export default class History extends Component {
 						x: new Date(data.start_time),
 						y: (data.correct.length / data.questions.length * 100),
 					});
+					userSetHistory.push(data.set_title);
 					return complete.push(pushData);
 				} else {
 					return incomplete.push(pushData);
@@ -108,6 +111,7 @@ export default class History extends Component {
 				totalPercentage: totalPercentage,
 				totalCompleteTests: complete.length,
 				userMarkHistory: userMarkHistory,
+				userSetHistory: userSetHistory,
 				personalSetsCount: (await userSets).docs.length,
 			});
 			this.props.page.load();
@@ -186,7 +190,7 @@ export default class History extends Component {
 						</div>
 
 						{ this.state.userMarkHistory && this.state.userMarkHistory.length > 1 &&
-							<LineChart data={this.state.userMarkHistory} />
+							<LineChart data={this.state.userMarkHistory} sets={this.state.userSetHistory} />
 						}
 
 						{

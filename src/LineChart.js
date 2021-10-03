@@ -38,7 +38,8 @@ export default function LineChart (props) {
 		tooltip: {
 			theme: "dark",
 			x: {
-				show: false,
+				show: typeof props.sets !== "undefined",
+				formatter: (value, opt) => typeof props.sets !== "undefined" ? props.sets[opt.dataPointIndex] : null,
 			},
 		},
 		stroke: {
