@@ -477,7 +477,7 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 							if (levDistance <= 1 ||
 								answer.length > 5 && levDistance <= 3 ||
 								answer.length > 10 && levDistance <= 4 ||
-								cleansedInputAnswer.includes(answers)) {
+								cleansedInputAnswer.includes(answer)) {
 									docData.typo = true;
 									transaction.set(progressDocId, docData);
 									typo = true;
