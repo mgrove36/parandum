@@ -1,6 +1,5 @@
 import React from 'react';
 import './css/App.css';
-import './css/PopUp.css';
 import { BrowserRouter as Router, Route, Switch, Redirect, Link } from 'react-router-dom';
 import Home from "./Home";
 import LoggedInHome from "./LoggedInHome";
@@ -63,13 +62,13 @@ const fadeIn = keyframes`
   }
 
   to {
-    opacity: 0.65;
+    opacity: 1;
   }
 `;
 
 const fadeOut = keyframes`
   from {
-    opacity: 0.65;
+    opacity: 1;
   }
 
   to {
@@ -80,8 +79,8 @@ const fadeOut = keyframes`
 const Fade = styled.div`
   display: inline-block;
   visibility: ${props => props.out ? 'hidden' : 'visible'};
-  animation: ${props => props.out ? fadeOut : fadeIn} 0.1s linear;
-  transition: visibility 0.1s linear;
+  animation: ${props => props.out ? fadeOut : fadeIn} 0.2s linear;
+  transition: visibility 0.2s linear;
 `;
 
 firebase.firestore().enablePersistence()
@@ -351,7 +350,7 @@ class App extends React.Component {
           </div>
         </Router>
         {/* <div className="overlay"><img className="page-loader" src={Loader} alt="Loading..." /></div> */}
-        <Fade out={!this.state.pageLoading && this.state.userDataPresent} className="overlay overlay--black">
+        <Fade out={!this.state.pageLoading && this.state.userDataPresent} className="page-loader-container">
           <img className="page-loader" src={Loader} alt="Loading..." />
         </Fade>
       </div>
