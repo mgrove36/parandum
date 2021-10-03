@@ -386,6 +386,7 @@ function cleanseVocabString(item) {
  * @param {object} data The data passed to the function.
  * @param {string} data.progressId The ID of the progress document to update.
  * @param {string} data.answer The answer given by the user to the current prompt.
+ * @return {string} averagePercentage The average percentage mark for the current collection of sets. Only returned when the test is complete.
  * @return {boolean} correct Whether the provided answer was correct.
  * @return {array} correctAnswers An array of correct answers for the question just answered. If not all correct
  * 					answers have yet been given, and the current answer is correct, this only contains the correct
@@ -551,8 +552,27 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 	
 							if (mode === "lives" && docData.lives <= 0) docData.questions.length = returnData.totalQuestions = docData.progress;
 							
+							const completedProgressDocId = db.collection("completed_progress").doc(progressDoc.data().setIds.sort().join("__"));
+							return transaction.get(completedProgressDocId).then((completedProgressDoc) => {
+								const totalPercentage = completedProgressDoc.data().total_percentage + (docData.correct.length / docData.questions.length * 100);
+								const attempts = completedProgressDoc.data().attempts + 1;
+								transaction.set(completedProgressDocId, {
+									attempts: attempts,
+									total_percentage: totalPercentage,
+								});
+								returnData.averagePercentage = (totalPercentage / attempts).toFixed(2);
+								transaction.set(progressDocId, docData);
+								return returnData;
+							}).catch((error) => {
+								const totalPercentage = docData.correct.length / docData.questions.length * 100;
+								transaction.set(completedProgressDocId, {
+									attempts: 1,
+									total_percentage: totalPercentage,
+								});
+								returnData.averagePercentage = totalPercentage.toFixed(2);
 							transaction.set(progressDocId, docData);
 							return returnData;
+							});
 						} else {
 							const nextVocabId = docData.questions[docData.progress];
 							const nextSetOwner = nextVocabId.split("__")[0];

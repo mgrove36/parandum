@@ -70,6 +70,8 @@ export default withRouter(class Progress extends React.Component {
 			lives: 1,
 			startLives: null,
 			setComplete: false,
+			averagePercentage: null,
+			pageLoaded: false,
 		};
 		
 		let isMounted = true;
@@ -87,7 +89,7 @@ export default withRouter(class Progress extends React.Component {
 		const progressId = this.props.match.params.progressId;
 		const progressRef = this.state.db.collection("progress").doc(progressId);
 		
-		let [ newState, setDone, incorrectAnswers, duration ] = await progressRef.get().then((doc) => {
+		let [ newState, setDone, incorrectAnswers, duration, setIds ] = await progressRef.get().then((doc) => {
 			const data = doc.data();
 			
 			document.title = `Study | ${data.set_title} | Parandum`;
@@ -107,6 +109,7 @@ export default withRouter(class Progress extends React.Component {
 				setIds: data.setIds,
 				originalTotalQuestions: [...new Set(data.questions)].length,
 				setComplete: data.duration !== null,
+				pageLoaded: true,
 			};
 
 			if (data.lives) {
@@ -114,7 +117,7 @@ export default withRouter(class Progress extends React.Component {
 				newState.startLives = data.start_lives;
 			}
 
-			return [ newState, data.duration !== null, data.incorrect, data.duration ];
+			return [ newState, data.duration !== null, data.incorrect, data.duration, data.setIds ];
 		}).catch((error) => {
 			console.log(`Progress data inaccessible: ${error}`);
 			return [
@@ -164,6 +167,16 @@ export default withRouter(class Progress extends React.Component {
 								x: new Date(doc.data().start_time),
 								y: (doc.data().correct.length / doc.data().questions.length * 100),
 							}));
+				}));
+
+			promises.push(this.state.db.collection("completed_progress")
+				.doc(setIds.sort().join("__"))
+				.get()
+				.then((completedProgressDoc) => {
+					newState.averagePercentage = (completedProgressDoc.data().total_percentage / completedProgressDoc.data().attempts).toFixed(2);
+				}).catch((error) => {
+					console.log(`Couldn't get average percentage: ${error}`);
+					newState.averagePercentage = null;
 				}));
 
 			if (incorrectAnswers.length > 0) {
@@ -363,6 +376,7 @@ export default withRouter(class Progress extends React.Component {
 					if (data.duration) {
 						// test done
 						newState.duration = data.duration;
+						newState.averagePercentage = data.averagePercentage;
 
 						this.props.logEvent("test_complete", {
 							progress_id: this.props.match.params.progressId,
@@ -491,7 +505,8 @@ export default withRouter(class Progress extends React.Component {
 		return (
 			<div>
 			{
-				this.state.progressInaccessible
+				this.state.pageLoaded &&
+				(this.state.progressInaccessible
 				?
 				<Error404 />
 				:
@@ -570,6 +585,13 @@ export default withRouter(class Progress extends React.Component {
 									<p>You got</p>
 									<h1>{`${(this.state.correct / this.state.totalQuestions * 100).toFixed(2)}%`}</h1>
 								</div>
+								{
+									this.state.averagePercentage !== null &&
+									<div className="stat-row stat-row--inline">
+										<p>The average is</p>
+										<h1>{`${this.state.averagePercentage}%`}</h1>
+									</div>
+								}
 								<div className="stat-row stat-row--inline">
 									<h1>{`${this.state.correct} of ${this.state.totalQuestions}`}</h1>
 									<p>marks</p>
@@ -739,7 +761,7 @@ export default withRouter(class Progress extends React.Component {
 							</div>
 						</>
 					}
-				</>
+				</>)
 			}
 			</div>
 		)

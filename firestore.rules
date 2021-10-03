@@ -222,5 +222,9 @@ service cloud.firestore {
 		match /join_codes/{joinCode} {
 			allow get: if isSignedIn();
 		}
+
+		match /completed_progress/{setIds} {
+			allow get: if isSignedIn();
+		}
   	}
 }

@@ -820,4 +820,16 @@ describe("Parandum Firestore database", () => {
 		const testDoc = db.collection("join_codes").doc(joinCodeOne);
 		await firebase.assertFails(testDoc.get());
 	});
+
+	it("Can read completed progress docs when signed in", async () => {
+		const db = getFirestore(myAuth);
+		const testDoc = db.collection("completed_progress").doc(setOne);
+		await firebase.assertSucceeds(testDoc.get());
+	});
+
+	it("Can't read completed progress docs when not signed in", async () => {
+		const db = getFirestore(null);
+		const testDoc = db.collection("completed_progress").doc(setOne);
+		await firebase.assertFails(testDoc.get());
+	});
 });
