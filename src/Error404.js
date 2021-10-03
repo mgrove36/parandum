@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import NavBar from './NavBar';
 import Footer from "./Footer";
 import { HomeRounded as HomeRoundedIcon } from "@material-ui/icons";
 
-export default function PageNotFound() {
+export default function PageNotFound(props) {
 	const navbarItems = [
 		{
 			type: "link",
@@ -15,7 +15,18 @@ export default function PageNotFound() {
 
 	document.title = "Error 404 | Parandum";
 
+	const page = props.page;
+
+	useEffect(() => {
+		if (page) {
+			page.load();
+			return () => page.unload();
+		}
+	}, [page]);
+
 	return (
+		!page.loaded
+		?
 		<div>
 			<NavBar items={navbarItems}/>
 			<main>
@@ -24,5 +35,7 @@ export default function PageNotFound() {
 			</main>
 			<Footer />
 		</div>
+		:
+		null
 	)
 }

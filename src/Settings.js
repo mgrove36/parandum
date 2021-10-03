@@ -38,11 +38,14 @@ export default withRouter(class Settings extends Component {
 	componentDidMount() {
 		document.title = "Settings | Parandum";
 
+		this.props.page.load();
+
 		this.props.logEvent("page_view");
 	}
 
 	componentWillUnmount() {
 		this.isMounted = false;
+		this.props.page.unload();
 	}
 
 	handleSoundInputChange = (event) => {

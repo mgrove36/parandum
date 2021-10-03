@@ -75,6 +75,7 @@ export default withRouter(class UserGroups extends Component {
 			}));
 
 			this.setState(newState);
+			this.props.page.load();
 		});
 
 		this.props.logEvent("page_view");
@@ -82,6 +83,7 @@ export default withRouter(class UserGroups extends Component {
 
 	componentWillUnmount() {
 		this.isMounted = false;
+		this.props.page.unload();
 	}
 
 	showJoinGroup = () => {

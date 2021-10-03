@@ -121,9 +121,12 @@ export default withRouter(class LoggedInHome extends React.Component {
 			var userGroupSets = [];
 
 			return Promise.all(userGroupsQuerySnapshot.docs.map((group) => {
-				newState.user.groups.push(group.id);
+				const groupData = groupRef.doc(group.id).get().catch((error) => {
+					console.log(`Couldn't get group data: ${error}`);
+					return true;
+				});
 
-				const groupData = groupRef.doc(group.id).get();
+				newState.user.groups.push(group.id);
 
 				return userGroupSetsRef
 					.where("public", "==", true)
@@ -175,6 +178,7 @@ export default withRouter(class LoggedInHome extends React.Component {
 			progressQuery
 		]).then(() => {
 			this.setState(newState);
+			this.props.page.load();
 		});
 
 		this.props.logEvent("page_view");
@@ -182,6 +186,7 @@ export default withRouter(class LoggedInHome extends React.Component {
 
 	componentWillUnmount() {
 		this.isMounted = false;
+		this.props.page.unload();
 	}
 
 	stopLoading = () => {

@@ -9,8 +9,6 @@ import "./css/GroupPage.css";
 import "./css/ConfirmationDialog.css";
 import "./css/OptionsListOverlay.css";
 
-import Loader from "./puff-loader.svg"
-
 export default withRouter(class GroupPage extends Component {
 	constructor(props) {
 		super(props);
@@ -118,9 +116,10 @@ export default withRouter(class GroupPage extends Component {
 						}
 
 						this.setState(newState);
+						this.props.page.load();
 					});
 			});
-		
+
 		this.props.logEvent("select_content", {
 			content_type: "group",
 			item_id: this.props.match.params.groupId,
@@ -129,6 +128,7 @@ export default withRouter(class GroupPage extends Component {
 
 	componentWillUnmount() {
 		this.isMounted = false;
+		this.props.page.unload();
 	}
 
 	editGroupName = () => {
@@ -340,10 +340,7 @@ export default withRouter(class GroupPage extends Component {
 				<NavBar items={this.state.navbarItems} />
 				<main>
 					{
-						(this.state.role === null)
-						?
-						<img className="page-loader" src={Loader} alt="Loading..." />
-						:
+						!(this.state.role === null) &&
 						<>
 							<div className="page-header">
 								{

@@ -13,9 +13,16 @@ export default function PrivacyPolicy(props) {
 		}
 	];
 
+	const page = props.page;
+	const logEvent = props.logEvent;
+
 	useEffect(() => {
-		props.logEvent("page_view");
-	});
+		if (page) {
+			page.load();
+			return () => page.unload();
+		}
+		if (logEvent) logEvent("page_view");
+	}, [logEvent, page]);
 
 	return (
 		<div>

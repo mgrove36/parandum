@@ -61,64 +61,67 @@ export default class History extends Component {
 		.then(async (querySnapshot) => {
 			let complete = [];
 			let incomplete = [];
-				let totalCorrect = 0;
-				let totalIncorrect = 0;
-				let totalMarks = 0;
-				let totalTime = 0;
-				let totalPercentage = 0;
-				let userMarkHistory = [];
+			let totalCorrect = 0;
+			let totalIncorrect = 0;
+			let totalMarks = 0;
+			let totalTime = 0;
+			let totalPercentage = 0;
+			let userMarkHistory = [];
+			
+			querySnapshot.docs.map((doc) => {
+				const data = doc.data();
+				const pushData = {
+					id: doc.id,
+					setTitle: data.set_title,
+					switchLanguage: data.switch_language,
+					percentageProgress: (data.progress / data.questions.length * 100).toFixed(2),
+					grade: (data.progress > 0 ? data.correct.length / data.progress * 100 : 0).toFixed(2),
+					mode: data.mode,
+					correct: data.correct.length,
+					progress: data.progress,
+				};
 				
-				querySnapshot.docs.map((doc) => {
-					const data = doc.data();
-					const pushData = {
-						id: doc.id,
-						setTitle: data.set_title,
-						switchLanguage: data.switch_language,
-						percentageProgress: (data.progress / data.questions.length * 100).toFixed(2),
-						grade: (data.progress > 0 ? data.correct.length / data.progress * 100 : 0).toFixed(2),
-						mode: data.mode,
-						correct: data.correct.length,
-						progress: data.progress,
-					};
-					
-					totalCorrect += data.correct.length;
-					totalIncorrect += data.incorrect.length;
-					totalMarks += data.progress;
-					
-					if (data.duration !== null) {
-						totalPercentage += (data.correct.length / data.questions.length * 100);
-						totalTime += data.duration;
-						userMarkHistory.push({
-							x: new Date(data.start_time),
-							y: (data.correct.length / data.questions.length * 100),
-						});
-						return complete.push(pushData);
-					} else {
-						return incomplete.push(pushData);
-					}
-				});
+				totalCorrect += data.correct.length;
+				totalIncorrect += data.incorrect.length;
+				totalMarks += data.progress;
 				
-				this.setState({
-					progressHistoryComplete: complete,
-					progressHistoryIncomplete: incomplete,
-					totalCorrect: totalCorrect,
-					totalIncorrect: totalIncorrect,
-					totalMarks: totalMarks,
-					totalTime: totalTime,
-					totalPercentage: totalPercentage,
-					totalCompleteTests: complete.length,
-					userMarkHistory: userMarkHistory,
-					personalSetsCount: (await userSets).docs.length,
-				});
-			}).catch((error) => {
-				console.log(`Couldn't retrieve progress history: ${error}`);
+				if (data.duration !== null) {
+					totalPercentage += (data.correct.length / data.questions.length * 100);
+					totalTime += data.duration;
+					userMarkHistory.push({
+						x: new Date(data.start_time),
+						y: (data.correct.length / data.questions.length * 100),
+					});
+					return complete.push(pushData);
+				} else {
+					return incomplete.push(pushData);
+				}
 			});
-	
-			this.props.logEvent("page_view");
+			
+			this.setState({
+				progressHistoryComplete: complete,
+				progressHistoryIncomplete: incomplete,
+				totalCorrect: totalCorrect,
+				totalIncorrect: totalIncorrect,
+				totalMarks: totalMarks,
+				totalTime: totalTime,
+				totalPercentage: totalPercentage,
+				totalCompleteTests: complete.length,
+				userMarkHistory: userMarkHistory,
+				personalSetsCount: (await userSets).docs.length,
+			});
+			this.props.page.load();
+		}).catch((error) => {
+			console.log(`Couldn't retrieve progress history: ${error}`);
+			this.props.page.load();
+		});
+
+		this.props.logEvent("page_view");
 	}
 
 	componentWillUnmount() {
 		this.isMounted = false;
+		this.props.page.unload();
 	}
 
 	deleteProgress = (progressId) => {

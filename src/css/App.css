@@ -292,6 +292,14 @@ label .MuiIconButton-label > input {
   column-gap: 2px;
 }
 
+.page-loader-container {
+  width: 30%;
+  height: min-content;
+  line-height: 0;
+  border-radius: 150px;
+  background: var(--primary-color-dark);
+}
+
 .page-loader {
   margin: auto;
   width: 30%;
@@ -393,6 +401,10 @@ label .MuiIconButton-label > input {
 
 .hide {
   visibility: hidden;
+}
+
+.transparent {
+  opacity: 0 !important;
 }
 
 @media screen and (max-width: 420px) {

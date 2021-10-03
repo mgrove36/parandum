@@ -98,11 +98,13 @@ export default withRouter(class SetPage extends React.Component {
 					},
 					currentSetGroups: setDoc.data().groups,
 				});
+				this.props.page.load();
 			});
 		}).catch((error) => {
 			this.setState({
 				setInaccessible: true,
 			});
+			this.props.page.load();
 			console.log(`Can't access set: ${error}`);
 		});
 
@@ -114,6 +116,7 @@ export default withRouter(class SetPage extends React.Component {
 
 	componentWillUnmount() {
 		this.isMounted = false;
+		this.props.page.unload();
 	}
 
 	stopLoading = () => {

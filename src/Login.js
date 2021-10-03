@@ -25,9 +25,11 @@ export default function Login(props) {
 	
 	document.title = "Login | Parandum";
 
+	const logEvent = props.logEvent;
+
 	useEffect(() => {
-		props.logEvent("page_view");
-	});
+		if (logEvent) logEvent("page_view");
+	}, [logEvent]);
 
 	return (
 		<>

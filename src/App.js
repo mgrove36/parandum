@@ -1,5 +1,6 @@
 import React from 'react';
 import './css/App.css';
+import './css/PopUp.css';
 import { BrowserRouter as Router, Route, Switch, Redirect, Link } from 'react-router-dom';
 import Home from "./Home";
 import LoggedInHome from "./LoggedInHome";
@@ -18,10 +19,13 @@ import TermsOfService from "./TermsOfService";
 import PrivacyPolicy from "./PrivacyPolicy";
 import Button from "./Button";
 import { CheckRounded as CheckRoundedIcon } from "@material-ui/icons";
+import Loader from "./puff-loader.svg";
 
 import RouteChangeTracker from './RouteChangeTracker';
 
 import Cookies from 'universal-cookie';
+
+import styled, { keyframes } from "styled-components";
 
 import firebase from "firebase/app";
 import "firebase/auth";
@@ -48,10 +52,37 @@ appCheck.activate(
   true
 );
 
-// firebase.functions().useEmulator("localhost", 5001);
-// firebase.auth().useEmulator("http://localhost:9099");
-// firebase.firestore().useEmulator("localhost", 8080);
-const functions = firebase.app().functions("europe-west2");//firebase.functions();
+firebase.functions().useEmulator("localhost", 5001);
+firebase.auth().useEmulator("http://localhost:9099");
+firebase.firestore().useEmulator("localhost", 8080);
+const functions = firebase.functions();//firebase.app().functions("europe-west2");
+
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 0.65;
+  }
+`;
+
+const fadeOut = keyframes`
+  from {
+    opacity: 0.65;
+  }
+
+  to {
+    opacity: 0;
+  }
+`;
+
+const Fade = styled.div`
+  display: inline-block;
+  visibility: ${props => props.out ? 'hidden' : 'visible'};
+  animation: ${props => props.out ? fadeOut : fadeIn} 0.1s linear;
+  transition: visibility 0.1s linear;
+`;
 
 firebase.firestore().enablePersistence()
   .catch((err) => {
@@ -85,10 +116,27 @@ const analytics = firebase.analytics();
 class App extends React.Component {
   constructor(props) {
     super(props);
+    
     this.state = {
       user: null,
+      userDataPresent: false,
       sound: true,
       theme: "default",
+      pageLoading: true,
+    };
+    
+    this.page = {
+      loaded: !this.state.pageLoading,
+      load: () => {
+        this.setState({
+          pageLoading: false,
+        });
+      },
+      unload: () => {
+        this.setState({
+          pageLoading: true,
+        });
+      },
     };
   }
 
@@ -96,6 +144,7 @@ class App extends React.Component {
     firebase.auth().onAuthStateChanged(async (userData) => {
       let newState = {
         user: userData,
+        userDataPresent: true,
       };
 
       if (userData) {
@@ -107,16 +156,16 @@ class App extends React.Component {
 
 
         await firebase.firestore()
-        .collection("users")
-        .doc(userData.uid)
-        .get()
-        .then((userDoc) => {
-          newState.sound = userDoc.data().sound;
-          newState.theme = userDoc.data().theme;
-        }).catch((error) => {
-          newState.sound = true;
-          newState.theme = "default";
-        });
+          .collection("users")
+          .doc(userData.uid)
+          .get()
+          .then((userDoc) => {
+            newState.sound = userDoc.data().sound;
+            newState.theme = userDoc.data().theme;
+          }).catch((error) => {
+            newState.sound = true;
+            newState.theme = "default";
+          });
       }
       
       this.setState(newState);
@@ -217,73 +266,76 @@ class App extends React.Component {
       <div className={this.state.theme}>
         <Router>
           <RouteChangeTracker />
-            {
-              this.state.user !== null
-              ?
-              <>
-                <Switch>
-                  <Route path="/" exact>
-                    <LoggedInHome db={db} firebase={firebase} functions={functions} user={this.state.user} logEvent={analytics.logEvent} />
-                  </Route>
-                  <Route path="/sets/:setId" exact>
-                  <SetPage db={db} functions={functions} user={this.state.user} logEvent={analytics.logEvent} />
-                  </Route>
-                  <Route path="/groups" exact>
-                  <UserGroups db={db} functions={functions} user={this.state.user} logEvent={analytics.logEvent} />
-                  </Route>
-                  <Route path="/groups/:groupId" exact>
-                  <GroupPage db={db} functions={functions} user={this.state.user} logEvent={analytics.logEvent} />
-                  </Route>
-                  <Route path="/settings">
-                  <Settings db={db} user={this.state.user} sound={this.state.sound} handleSoundChange={this.handleSoundChange} theme={this.state.theme} handleThemeChange={this.handleThemeChange} themes={themes} logEvent={analytics.logEvent} />
-                  </Route>
-                  <Route path="/progress/:progressId" exact>
-                  <Progress db={db} functions={functions} user={this.state.user} sound={this.state.sound} handleSoundChange={this.handleSoundChange} theme={this.state.theme} handleThemeChange={this.handleThemeChange} themes={themes} logEvent={analytics.logEvent} />
-                  </Route>
-                  <Route path="/create-set" exact>
-                  <CreateSet db={db} user={this.state.user} logEvent={analytics.logEvent} />
-                  </Route>
-                  <Route path="/my-sets" exact>
-                  <UserSets db={db} functions={functions} user={this.state.user} logEvent={analytics.logEvent} />
-                  </Route>
-                  <Route path="/sets/:setId/edit" exact>
-                  <EditSet db={db} user={this.state.user} logEvent={analytics.logEvent} />
-                  </Route>
-                  <Route path="/history" exact>
-                  <History db={db} user={this.state.user} logEvent={analytics.logEvent} />
-                  </Route>
-                  <Route path="/tos" exact>
-                  <TermsOfService logEvent={analytics.logEvent} />
-                  </Route>
-                  <Route path="/privacy" exact>
-                  <PrivacyPolicy logEvent={analytics.logEvent} />
-                  </Route>
-                  <Redirect from="/login" to="/" />
-                  <Route>
-                    <Error404 />
-                  </Route>
-                  </Switch>
-                </>
-                :
-                <>
-                  <Switch>
-                    <Route path="/" exact>
-                  <Home db={db} logEvent={analytics.logEvent} />
-                    </Route>
-                    <Route path="/login">
+          {
+            this.state.userDataPresent &&
+            (
+            this.state.user !== null
+            ?
+            <>
+              <Switch>
+                <Route path="/" exact>
+                    <LoggedInHome db={db} firebase={firebase} functions={functions} user={this.state.user} logEvent={analytics.logEvent} page={this.page} />
+                </Route>
+                <Route path="/sets/:setId" exact>
+                  <SetPage db={db} functions={functions} user={this.state.user} logEvent={analytics.logEvent} page={this.page} />
+                </Route>
+                <Route path="/groups" exact>
+                  <UserGroups db={db} functions={functions} user={this.state.user} logEvent={analytics.logEvent} page={this.page} />
+                </Route>
+                <Route path="/groups/:groupId" exact>
+                  <GroupPage db={db} functions={functions} user={this.state.user} logEvent={analytics.logEvent} page={this.page} />
+                </Route>
+                <Route path="/settings">
+                  <Settings db={db} user={this.state.user} sound={this.state.sound} handleSoundChange={this.handleSoundChange} theme={this.state.theme} handleThemeChange={this.handleThemeChange} themes={themes} logEvent={analytics.logEvent} page={this.page} />
+                </Route>
+                <Route path="/progress/:progressId" exact>
+                  <Progress db={db} functions={functions} user={this.state.user} sound={this.state.sound} handleSoundChange={this.handleSoundChange} theme={this.state.theme} handleThemeChange={this.handleThemeChange} themes={themes} logEvent={analytics.logEvent} page={this.page} />
+              </Route>
+                <Route path="/create-set" exact>
+                  <CreateSet db={db} user={this.state.user} logEvent={analytics.logEvent} page={this.page} />
+                </Route>
+                <Route path="/my-sets" exact>
+                  <UserSets db={db} functions={functions} user={this.state.user} logEvent={analytics.logEvent} page={this.page} />
+                </Route>
+                <Route path="/sets/:setId/edit" exact>
+                  <EditSet db={db} user={this.state.user} logEvent={analytics.logEvent} page={this.page} />
+                </Route>
+                <Route path="/history" exact>
+                  <History db={db} user={this.state.user} logEvent={analytics.logEvent} page={this.page} />
+                </Route>
+                <Route path="/tos" exact>
+                  <TermsOfService logEvent={analytics.logEvent} page={this.page} />
+                </Route>
+                <Route path="/privacy" exact>
+                  <PrivacyPolicy logEvent={analytics.logEvent} page={this.page} />
+                </Route>
+                <Redirect from="/login" to="/" />
+                <Route>
+                  <Error404 page={this.page} />
+                </Route>
+              </Switch>
+            </>
+            :
+            <>
+              <Switch>
+                <Route path="/" exact>
+                  <Home logEvent={analytics.logEvent} page={this.page} />
+                </Route>
+                <Route path="/login">
                     <Login db={db} firebase={firebase} logEvent={analytics.logEvent} user={this.state.user} />
                 </Route>
                 <Route path="/tos" exact>
-                  <TermsOfService logEvent={analytics.logEvent} />
+                  <TermsOfService logEvent={analytics.logEvent} page={this.page} />
                 </Route>
                 <Route path="/privacy" exact>
-                  <PrivacyPolicy logEvent={analytics.logEvent} />
-                    </Route>
-                    <Route>
-                      <Error404 />
-                    </Route>
-                  </Switch>
-                </>
+                  <PrivacyPolicy logEvent={analytics.logEvent} page={this.page} />
+                </Route>
+                <Route>
+                  <Error404 page={this.page} />
+                </Route>
+              </Switch>
+            </>
+            )
           }
           <div className="cookie-notice" id="cookie-notice">
             <div>
@@ -298,6 +350,10 @@ class App extends React.Component {
             ></Button>
           </div>
         </Router>
+        {/* <div className="overlay"><img className="page-loader" src={Loader} alt="Loading..." /></div> */}
+        <Fade out={!this.state.pageLoading && this.state.userDataPresent} className="overlay overlay--black">
+          <img className="page-loader" src={Loader} alt="Loading..." />
+        </Fade>
       </div>
     );
   }

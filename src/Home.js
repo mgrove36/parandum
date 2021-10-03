@@ -18,9 +18,16 @@ export default function Home(props) {
 	
 	document.title = "Parandum";
 
+	const page = props.page;
+	const logEvent = props.logEvent;
+
 	useEffect(() => {
-		if (props.logEvent) props.logEvent("page_view");
-	});
+		if (page) {
+			page.load();
+			return () => page.unload();
+		}
+		if (logEvent) logEvent("page_view");
+	}, [logEvent, page]);
 
 	return (
 		<div>

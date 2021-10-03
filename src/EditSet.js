@@ -103,11 +103,13 @@ export default withRouter(class EditSet extends Component {
 				}
 
 				this.setState(newState);
+				this.props.page.load();
 			});
 		}).catch(() => {
 			this.setState({
 				setInaccessible: true,
 			});
+			this.props.page.load();
 		});
 
 		this.props.logEvent("select_content", {
@@ -119,6 +121,7 @@ export default withRouter(class EditSet extends Component {
 	componentWillUnmount = () => {
 		window.removeEventListener('beforeunload', this.alertLeavingWithoutSaving);
 		this.isMounted = false;
+		this.props.page.unload();
 	}
 
 	stopLoading = () => {

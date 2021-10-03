@@ -49,7 +49,8 @@ export default withRouter(class UserSets extends Component {
 		userSetsRef.get().then((querySnapshot) => {
 			this.setState({
 				userSets: querySnapshot.docs,
-			})
+			});
+			this.props.page.load();
 		});
 
 		this.props.logEvent("page_view");
@@ -57,6 +58,7 @@ export default withRouter(class UserSets extends Component {
 
 	componentWillUnmount() {
 		this.isMounted = false;
+		this.props.page.unload();
 	}
 
 	render() {
