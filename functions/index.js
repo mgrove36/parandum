@@ -476,7 +476,8 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 							const levDistance = levenshtein(answer, cleansedInputAnswer);
 							if (levDistance <= 1 ||
 								answer.length > 5 && levDistance <= 3 ||
-								answer.length > 10 && levDistance <= 4) {
+								answer.length > 10 && levDistance <= 4 ||
+								cleansedInputAnswer.includes(answers)) {
 									docData.typo = true;
 									transaction.set(progressDocId, docData);
 									typo = true;
