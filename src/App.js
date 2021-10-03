@@ -52,10 +52,10 @@ appCheck.activate(
   true
 );
 
-firebase.functions().useEmulator("localhost", 5001);
-firebase.auth().useEmulator("http://localhost:9099");
-firebase.firestore().useEmulator("localhost", 8080);
-const functions = firebase.functions();//firebase.app().functions("europe-west2");
+// firebase.functions().useEmulator("localhost", 5001);
+// firebase.auth().useEmulator("http://localhost:9099");
+// firebase.firestore().useEmulator("localhost", 8080);
+const functions = firebase.app().functions("europe-west2");//firebase.functions();
 
 const fadeIn = keyframes`
   from {
