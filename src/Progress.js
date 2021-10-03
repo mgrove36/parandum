@@ -585,6 +585,10 @@ export default withRouter(class Progress extends React.Component {
 									<p>You got</p>
 									<h1>{`${(this.state.correct / this.state.totalQuestions * 100).toFixed(2)}%`}</h1>
 								</div>
+								<div className="stat-row stat-row--inline">
+									<h1>{`${this.state.correct} of ${this.state.totalQuestions}`}</h1>
+									<p>marks</p>
+								</div>
 								{
 									this.state.averagePercentage !== null &&
 									<div className="stat-row stat-row--inline">
@@ -592,10 +596,6 @@ export default withRouter(class Progress extends React.Component {
 										<h1>{`${this.state.averagePercentage}%`}</h1>
 									</div>
 								}
-								<div className="stat-row stat-row--inline">
-									<h1>{`${this.state.correct} of ${this.state.totalQuestions}`}</h1>
-									<p>marks</p>
-								</div>
 								<div className="stat-row stat-row--inline">
 									<p>You took</p>
 									<h1>{this.msToTime(this.state.duration)}</h1>
