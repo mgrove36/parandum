@@ -5,6 +5,9 @@ export default function LineChart (props) {
 	const options = {
 		xaxis: {
 			type: "datetime",
+			tooltip: {
+				enabled: false,
+			},
 		},
 		yaxis: {
 			min: 0,
