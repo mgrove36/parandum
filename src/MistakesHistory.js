@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { HistoryRounded as HistoryRoundedIcon, HomeRounded as HomeRoundedIcon, QuestionAnswerRounded as QuestionAnswerRoundedIcon, PeopleRounded as PeopleRoundedIcon, SwapHorizRounded as SwapHorizRoundedIcon, DeleteRounded as DeleteRoundedIcon } from "@material-ui/icons";
+import { HistoryRounded as HistoryRoundedIcon, HomeRounded as HomeRoundedIcon } from "@material-ui/icons";
 import NavBar from "./NavBar";
 import Footer from "./Footer";
 import "./css/History.css";
@@ -150,8 +150,8 @@ export default class IncorrectHistory extends Component {
 						</div>
 						<div className="mistakes-history-container">
 							{
-								this.state.incorrectAnswers.map((vocabItem) => (
-									<>
+								this.state.incorrectAnswers.map((vocabItem, index) => (
+									<React.Fragment key={index}>
 										<div>
 											<h2>{vocabItem.term}</h2>
 											<p><b>{vocabItem.switchedCount} mistake{vocabItem.switchedCount !== 1 && "s"}{vocabItem.switchedCount > 0 && ":"}</b></p>
@@ -167,8 +167,8 @@ export default class IncorrectHistory extends Component {
 																return 1;
 															}
 															return 0;
-														}).map((answerItem) => answerItem.switchLanguage && (
-															<p>{answerItem.answer === "" ? <i>skipped</i> : answerItem.answer}</p>
+														}).map((answerItem, index) => answerItem.switchLanguage && (
+															<p key={index}>{answerItem.answer === "" ? <i>skipped</i> : answerItem.answer}</p>
 														))
 													}
 												</div>
@@ -189,14 +189,14 @@ export default class IncorrectHistory extends Component {
 																return 1;
 															}
 															return 0;
-														}).map((answerItem) => !answerItem.switchLanguage && (
-															<p>{answerItem.answer === "" ? <i>skipped</i> : answerItem.answer}</p>
+														}).map((answerItem, index) => !answerItem.switchLanguage && (
+															<p key={index}>{answerItem.answer === "" ? <i>skipped</i> : answerItem.answer}</p>
 														))
 													}
 												</div>
 											}
 										</div>
-									</>
+									</React.Fragment>
 								))
 							}
 						</div>
