@@ -72,6 +72,7 @@ export default withRouter(class Progress extends React.Component {
 			setComplete: false,
 			averagePercentage: null,
 			pageLoaded: false,
+			startTime: null,
 		};
 		
 		let isMounted = true;
@@ -163,10 +164,13 @@ export default withRouter(class Progress extends React.Component {
 					newState.attemptNumber = querySnapshot.docs.map((doc) => doc.id).indexOf(this.props.match.params.progressId) + 1;
 					if (querySnapshot.docs.length > 1)
 						newState.attemptHistory = querySnapshot.docs.filter((doc) => doc.data().duration !== null)
-							.map((doc) => ({
-								x: new Date(doc.data().start_time),
-								y: (doc.data().correct.length / doc.data().questions.length * 100),
-							}));
+							.map((doc) => {
+								if (doc.id === this.props.match.params.progressId) newState.startTime = doc.data().start_time;
+								return {
+									x: new Date(doc.data().start_time),
+									y: (doc.data().correct.length / doc.data().questions.length * 100),
+								}
+							});
 				}));
 
 			promises.push(this.state.db.collection("completed_progress")
@@ -391,10 +395,13 @@ export default withRouter(class Progress extends React.Component {
 								newState.attemptNumber = querySnapshot.docs.map((doc) => doc.id).indexOf(this.props.match.params.progressId) + 1;
 								if (querySnapshot.docs.length > 1)
 									newState.attemptHistory = querySnapshot.docs.filter((doc) => doc.data().duration !== null)
-										.map((doc) => ({
-											x: new Date(doc.data().start_time),
-											y: (doc.data().correct.length / doc.data().questions.length * 100),
-										}));
+										.map((doc) => {
+											if (doc.id === this.props.match.params.progressId) newState.startTime = doc.data().start_time;
+											return {
+												x: new Date(doc.data().start_time),
+												y: (doc.data().correct.length / doc.data().questions.length * 100),
+											}
+										});
 							}));
 					}
 
@@ -641,7 +648,7 @@ export default withRouter(class Progress extends React.Component {
 							{Object.keys(this.state.attemptHistory).length > 1 &&
 								<>
 									<h2 className="chart-title">History</h2>
-									<LineChart data={this.state.attemptHistory} />
+									<LineChart data={this.state.attemptHistory} currentPointX={this.state.startTime} />
 								</>
 							}
 

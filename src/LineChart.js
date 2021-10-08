@@ -2,6 +2,19 @@ import React from 'react';
 import Chart from "react-apexcharts";
 
 export default function LineChart (props) {
+	const themeColor = getComputedStyle(
+			document.querySelector("#root > div")
+		).getPropertyValue("--primary-color")
+		.trim();
+	const overlayColor = getComputedStyle(
+			document.querySelector("#root > div")
+		).getPropertyValue("--overlay-color")
+		.trim();
+	const textColor = getComputedStyle(
+			document.querySelector("#root > div")
+		).getPropertyValue("--text-color")
+		.trim();
+
 	const options = {
 		xaxis: {
 			type: "datetime",
@@ -18,11 +31,7 @@ export default function LineChart (props) {
 			tickAmount: 5,
 		},
 		chart: {
-			foreColor:
-				getComputedStyle(
-					document.querySelector("#root > div")
-				).getPropertyValue("--text-color")
-				.trim(),
+			foreColor: textColor,
 			toolbar: {
 				show: false,
 			},
@@ -33,10 +42,7 @@ export default function LineChart (props) {
 			},
 		},
 		colors: [
-			getComputedStyle(
-				document.querySelector("#root > div")
-			).getPropertyValue("--primary-color")
-			.trim()
+			themeColor
 		],
 		tooltip: {
 			theme: "dark",
@@ -50,10 +56,7 @@ export default function LineChart (props) {
 			curve: 'smooth',
 		},
 		grid: {
-			borderColor: getComputedStyle(
-				document.querySelector("#root > div")
-			).getPropertyValue("--overlay-color")
-				.trim(),
+			borderColor: overlayColor,
 			xaxis: {
 				lines: {
 					show: true
@@ -71,6 +74,16 @@ export default function LineChart (props) {
 				},
 			},
 		}],
+		annotations: 
+			props.currentPointX ? {
+				xaxis: [
+					{
+						x: new Date(props.currentPointX).getTime(),
+						strokeDashArray: 5,
+						borderColor: themeColor,
+					}
+				],
+			} : {},
 	};
 	const series = [
 		{
