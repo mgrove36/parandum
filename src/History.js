@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { HomeRounded as HomeRoundedIcon, QuestionAnswerRounded as QuestionAnswerRoundedIcon, PeopleRounded as PeopleRoundedIcon, SwapHorizRounded as SwapHorizRoundedIcon, DeleteRounded as DeleteRoundedIcon } from "@material-ui/icons";
+import { TimelineRounded as TimelineRoundedIcon, HomeRounded as HomeRoundedIcon, QuestionAnswerRounded as QuestionAnswerRoundedIcon, PeopleRounded as PeopleRoundedIcon, SwapHorizRounded as SwapHorizRoundedIcon, DeleteRounded as DeleteRoundedIcon } from "@material-ui/icons";
 import NavBar from "./NavBar";
 import Button from "./Button";
 import Footer from "./Footer";
@@ -15,6 +15,13 @@ export default class History extends Component {
 			user: props.user,
 			db: props.db,
 			navbarItems: [
+				{
+					type: "link",
+					name: "Mistakes",
+					link: "/history/mistakes",
+					icon: <TimelineRoundedIcon />,
+					hideTextMobile: true,
+				},
 				{
 					type: "link",
 					link: "/",

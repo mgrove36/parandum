@@ -434,17 +434,12 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 				const currentIndex = progressDoc.data().progress;
 				const currentVocab = progressDoc.data().questions[currentIndex];
 
-				let answerDocId;
-
-				if (progressDoc.data().switch_language) {
-					answerDocId = progressDocId
+				termDocId = progressDocId
 						.collection("terms").doc(currentVocab);
-				} else {
-					answerDocId = progressDocId
+				definitionDocId = progressDocId
 						.collection("definitions").doc(currentVocab);
-				}
 
-				return transaction.get(answerDocId).then((answerDoc) => {
+				return transaction.get(progressDoc.data().switch_language ? termDocId : definitionDocId).then((answerDoc) => {
 					const docData = progressDoc.data();
 					const mode = docData.mode;
 					const correctAnswers = answerDoc.data().item;
@@ -507,6 +502,8 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 
 					docData.typo = false;
 
+					var userGroups, incorrectAnswerDoc, prompt;
+
 					if (isCorrectAnswer) {
 						if (mode === "lives") {
 							returnData.lives = docData.lives;
@@ -542,7 +539,12 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 						docData.questions = doneQuestions.concat(shuffleArray(notDoneQuestions));
 						returnData.totalQuestions = docData.questions.length;
 						returnData.totalIncorrect = docData.incorrect.length;
+
+						userGroups = transaction.get(db.collection("users").doc(uid).collection("groups")).then((querySnapshot) => querySnapshot.docs.map((doc) => doc.id));
+						incorrectAnswerDoc = db.collection("incorrect_answers").doc();
+						prompt = transaction.get(progressDoc.data().switch_language ? definitionDocId : termDocId).then((doc) => doc.data().item);
 					}
+
 
 					if (!returnData.moreAnswers) {
 						if (docData.progress >= docData.questions.length || (mode === "lives" && docData.lives <= 0)) {
@@ -554,7 +556,16 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 							if (mode === "lives" && docData.lives <= 0) docData.questions.length = returnData.totalQuestions = docData.progress;
 							
 							const completedProgressDocId = db.collection("completed_progress").doc(progressDoc.data().setIds.sort().join("__"));
-							return transaction.get(completedProgressDocId).then((completedProgressDoc) => {
+							return transaction.get(completedProgressDocId).then(async (completedProgressDoc) => {
+								if (!isCorrectAnswer) transaction.set(incorrectAnswerDoc, {
+									uid: uid,
+									groups: await userGroups,
+									term: progressDoc.data().switch_language ? correctAnswers : await prompt,
+									definition: progressDoc.data().switch_language ? await prompt : correctAnswers,
+									answer: inputAnswer.trim(),
+									switch_language: progressDoc.data().switch_language,
+								});
+
 								const totalPercentage = completedProgressDoc.data().total_percentage + (docData.correct.length / docData.questions.length * 100);
 								const attempts = completedProgressDoc.data().attempts + 1;
 								transaction.set(completedProgressDocId, {
@@ -564,7 +575,16 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 								returnData.averagePercentage = (totalPercentage / attempts).toFixed(2);
 								transaction.set(progressDocId, docData);
 								return returnData;
-							}).catch((error) => {
+							}).catch(async (error) => {
+								if (!isCorrectAnswer) transaction.set(incorrectAnswerDoc, {
+									uid: uid,
+									groups: await userGroups,
+									term: progressDoc.data().switch_language ? correctAnswers : await prompt,
+									definition: progressDoc.data().switch_language ? await prompt : correctAnswers,
+									answer: inputAnswer.trim(),
+									switch_language: progressDoc.data().switch_language,
+								});
+
 								const totalPercentage = docData.correct.length / docData.questions.length * 100;
 								transaction.set(completedProgressDocId, {
 									attempts: 1,
@@ -583,7 +603,16 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 									.collection("definitions").doc(nextVocabId);
 								const sound = null;
 	
-								return transaction.get(promptDocId).then((promptDoc) => {
+								return transaction.get(promptDocId).then(async (promptDoc) => {
+									if (!isCorrectAnswer) transaction.set(incorrectAnswerDoc, {
+										uid: uid,
+										groups: await userGroups,
+										term: progressDoc.data().switch_language ? correctAnswers : await prompt,
+										definition: progressDoc.data().switch_language ? await prompt : correctAnswers,
+										answer: inputAnswer.trim(),
+										switch_language: progressDoc.data().switch_language,
+									});
+
 									returnData.nextPrompt = {
 										item: promptDoc.data().item,
 										sound: sound,
@@ -596,7 +625,16 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 								const promptDocId = progressDocId
 									.collection("terms").doc(nextVocabId);
 	
-								return transaction.get(promptDocId).then((promptDoc) => {
+								return transaction.get(promptDocId).then(async (promptDoc) => {
+									if (!isCorrectAnswer) transaction.set(incorrectAnswerDoc, {
+										uid: uid,
+										groups: await userGroups,
+										term: progressDoc.data().switch_language ? correctAnswers : await prompt,
+										definition: progressDoc.data().switch_language ? await prompt : correctAnswers,
+										answer: inputAnswer.trim(),
+										switch_language: progressDoc.data().switch_language,
+									});
+
 									const sound = promptDoc.data().sound;
 									returnData.nextPrompt = {
 										item: promptDoc.data().item,

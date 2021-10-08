@@ -226,5 +226,9 @@ service cloud.firestore {
 		match /completed_progress/{setIds} {
 			allow get: if isSignedIn();
 		}
+
+		match /incorrect_answers/{incorrectAnswerId} {
+			allow read: if isSignedIn();
+		}
   	}
 }

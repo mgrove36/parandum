@@ -14,6 +14,7 @@ import UserSets from "./UserSets";
 import EditSet from "./EditSet";
 import Error404 from "./Error404";
 import History from "./History";
+import MistakesHistory from "./MistakesHistory";
 import TermsOfService from "./TermsOfService";
 import PrivacyPolicy from "./PrivacyPolicy";
 import Button from "./Button";
@@ -319,6 +320,9 @@ class App extends React.Component {
                 </Route>
                 <Route path="/history" exact>
                   <History db={db} user={this.state.user} logEvent={analytics.logEvent} page={this.page} />
+                </Route>
+                <Route path="/history/mistakes" exact>
+                  <MistakesHistory db={db} user={this.state.user} logEvent={analytics.logEvent} page={this.page} />
                 </Route>
                 <Route path="/tos" exact>
                   <TermsOfService logEvent={analytics.logEvent} page={this.page} />
