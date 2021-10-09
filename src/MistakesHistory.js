@@ -82,7 +82,12 @@ export default class IncorrectHistory extends Component {
 					});
 					newState.incorrectAnswers = incorrectAnswers.sort((a,b) => b.count + b.switchedCount - a.count - a.switchedCount);
 					newState.totalIncorrect = querySnapshot.docs.length;
-			})
+				})
+				.catch((error) => {
+					newState.incorrectAnswers = [];
+					newState.totalIncorrect = 0;
+					console.log(`Couldn't get group progress: ${error}`);
+				})
 		);
 
 		promises.push(
@@ -104,18 +109,6 @@ export default class IncorrectHistory extends Component {
 	componentWillUnmount() {
 		this.isMounted = false;
 		this.props.page.unload();
-	}
-
-	msToTime = (time) => {
-		const localeData = {
-			minimumIntegerDigits: 2,
-			useGrouping: false,
-		};
-		const seconds = Math.floor((time / 1000) % 60).toLocaleString("en-GB", localeData);
-		const minutes = Math.floor((time / 1000 / 60) % 60).toLocaleString("en-GB", localeData);
-		const hours = Math.floor(time / 1000 / 60 / 60).toLocaleString("en-GB", localeData);
-
-		return `${hours}:${minutes}:${seconds}`;
 	}
 
 	render() {
