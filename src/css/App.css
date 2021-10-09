@@ -275,6 +275,8 @@ label .MuiIconButton-label > input {
 	justify-content: space-between;
 	align-items: baseline;
   flex-wrap: wrap;
+  word-wrap: break-word;
+  word-break: break-word;
 }
 
 .stat-row > h1, .stat-row > h2, .stat-row > h3 {

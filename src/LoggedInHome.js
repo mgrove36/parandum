@@ -1,7 +1,7 @@
 import React from 'react';
 import NavBar from "./NavBar";
 import { Link } from "react-router-dom";
-import { ExitToAppRounded as ExitToAppRoundedIcon, HistoryRounded as HistoryRoundedIcon, SettingsRounded as SettingsRoundedIcon, PersonRounded as PersonRoundedIcon, PublicRounded as PublicRoundedIcon, GroupRounded as GroupRoundedIcon, AddRounded as AddRoundedIcon, SwapHorizRounded as SwapHorizRoundedIcon, PeopleRounded as PeopleRoundedIcon, DeleteRounded as DeleteRoundedIcon, QuestionAnswerRounded as QuestionAnswerRoundedIcon } from "@material-ui/icons";
+import { TimelineRounded as TimelineRoundedIcon, ExitToAppRounded as ExitToAppRoundedIcon, HistoryRounded as HistoryRoundedIcon, SettingsRounded as SettingsRoundedIcon, PersonRounded as PersonRoundedIcon, PublicRounded as PublicRoundedIcon, GroupRounded as GroupRoundedIcon, AddRounded as AddRoundedIcon, SwapHorizRounded as SwapHorizRoundedIcon, PeopleRounded as PeopleRoundedIcon, DeleteRounded as DeleteRoundedIcon, QuestionAnswerRounded as QuestionAnswerRoundedIcon } from "@material-ui/icons";
 import Checkbox from '@material-ui/core/Checkbox';
 
 import Xarrow from 'react-xarrows';
@@ -40,6 +40,13 @@ export default withRouter(class LoggedInHome extends React.Component {
 			navbarItems: [
 				{
 					type: "link",
+					name: "Mistakes",
+					link: "/history/mistakes",
+					icon: <TimelineRoundedIcon />,
+					hideTextMobile: true,
+				},
+				{
+					type: "link",
 					name: "History",
 					link: "/history",
 					icon: <HistoryRoundedIcon />,
@@ -54,7 +61,6 @@ export default withRouter(class LoggedInHome extends React.Component {
 				},
 				{
 					type: "button",
-					name: "Logout",
 					onClick: () => this.props.firebase.auth().signOut(),
 					icon: <ExitToAppRoundedIcon />,
 					hideTextMobile: true,

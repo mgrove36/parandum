@@ -132,19 +132,20 @@ export default class IncorrectHistory extends Component {
 								<p>mistakes</p>
 							</div>
 							{
-								this.state.incorrectAnswers.length > 0 &&
+								this.state.totalTests > 0 &&
 								<div className="stat-row stat-row--inline">
-									<h1>{this.state.incorrectAnswers[0].definition}</h1>
-									<p>meaning</p>
-									<h1>{this.state.incorrectAnswers[0].term}</h1>
-									<p>is the most common</p>
+									<p>average</p>
+									<h1>{(this.state.totalIncorrect / this.state.totalTests).toFixed(2)}</h1>
+									<p>per test</p>
 								</div>
 							}
 							{
-								this.state.totalTests > 0 &&
+								this.state.incorrectAnswers.length > 0 &&
 								<div className="stat-row stat-row--inline">
-									<h1>{(this.state.totalIncorrect / this.state.totalTests).toFixed(2)}</h1>
-									<p>mistakes per test on average</p>
+									<h1>{this.state.incorrectAnswers[0].term}</h1>
+									<p>meaning</p>
+									<h1>{this.state.incorrectAnswers[0].definition}</h1>
+									<p>is the most common</p>
 								</div>
 							}
 						</div>

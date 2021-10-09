@@ -82,7 +82,7 @@ main .button {
 	display: none;
 }
 
-@media screen and (max-width: 660px) {
+@media screen and (max-width: 700px) {
 	.button.button--hide-text-mobile {
 		background: none;
 		padding: 10px;

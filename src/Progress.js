@@ -270,9 +270,11 @@ export default withRouter(class Progress extends React.Component {
 	}
 
 	handleAnswerInput = (event) => {
-		this.setState({
-			answerInput: event.target.value,
-		});
+		if (this.state.canProceed) {
+			this.setState({
+				answerInput: event.target.value,
+			});
+		}
 	}
 
 	showNextItem = () => {
