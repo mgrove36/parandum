@@ -1,9 +1,11 @@
 import React, { Component } from 'react';
 import { withRouter, Link } from "react-router-dom";
-import { HomeRounded as HomeRoundedIcon, EditRounded as EditRoundedIcon, ArrowForwardRounded as ArrowForwardRoundedIcon, DeleteRounded as DeleteRoundedIcon } from "@material-ui/icons";
+import { TimelineRounded as TimelineRoundedIcon, HomeRounded as HomeRoundedIcon, EditRounded as EditRoundedIcon, ArrowForwardRounded as ArrowForwardRoundedIcon, DeleteRounded as DeleteRoundedIcon } from "@material-ui/icons";
 import NavBar from "./NavBar";
 import Button from "./Button";
+import LinkButton from "./LinkButton";
 import Footer from "./Footer";
+import Error404 from "./Error404";
 
 import "./css/GroupPage.css";
 import "./css/ConfirmationDialog.css";
@@ -55,70 +57,91 @@ export default withRouter(class GroupPage extends Component {
 		if (this.isMounted) super.setState(state, callback);
 	}
 
-	componentDidMount() {
-		this.state.db
-			.collection("users")
-			.doc(this.state.user.uid)
-			.collection("groups")
-			.doc(this.props.match.params.groupId)
-			.get()
-			.then((userGroupDoc) => {
-				this.state.db
-					.collection("groups")
-					.doc(this.props.match.params.groupId)
-					.get()
-					.then(async (groupDoc) => {
-						document.title = `${groupDoc.data().display_name} | Parandum`;
+	async componentDidMount() {
+		let promises = [];
+		let newState = {
+			sets: {},
+		};
 
-						let newState = {
-							role: userGroupDoc.data().role,
-							groupName: groupDoc.data().display_name,
-							originalGroupName: groupDoc.data().display_name,
-							sets: {},
-							memberCount: Object.keys(groupDoc.data().users).length + (Object.keys(groupDoc.data().users).includes(this.state.user.uid) ? 0 : 1),
-							joinCode: userGroupDoc.data().role === "owner" ? groupDoc.data().join_code : "",
-						};
+		promises.push(
+			this.state.db
+				.collection("users")
+				.doc(this.state.user.uid)
+				.collection("groups")
+				.doc(this.props.match.params.groupId)
+				.get()
+				.then((userGroupDoc) => userGroupDoc.data())
+				.catch((error) => {
+					console.log(`Can't access user group: ${error}`);
+					return {
+						role: "none",
+					};
+				})
+		);
 
-						await Promise.all(groupDoc.data().sets.map((setId) => {
-							return this.state.db.collection("sets")
-								.doc(setId)
-								.get()
-								.then((doc) => {
-									newState.sets[setId] = {
-										displayName: doc.data().title,
-										loading: false,
-									};
-								});
-						}));
+		promises.push(
+			this.state.db
+				.collection("groups")
+				.doc(this.props.match.params.groupId)
+				.get()
+				.then(async (groupDoc) => {
+					await Promise.all(groupDoc.data().sets.map((setId) => {
+						return this.state.db.collection("sets")
+							.doc(setId)
+							.get()
+							.then((doc) => {
+								newState.sets[setId] = {
+									displayName: doc.data().title,
+									loading: false,
+								};
+							});
+					}));
 
-						if (newState.role === "owner") {
-							const getGroupMembers = () => {
-								return this.state.functions.getGroupMembers({ groupId: this.props.match.params.groupId })
-									.catch((error) => {
-										return {
-											data: {
-												owners: [
-													{
-														displayName: this.state.user.displayName,
-														uid: this.state.user.uid,
-													}
-												],
-												contributors: [],
-												members: [],
-											}
-										}
-									});
-							}
+					return groupDoc.data();
+				}).catch((error) => {
+					console.log(`Can't access group: ${error}`);
+					return {
+						display_name: "",
+						users: {},
+						join_code: "",
+					};
+				})
+		);
 
-							const groupUsers = await getGroupMembers();
 
-							newState.groupUsers = groupUsers.data;
+		if (newState.role === "owner") {
+			promises.push(
+				this.state.functions.getGroupMembers({ groupId: this.props.match.params.groupId })
+					.then((response) => {
+						newState.groupUsers = response.data;
+					})
+					.catch((error) => {
+						newState.groupUsers = {
+							owners: [
+								{
+									displayName: this.state.user.displayName,
+									uid: this.state.user.uid,
+								}
+							],
+							contributors: [],
+							members: [],
 						}
+					})
+			)
+		}
 
-						this.setState(newState);
-						this.props.page.load();
-					});
-			});
+		const completedPromises = await Promise.all(promises);
+
+		document.title = `${completedPromises[1].display_name} | Parandum`;
+
+		newState.role = completedPromises[0].role;
+		newState.groupName = completedPromises[1].display_name;
+		newState.originalGroupName = completedPromises[1].display_name;
+		newState.memberCount = Object.keys(completedPromises[1].users).length + (Object.keys(completedPromises[1].users).includes(this.state.user.uid) ? 0 : 1);
+		newState.joinCode = completedPromises[0].role === "owner" ? completedPromises[1].join_code : "";
+
+		this.setState(newState);
+		this.props.page.load();
 
 		this.props.logEvent("select_content", {
 			content_type: "group",
@@ -336,6 +359,9 @@ export default withRouter(class GroupPage extends Component {
 
 	render() {
 		return (
+			(this.state.role === "none") ?
+			<Error404 />
+			:
 			<div>
 				<NavBar items={this.state.navbarItems} />
 				<main>
@@ -375,12 +401,20 @@ export default withRouter(class GroupPage extends Component {
 								}
 								{
 									this.state.role === "owner" &&
-									<Button
-										onClick={this.showDeleteGroup}
-										icon={<DeleteRoundedIcon />}
-										className="button--round"
-										title="Delete group"
-									></Button>
+									<div className="button-container">
+										<LinkButton
+											to={`/groups/${this.props.match.params.groupId}/stats`}
+											icon={<TimelineRoundedIcon />}
+											className="button--round"
+											title="Group progress"
+										></LinkButton>
+										<Button
+											onClick={this.showDeleteGroup}
+											icon={<DeleteRoundedIcon />}
+											className="button--round"
+											title="Delete group"
+										></Button>
+									</div>
 								}
 							</div>
 							{

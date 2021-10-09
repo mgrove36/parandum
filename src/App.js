@@ -6,6 +6,7 @@ import LoggedInHome from "./LoggedInHome";
 import Login from "./Login";
 import SetPage from "./SetPage";
 import GroupPage from "./GroupPage";
+import GroupStats from "./GroupStats";
 import UserGroups from "./UserGroups";
 import Settings from "./Settings";
 import Progress from "./Progress";
@@ -299,6 +300,9 @@ class App extends React.Component {
                 <Route path="/groups/:groupId" exact>
                   <GroupPage db={db} functions={functions} user={this.state.user} logEvent={analytics.logEvent} page={this.page} />
                 </Route>
+                <Route path="/groups/:groupId/stats" exact>
+                  <GroupStats db={db} user={this.state.user} logEvent={analytics.logEvent} page={this.page} />
+                </Route>
                 <Route path="/settings">
                   <Settings db={db} user={this.state.user} sound={this.state.sound} coloredEdges={this.state.coloredEdges} handleColoredEdgesChange={this.handleColoredEdgesChange} handleSoundChange={this.handleSoundChange} theme={this.state.theme} handleThemeChange={this.handleThemeChange} themes={themes} logEvent={analytics.logEvent} page={this.page} />
                 </Route>
@@ -371,7 +375,6 @@ class App extends React.Component {
             ></Button>
           </div>
         </Router>
-        {/* <div className="overlay"><img className="page-loader" src={Loader} alt="Loading..." /></div> */}
         <Fade out={!this.state.pageLoading && this.state.userDataPresent} className="page-loader-container">
           <img className="page-loader" src={Loader} alt="Loading..." />
         </Fade>
