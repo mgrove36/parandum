@@ -1,11 +1,13 @@
 import React, { Component } from 'react';
-import { GroupRounded as GroupRoundedIcon, HomeRounded as HomeRoundedIcon } from "@material-ui/icons";
+import { ArrowDropDownRounded as ArrowDropDownRoundedIcon, GroupRounded as GroupRoundedIcon, HomeRounded as HomeRoundedIcon } from "@material-ui/icons";
 import { withRouter } from 'react-router-dom';
 import NavBar from "./NavBar";
 import Footer from "./Footer";
 import Error404 from "./Error404";
 import "./css/History.css";
 import "./css/MistakesHistory.css";
+
+import Collapsible from "react-collapsible";
 
 export default withRouter(class GroupStats extends Component {
 	constructor(props) {
@@ -178,46 +180,60 @@ export default withRouter(class GroupStats extends Component {
 									<React.Fragment key={index}>
 										<div>
 											<h2>{vocabItem.term}</h2>
-											<p><b>{vocabItem.switchedCount} mistake{vocabItem.switchedCount !== 1 && "s"}{vocabItem.switchedCount > 0 && ":"}</b></p>
 											{
-												vocabItem.switchedCount > 0 &&
-												<div>
+												vocabItem.switchedCount > 0
+												?
+												<Collapsible transitionTime={300} trigger={<><b>{vocabItem.switchedCount} mistake{vocabItem.switchedCount !== 1 && "s"}</b><ArrowDropDownRoundedIcon /></>}>
 													{
-														vocabItem.answers.sort((a, b) => {
-															if (a.answer < b.answer) {
-																return -1;
+														vocabItem.switchedCount > 0 &&
+														<div>
+															{
+																vocabItem.answers.sort((a, b) => {
+																	if (a.answer < b.answer) {
+																		return -1;
+																	}
+																	if (a.answer > b.answer) {
+																		return 1;
+																	}
+																	return 0;
+																}).map((answerItem, index) => answerItem.switchLanguage && (
+																	<p key={index}>{answerItem.answer === "" ? <i>skipped</i> : answerItem.answer}</p>
+																))
 															}
-															if (a.answer > b.answer) {
-																return 1;
-															}
-															return 0;
-														}).map((answerItem, index) => answerItem.switchLanguage && (
-															<p key={index}>{answerItem.answer === "" ? <i>skipped</i> : answerItem.answer}</p>
-														))
+														</div>
 													}
-												</div>
+												</Collapsible>
+												:
+												<b>{vocabItem.switchedCount} mistake{vocabItem.switchedCount !== 1 && "s"}</b>
 											}
 										</div>
 										<div>
 											<h2>{vocabItem.definition}</h2>
-											<p><b>{vocabItem.count} mistake{vocabItem.count !== 1 && "s"}{vocabItem.count > 0 && ":"}</b></p>
 											{
-												vocabItem.count > 0 &&
-												<div>
+												vocabItem.count > 0
+												?
+												<Collapsible transitionTime={300} trigger={<><b>{vocabItem.count} mistake{vocabItem.count !== 1 && "s"}</b><ArrowDropDownRoundedIcon /></>}>
 													{
-														vocabItem.answers.sort((a, b) => {
-															if (a.answer < b.answer) {
-																return -1;
+														vocabItem.count > 0 &&
+														<div>
+															{
+																vocabItem.answers.sort((a, b) => {
+																	if (a.answer < b.answer) {
+																		return -1;
+																	}
+																	if (a.answer > b.answer) {
+																		return 1;
+																	}
+																	return 0;
+																}).map((answerItem, index) => !answerItem.switchLanguage && (
+																	<p key={index}>{answerItem.answer === "" ? <i>skipped</i> : answerItem.answer}</p>
+																))
 															}
-															if (a.answer > b.answer) {
-																return 1;
-															}
-															return 0;
-														}).map((answerItem, index) => !answerItem.switchLanguage && (
-															<p key={index}>{answerItem.answer === "" ? <i>skipped</i> : answerItem.answer}</p>
-														))
+														</div>
 													}
-												</div>
+												</Collapsible>
+												:
+												<b>{vocabItem.switchedCount} mistake{vocabItem.switchedCount !== 1 && "s"}</b>
 											}
 										</div>
 									</React.Fragment>

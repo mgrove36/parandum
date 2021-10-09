@@ -15,3 +15,13 @@
 .mistakes-history-container > div:last-child {
 	margin-bottom: 0;
 }
+
+.mistakes-history-container .Collapsible__trigger {
+	cursor: pointer;
+	display: flex;
+	margin: 0;
+	flex-direction: row;
+	align-items: center;
+	justify-content: flex-start;
+	flex-wrap: wrap;
+}
