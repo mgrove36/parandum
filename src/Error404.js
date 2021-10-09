@@ -25,7 +25,7 @@ export default function PageNotFound(props) {
 	}, [page]);
 
 	return (
-		!page.loaded
+		(typeof page === "undefined" || !page.loaded)
 		?
 		<div>
 			<NavBar items={navbarItems}/>
