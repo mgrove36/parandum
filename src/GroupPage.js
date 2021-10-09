@@ -70,7 +70,30 @@ export default withRouter(class GroupPage extends Component {
 				.collection("groups")
 				.doc(this.props.match.params.groupId)
 				.get()
-				.then((userGroupDoc) => userGroupDoc.data())
+				.then((userGroupDoc) => {
+					if (userGroupDoc.data().role === "owner") {
+						return this.state.functions
+							.getGroupMembers({ groupId: this.props.match.params.groupId })
+							.then((response) => {
+								newState.groupUsers = response.data;
+								return userGroupDoc.data();
+							})
+							.catch((error) => {
+								newState.groupUsers = {
+									owners: [
+										{
+											displayName: this.state.user.displayName,
+											uid: this.state.user.uid,
+										}
+									],
+									contributors: [],
+									members: [],
+								};
+								return userGroupDoc.data();
+							});
+					}
+					return userGroupDoc.data();
+				})
 				.catch((error) => {
 					console.log(`Can't access user group: ${error}`);
 					return {
@@ -107,28 +130,6 @@ export default withRouter(class GroupPage extends Component {
 					};
 				})
 		);
-
-
-		if (newState.role === "owner") {
-			promises.push(
-				this.state.functions.getGroupMembers({ groupId: this.props.match.params.groupId })
-					.then((response) => {
-						newState.groupUsers = response.data;
-					})
-					.catch((error) => {
-						newState.groupUsers = {
-							owners: [
-								{
-									displayName: this.state.user.displayName,
-									uid: this.state.user.uid,
-								}
-							],
-							contributors: [],
-							members: [],
-						}
-					})
-			)
-		}
 
 		const completedPromises = await Promise.all(promises);
 
