@@ -24,6 +24,10 @@ nav {
 	justify-content: flex-end;
 }
 
+.navbar-items .button.button--round {
+	padding: 10px;
+}
+
 @media screen and (max-width: 700px) {
 	#banner-logo {
 		display: none;
