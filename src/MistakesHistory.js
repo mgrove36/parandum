@@ -58,27 +58,31 @@ export default class IncorrectHistory extends Component {
 				.then((querySnapshot) => {
 					let incorrectAnswers = [];
 					querySnapshot.docs.map((doc, index, array) => {
-						if (index === 0 || doc.data().term !== array[index - 1].data().term || doc.data().definition !== array[index - 1].data().definition) {
+						if (index === 0 || doc.data().term !== array[array.length - 1].data().term || doc.data().definition !== array[array.length - 1].data().definition) {
 							incorrectAnswers.push({
 								term: doc.data().term,
 								definition: doc.data().definition,
-								answers: [{
-									answer: doc.data().answer,
-									switchLanguage: doc.data().switch_language,
-								}],
-								count: doc.data().switch_language ? 0 : 1,
-								switchedCount: doc.data().switch_language ? 1 : 0,
+								switchedAnswers: {},
+								notSwitchedAnswers: {},
+								switchedCount: 0,
+								notSwitchedCount: 0,
 							});
-						} else {
-							incorrectAnswers[incorrectAnswers.length - 1].answers.push({
-								answer: doc.data().answer,
-								switchLanguage: doc.data().switch_language,
-							});
-							if (doc.data().switch_language) {
-								incorrectAnswers[incorrectAnswers.length - 1].switchedCount++;
+						}
+
+						if (doc.data().switch_language) {
+							if (Object.keys(incorrectAnswers[incorrectAnswers.length - 1].switchedAnswers).includes(doc.data().answer)) {
+								incorrectAnswers[incorrectAnswers.length - 1].switchedAnswers[doc.data().answer]++;
 							} else {
-								incorrectAnswers[incorrectAnswers.length - 1].count++;
+								incorrectAnswers[incorrectAnswers.length - 1].switchedAnswers[doc.data().answer] = 1;
 							}
+							incorrectAnswers[incorrectAnswers.length - 1].switchedCount++;
+						} else {
+							if (Object.keys(incorrectAnswers[incorrectAnswers.length - 1].notSwitchedAnswers).includes(doc.data().answer)) {
+								incorrectAnswers[incorrectAnswers.length - 1].notSwitchedAnswers[doc.data().answer]++;
+							} else {
+								incorrectAnswers[incorrectAnswers.length - 1].notSwitchedAnswers[doc.data().answer] = 1;
+							}
+							incorrectAnswers[incorrectAnswers.length - 1].notSwitchedCount++;
 						}
 						return true;
 					});
@@ -155,55 +159,65 @@ export default class IncorrectHistory extends Component {
 												?
 												<Collapsible transitionTime={300} trigger={<><b>{vocabItem.switchedCount} mistake{vocabItem.switchedCount !== 1 && "s"}</b><ArrowDropDownRoundedIcon /></>}>
 													{
-														vocabItem.switchedCount > 0 &&
 														<div>
 															{
-																vocabItem.answers.sort((a, b) => {
-																	if (a.answer < b.answer) {
+																Object.keys(vocabItem.switchedAnswers).sort((a, b) => {
+																	if (a < b) {
 																		return -1;
 																	}
-																	if (a.answer > b.answer) {
+																	if (a > b) {
 																		return 1;
 																	}
 																	return 0;
-																}).map((answerItem, index) => answerItem.switchLanguage && (
-																	<p key={index}>{answerItem.answer === "" ? <i>skipped</i> : answerItem.answer}</p>
-																))
+																}).map((answer, index) =>
+																	<p key={index}>
+																		{answer === "" ? <i>skipped</i> : answer}
+																		{
+																			vocabItem.switchedAnswers[answer] > 1 &&
+																			<i>{` (x${vocabItem.switchedAnswers[answer]})`}</i>
+																		}
+																	</p>
+																)
 															}
 														</div>
 													}
 												</Collapsible>
 												:
-												<b>{vocabItem.switchedCount} mistake{vocabItem.switchedCount !== 1 && "s"}</b>
+												<b>0 mistakes</b>
 											}
 										</div>
 										<div>
 											<h2>{vocabItem.definition}</h2>
 											{
-												vocabItem.count > 0
+												vocabItem.notSwitchedCount > 0
 												?
-												<Collapsible transitionTime={300} trigger={<><b>{vocabItem.count} mistake{vocabItem.count !== 1 && "s"}</b><ArrowDropDownRoundedIcon /></>}>
+												<Collapsible transitionTime={300} trigger={<><b>{vocabItem.notSwitchedCount} mistake{vocabItem.notSwitchedCount !== 1 && "s"}</b><ArrowDropDownRoundedIcon /></>}>
 													{
-														vocabItem.count > 0 &&
 														<div>
 															{
-																vocabItem.answers.sort((a, b) => {
-																	if (a.answer < b.answer) {
+																Object.keys(vocabItem.notSwitchedAnswers).sort((a, b) => {
+																	if (a < b) {
 																		return -1;
 																	}
-																	if (a.answer > b.answer) {
+																	if (a > b) {
 																		return 1;
 																	}
 																	return 0;
-																}).map((answerItem, index) => !answerItem.switchLanguage && (
-																	<p key={index}>{answerItem.answer === "" ? <i>skipped</i> : answerItem.answer}</p>
-																))
+																}).map((answer, index) =>
+																	<p key={index}>
+																		{answer === "" ? <i>skipped</i> : answer}
+																		{
+																			vocabItem.notSwitchedAnswers[answer] > 1 &&
+																			<i>{` (x${vocabItem.notSwitchedAnswers[answer]})`}</i>
+																		}
+																	</p>
+																)
 															}
 														</div>
 													}
 												</Collapsible>
 												:
-												<b>{vocabItem.switchedCount} mistake{vocabItem.switchedCount !== 1 && "s"}</b>
+												<b>0 mistakes</b>
 											}
 										</div>
 									</React.Fragment>
