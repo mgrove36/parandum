@@ -66,8 +66,7 @@ exports.userDeleted = functions.auth.user().onDelete((user) => {
  * NOTE: can't be unit tested
  */
 exports.getGroupMembers = functions.https.onCall((data, context) => {
-	const uid = context.auth.uid;
-	// const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
+	const uid = LOCAL_TESTING ? "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3" : context.auth.uid;
 
 	if (context.app == undefined && !LOCAL_TESTING) {
 		throw new functions.https.HttpsError(
@@ -148,9 +147,7 @@ exports.getGroupMembers = functions.https.onCall((data, context) => {
  * @return {string} The ID of the created progress document.
 */
 exports.createProgress = functions.https.onCall((data, context) => {
-	const uid = context.auth.uid;
-	// const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
-
+	const uid = LOCAL_TESTING ? "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3" : context.auth.uid;
 	if (context.app == undefined && !LOCAL_TESTING) {
 		throw new functions.https.HttpsError(
 			"failed-precondition",
@@ -214,7 +211,7 @@ exports.createProgress = functions.https.onCall((data, context) => {
 
 		let setTitle;
 		if (allSetTitles.length > 1) {
-			setTitle = allSetTitles.slice(0, -1).join(", ") + " & " + allSetTitles.slice(-1);
+			setTitle = allSetTitles.sort().slice(0, -1).join(", ") + " & " + allSetTitles.sort().slice(-1);
 		} else {
 			setTitle = allSetTitles[0];
 		}
@@ -407,8 +404,7 @@ function cleanseVocabString(item) {
  * @return {boolean} typo Whether the inputted answer is likely to include a typo (using Levenshtein distance or by detecting a null answer).
  */
 exports.processAnswer = functions.https.onCall((data, context) => {
-	const uid = context.auth.uid;
-	// const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
+	const uid = LOCAL_TESTING ? "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3" : context.auth.uid;
 
 	if (context.app == undefined && !LOCAL_TESTING) {
 		throw new functions.https.HttpsError(
@@ -434,227 +430,239 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 				throw new functions.https.HttpsError("permission-denied", "Progress already completed")
 			}
 
-				const currentIndex = progressDoc.data().progress;
-				const currentVocab = progressDoc.data().questions[currentIndex];
+			const currentIndex = progressDoc.data().progress;
+			const currentVocab = progressDoc.data().questions[currentIndex];
 
-				termDocId = progressDocId
-						.collection("terms").doc(currentVocab);
-				definitionDocId = progressDocId
-						.collection("definitions").doc(currentVocab);
+			termDocId = progressDocId
+				.collection("terms").doc(currentVocab);
+			definitionDocId = progressDocId
+				.collection("definitions").doc(currentVocab);
 
-				return transaction.get(progressDoc.data().switch_language ? termDocId : definitionDocId).then((answerDoc) => {
-					const docData = progressDoc.data();
-					const mode = docData.mode;
-					const correctAnswers = answerDoc.data().item;
-					const splitCorrectAnswers = correctAnswers.split("/");
-					const cleansedSplitCorrectAnswers = cleanseVocabString(correctAnswers).split("/");
-					const cleansedInputAnswer = cleanseVocabString(inputAnswer);
+			return transaction.get(progressDoc.data().switch_language ? termDocId : definitionDocId).then((answerDoc) => {
+				const docData = progressDoc.data();
+				const mode = docData.mode;
+				const correctAnswers = answerDoc.data().item;
+				const splitCorrectAnswers = correctAnswers.split("/");
+				const cleansedSplitCorrectAnswers = cleanseVocabString(correctAnswers).split("/");
+				const cleansedInputAnswer = cleanseVocabString(inputAnswer);
 
-					let isCorrectAnswer = false;
-					let correctAnswerIndex;
+				let isCorrectAnswer = false;
+				let correctAnswerIndex;
 
-					cleansedSplitCorrectAnswers.forEach((answer, index, array) => {
-						if (answer === cleansedInputAnswer) {
-							isCorrectAnswer = true;
-							correctAnswerIndex = index;
-							array.length = index + 1;
-						}
-					});
+				cleansedSplitCorrectAnswers.forEach((answer, index, array) => {
+					if (answer === cleansedInputAnswer) {
+						isCorrectAnswer = true;
+						correctAnswerIndex = index;
+						array.length = index + 1;
+					}
+				});
 
-					if (!isCorrectAnswer && !progressDoc.data().typo) {
-						if (cleansedInputAnswer === "") {
-							docData.typo = true;
-							transaction.set(progressDocId, docData);
-							return {
-								typo: true,
-							};
-						}
-						let typo = false;
-						cleansedSplitCorrectAnswers.forEach((answer, index, array) => {
-							const levDistance = levenshtein(answer, cleansedInputAnswer);
-							if (levDistance <= 1 ||
-								answer.length > 5 && levDistance <= 3 ||
-								cleansedInputAnswer.includes(answer)) {
-									docData.typo = true;
-									transaction.set(progressDocId, docData);
-									typo = true;
-									array.length = index + 1;
-							}
-						});
-						if (typo) return {
+				if (!isCorrectAnswer && !progressDoc.data().typo) {
+					if (cleansedInputAnswer === "") {
+						docData.typo = true;
+						transaction.set(progressDocId, docData);
+						return {
 							typo: true,
 						};
 					}
-
-					let prevCorrect = progressDoc.data().current_correct;
-					
-					var returnData = {
-						mode: mode,
-						correct: isCorrectAnswer,
-						correctAnswers: splitCorrectAnswers,
-						currentVocabId: currentVocab,
-						moreAnswers: false,
-						nextPrompt: null,
-						progress: docData.progress,
-						totalQuestions: docData.questions.length,
-						totalCorrect: docData.correct.length,
-						totalIncorrect: docData.incorrect.length,
-						typo: false,
-					}
-
-					docData.typo = false;
-
-					var userGroups, incorrectAnswerDoc, prompt;
-
-					if (isCorrectAnswer) {
-						if (mode === "lives") {
-							returnData.lives = docData.lives;
-						}
-
-						if (!prevCorrect) {
-							docData.current_correct = [splitCorrectAnswers[correctAnswerIndex]];
-						} else if (!prevCorrect.includes(splitCorrectAnswers[correctAnswerIndex])) {
-							docData.current_correct.push(splitCorrectAnswers[correctAnswerIndex]);
-						}
-						
-						if (docData.current_correct.length === splitCorrectAnswers.length) {
-							docData.progress++;
-							returnData.progress = docData.progress;
-							docData.current_correct = [];
-							docData.correct.push(currentVocab);
-							returnData.totalCorrect = docData.correct.length;
-						} else {
-							returnData.moreAnswers = true;
-							returnData.correctAnswers = docData.current_correct;
-						}
-					} else {
-						if (mode === "lives") {
-							returnData.lives = --docData.lives;
-						}
-
-						returnData.progress = ++docData.progress;
-						docData.incorrect.push(currentVocab);
-						docData.questions.push(currentVocab);
-						const doneQuestions = docData.questions.slice(0, docData.progress);
-						const notDoneQuestions = docData.questions.slice(docData.progress);
-						docData.current_correct = [];
-						docData.questions = doneQuestions.concat(shuffleArray(notDoneQuestions));
-						returnData.totalQuestions = docData.questions.length;
-						returnData.totalIncorrect = docData.incorrect.length;
-
-						userGroups = transaction.get(db.collection("users").doc(uid).collection("groups")).then((querySnapshot) => querySnapshot.docs.map((doc) => doc.id));
-						incorrectAnswerDoc = db.collection("incorrect_answers").doc();
-						prompt = transaction.get(progressDoc.data().switch_language ? definitionDocId : termDocId).then((doc) => doc.data().item);
-					}
-
-
-					if (!returnData.moreAnswers) {
-						if (docData.progress >= docData.questions.length || (mode === "lives" && docData.lives <= 0)) {
-							const duration = Date.now() - docData.start_time;
-							docData.duration = duration;
-							returnData.duration = duration;
-							returnData.incorrectAnswers = docData.incorrect;
-	
-							if (mode === "lives" && docData.lives <= 0) docData.questions.length = returnData.totalQuestions = docData.progress;
-							
-							const completedProgressDocId = db.collection("completed_progress").doc(progressDoc.data().setIds.sort().join("__"));
-							return transaction.get(completedProgressDocId).then(async (completedProgressDoc) => {
-								if (!isCorrectAnswer) transaction.set(incorrectAnswerDoc, {
-									uid: uid,
-									groups: await userGroups,
-									term: progressDoc.data().switch_language ? correctAnswers : await prompt,
-									definition: progressDoc.data().switch_language ? await prompt : correctAnswers,
-									answer: inputAnswer.trim(),
-									switch_language: progressDoc.data().switch_language,
-								});
-
-								const totalPercentage = completedProgressDoc.data().total_percentage + (docData.correct.length / docData.questions.length * 100);
-								const attempts = completedProgressDoc.data().attempts + 1;
-								transaction.set(completedProgressDocId, {
-									attempts: attempts,
-									total_percentage: totalPercentage,
-								setIds: progressDoc.data().setIds,
-								});
-								returnData.averagePercentage = (totalPercentage / attempts).toFixed(2);
+					let typo = false;
+					cleansedSplitCorrectAnswers.forEach((answer, index, array) => {
+						const levDistance = levenshtein(answer, cleansedInputAnswer);
+						if (levDistance <= 1 ||
+							answer.length > 5 && levDistance <= 3 ||
+							cleansedInputAnswer.includes(answer)) {
+								docData.typo = true;
 								transaction.set(progressDocId, docData);
-								return returnData;
-							}).catch(async (error) => {
-								if (!isCorrectAnswer) transaction.set(incorrectAnswerDoc, {
-									uid: uid,
-									groups: await userGroups,
-									term: progressDoc.data().switch_language ? correctAnswers : await prompt,
-									definition: progressDoc.data().switch_language ? await prompt : correctAnswers,
-									answer: inputAnswer.trim(),
-									switch_language: progressDoc.data().switch_language,
-								});
+								typo = true;
+								array.length = index + 1;
+						}
+					});
+					if (typo) return {
+						typo: true,
+					};
+				}
 
-								const totalPercentage = docData.correct.length / docData.questions.length * 100;
-								transaction.set(completedProgressDocId, {
-									attempts: 1,
-									total_percentage: totalPercentage,
-								});
-								returnData.averagePercentage = totalPercentage.toFixed(2);
+				let prevCorrect = progressDoc.data().current_correct;
+				
+				var returnData = {
+					mode: mode,
+					correct: isCorrectAnswer,
+					correctAnswers: splitCorrectAnswers,
+					currentVocabId: currentVocab,
+					moreAnswers: false,
+					nextPrompt: null,
+					progress: docData.progress,
+					totalQuestions: docData.questions.length,
+					totalCorrect: docData.correct.length,
+					totalIncorrect: docData.incorrect.length,
+					typo: false,
+				}
+
+				docData.typo = false;
+
+				var userGroups, incorrectAnswerDoc, prompt;
+
+				if (isCorrectAnswer) {
+					if (mode === "lives") {
+						returnData.lives = docData.lives;
+					}
+
+					if (!prevCorrect) {
+						docData.current_correct = [splitCorrectAnswers[correctAnswerIndex]];
+					} else if (!prevCorrect.includes(splitCorrectAnswers[correctAnswerIndex])) {
+						docData.current_correct.push(splitCorrectAnswers[correctAnswerIndex]);
+					}
+					
+					if (docData.current_correct.length === splitCorrectAnswers.length) {
+						docData.progress++;
+						returnData.progress = docData.progress;
+						docData.current_correct = [];
+						docData.correct.push(currentVocab);
+						returnData.totalCorrect = docData.correct.length;
+					} else {
+						returnData.moreAnswers = true;
+						returnData.correctAnswers = docData.current_correct;
+					}
+				} else {
+					if (mode === "lives") {
+						returnData.lives = --docData.lives;
+					}
+
+					returnData.progress = ++docData.progress;
+					docData.incorrect.push(currentVocab);
+					docData.questions.push(currentVocab);
+					const doneQuestions = docData.questions.slice(0, docData.progress);
+					const notDoneQuestions = docData.questions.slice(docData.progress);
+					docData.current_correct = [];
+					docData.questions = doneQuestions.concat(shuffleArray(notDoneQuestions));
+					returnData.totalQuestions = docData.questions.length;
+					returnData.totalIncorrect = docData.incorrect.length;
+
+					userGroups = transaction.get(db.collection("users").doc(uid).collection("groups")).then((querySnapshot) => querySnapshot.docs.map((doc) => doc.id));
+					incorrectAnswerDoc = db.collection("incorrect_answers").doc();
+					prompt = transaction.get(progressDoc.data().switch_language ? definitionDocId : termDocId).then((doc) => doc.data().item);
+				}
+
+				if (!returnData.moreAnswers) {
+					if (docData.progress >= docData.questions.length || (mode === "lives" && docData.lives <= 0)) {
+						const duration = Date.now() - docData.start_time;
+						docData.duration = duration;
+						returnData.duration = duration;
+						returnData.incorrectAnswers = docData.incorrect;
+
+						if (mode === "lives" && docData.lives <= 0) docData.questions.length = returnData.totalQuestions = docData.progress;
+						
+						const completedProgressDocId = db.collection("completed_progress").doc(progressDoc.data().setIds.sort().join("__"));
+						return transaction.get(completedProgressDocId).then(async (completedProgressDoc) => {
+							if (!completedProgressDoc.exists) throw new Error("Completed progress doc doesn't exist");
+
+							if (!isCorrectAnswer) transaction.set(incorrectAnswerDoc, {
+								uid: uid,
+								groups: await userGroups,
+								term: progressDoc.data().switch_language ? correctAnswers : await prompt,
+								definition: progressDoc.data().switch_language ? await prompt : correctAnswers,
+								answer: inputAnswer.trim(),
+								switch_language: progressDoc.data().switch_language,
+								setIds: progressDoc.data().setIds,
+							});
+
+							const totalPercentage = completedProgressDoc.data().total_percentage + (docData.correct.length / docData.questions.length * 100);
+							const attempts = completedProgressDoc.data().attempts + 1;
+							transaction.set(completedProgressDocId, {
+								attempts: attempts,
+								total_percentage: totalPercentage,
+								set_title: completedProgressDoc.data().set_title,
+							});
+							returnData.averagePercentage = (totalPercentage / attempts).toFixed(2);
 							transaction.set(progressDocId, docData);
 							return returnData;
+						}).catch(async (error) => {
+							const allSetTitles = await Promise.all(progressDoc.data().setIds.map((setId) =>
+								transaction.get(db.collection("sets")
+									.doc(setId))
+									.then((setDoc) => setDoc.data().title)
+									.catch((error) => ""))
+							);
+							const setTitle = allSetTitles.slice(0, -1).join(", ") + " & " + allSetTitles.sort().slice(-1);
+							if (!isCorrectAnswer) transaction.set(incorrectAnswerDoc, {
+								uid: uid,
+								groups: await userGroups,
+								term: progressDoc.data().switch_language ? correctAnswers : await prompt,
+								definition: progressDoc.data().switch_language ? await prompt : correctAnswers,
+								answer: inputAnswer.trim(),
+								switch_language: progressDoc.data().switch_language,
+								setIds: progressDoc.data().setIds,
+							});
+
+							const totalPercentage = docData.correct.length / docData.questions.length * 100;
+							transaction.set(completedProgressDocId, {
+								attempts: 1,
+								total_percentage: totalPercentage,
+								set_title: setTitle,
+							});
+							returnData.averagePercentage = totalPercentage.toFixed(2);
+							transaction.set(progressDocId, docData);
+							return returnData;
+						});
+					} else {
+						const nextVocabId = docData.questions[docData.progress];
+						const nextSetOwner = nextVocabId.split("__")[0];
+
+						if (docData.switch_language) {
+							const promptDocId = progressDocId
+								.collection("definitions").doc(nextVocabId);
+							const sound = null;
+
+							return transaction.get(promptDocId).then(async (promptDoc) => {
+								if (!isCorrectAnswer) transaction.set(incorrectAnswerDoc, {
+									uid: uid,
+									groups: await userGroups,
+									term: progressDoc.data().switch_language ? correctAnswers : await prompt,
+									definition: progressDoc.data().switch_language ? await prompt : correctAnswers,
+									answer: inputAnswer.trim(),
+									switch_language: progressDoc.data().switch_language,
+									setIds: progressDoc.data().setIds,
+								});
+
+								returnData.nextPrompt = {
+									item: promptDoc.data().item,
+									sound: sound,
+									set_owner: nextSetOwner,
+								}
+								transaction.set(progressDocId, docData);
+								return returnData;
 							});
 						} else {
-							const nextVocabId = docData.questions[docData.progress];
-							const nextSetOwner = nextVocabId.split("__")[0];
-	
-							if (docData.switch_language) {
-								const promptDocId = progressDocId
-									.collection("definitions").doc(nextVocabId);
-								const sound = null;
-	
-								return transaction.get(promptDocId).then(async (promptDoc) => {
-									if (!isCorrectAnswer) transaction.set(incorrectAnswerDoc, {
-										uid: uid,
-										groups: await userGroups,
-										term: progressDoc.data().switch_language ? correctAnswers : await prompt,
-										definition: progressDoc.data().switch_language ? await prompt : correctAnswers,
-										answer: inputAnswer.trim(),
-										switch_language: progressDoc.data().switch_language,
-									});
+							const promptDocId = progressDocId
+								.collection("terms").doc(nextVocabId);
 
-									returnData.nextPrompt = {
-										item: promptDoc.data().item,
-										sound: sound,
-										set_owner: nextSetOwner,
-									}
-									transaction.set(progressDocId, docData);
-									return returnData;
+							return transaction.get(promptDocId).then(async (promptDoc) => {
+								if (!isCorrectAnswer) transaction.set(incorrectAnswerDoc, {
+									uid: uid,
+									groups: await userGroups,
+									term: progressDoc.data().switch_language ? correctAnswers : await prompt,
+									definition: progressDoc.data().switch_language ? await prompt : correctAnswers,
+									answer: inputAnswer.trim(),
+									switch_language: progressDoc.data().switch_language,
+									setIds: progressDoc.data().setIds,
 								});
-							} else {
-								const promptDocId = progressDocId
-									.collection("terms").doc(nextVocabId);
-	
-								return transaction.get(promptDocId).then(async (promptDoc) => {
-									if (!isCorrectAnswer) transaction.set(incorrectAnswerDoc, {
-										uid: uid,
-										groups: await userGroups,
-										term: progressDoc.data().switch_language ? correctAnswers : await prompt,
-										definition: progressDoc.data().switch_language ? await prompt : correctAnswers,
-										answer: inputAnswer.trim(),
-										switch_language: progressDoc.data().switch_language,
-									});
 
-									const sound = promptDoc.data().sound;
-									returnData.nextPrompt = {
-										item: promptDoc.data().item,
-										sound: sound,
-										set_owner: nextSetOwner,
-									}
-									transaction.set(progressDocId, docData);
-									return returnData;
-								});
-							}
+								const sound = promptDoc.data().sound;
+								returnData.nextPrompt = {
+									item: promptDoc.data().item,
+									sound: sound,
+									set_owner: nextSetOwner,
+								}
+								transaction.set(progressDocId, docData);
+								return returnData;
+							});
 						}
-					} else {
-						transaction.set(progressDocId, docData);
-						return returnData;
 					}
-				});
-			}
+				} else {
+					transaction.set(progressDocId, docData);
+					return returnData;
+				}
+			});
 		});
 	});
 });
@@ -668,10 +676,8 @@ exports.processAnswer = functions.https.onCall((data, context) => {
  * @return {promise} The promise from setting the target user's admin custom auth claim.
 */
 exports.setAdmin = functions.https.onCall(async (data, context) => {
-	const uid = context.auth.uid;
-	const isAdmin = context.auth.tokens.admin;
-	// const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";//nobVRmshkZNkrPbwgmPqNYrk55v2
-	// const isAdmin = true;
+	const uid = LOCAL_TESTING ? "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3" : context.auth.uid;
+	const isAdmin = LOCAL_TESTING ? true : context.auth.token.admin;
 
 	if (context.app == undefined && !LOCAL_TESTING) {
 		throw new functions.https.HttpsError(
@@ -703,12 +709,9 @@ exports.setAdmin = functions.https.onCall(async (data, context) => {
  * @return {boolean} true, to show the function has succeeded.
 */
 exports.addSetToGroup = functions.https.onCall((data, context) => {
-	const uid = context.auth.uid;
-	const isAdmin = context.auth.token.admin;
-	const auth = context.auth;
-	// const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
-	// const isAdmin = false;
-	// const auth = { uid: uid };
+	const uid = LOCAL_TESTING ? "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3" : context.auth.uid;
+	const isAdmin = LOCAL_TESTING ? false : context.auth.token.admin;
+	const auth = LOCAL_TESTING ? { uid: uid } : context.auth;
 
 	if (context.app == undefined && !LOCAL_TESTING) {
 		throw new functions.https.HttpsError(
@@ -775,12 +778,9 @@ exports.addSetToGroup = functions.https.onCall((data, context) => {
  * @return {promise} The promise from setting the group's updated data.
 */
 exports.removeSetFromGroup = functions.https.onCall((data, context) => {
-	const uid = context.auth.uid;
-	const isAdmin = context.auth.token.admin;
-	const auth = context.auth;
-	// const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
-	// const isAdmin = false;
-	// const auth = { uid: uid };
+	const uid = LOCAL_TESTING ? "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3" : context.auth.uid;
+	const isAdmin = LOCAL_TESTING ? false : context.auth.token.admin;
+	const auth = LOCAL_TESTING ? { uid: uid } : context.auth;
 
 	if (context.app == undefined && !LOCAL_TESTING) {
 		throw new functions.https.HttpsError(
@@ -905,8 +905,7 @@ async function generateJoinCode() {
  * @return {string} The ID of the new group's document in the groups collection.
 */
 exports.createGroup = functions.https.onCall(async (data, context) => {
-	const uid = context.auth.uid;
-	// const uid = "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3";
+	const uid = LOCAL_TESTING ? "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3" : context.auth.uid;
 
 	if (context.app == undefined && !LOCAL_TESTING) {
 		throw new functions.https.HttpsError(

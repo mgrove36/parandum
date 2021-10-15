@@ -20,12 +20,20 @@ const setTwo = "set_02";
 const vocabOne = "vocab_01";
 const termOne = "term_01";
 const definitionOne = "definition_01";
+const definitionOneTypoOne = "ddefinition_01";
+const definitionOneTypoTwo = "dinition_01";
+const definitionOneTypoThree = "dinition_02";
+const definitionOneTypoFour = "dinition_";
+const shortDefinitionOne = "d1";
+const shortDefinitionOneTypoOne = "f1";
+const shortDefinitionOneTypoTwo = "f2";
 const soundOne = true;
 const vocabTwo = "vocab_02";
 const termTwo = "term_02";
 const definitionTwo = "definition_02";
 const soundTwo = true;
 const groupOne = "group_01";
+const groupTwo = "group_02";
 const doubleDefinitionOne = "definition/01";
 const doubleDefinitionTwo = "definition/02";
 const punctuationDefinitionOne = "definition .,()-_'\"01";
@@ -35,8 +43,43 @@ const vocabThree = "vocab_03";
 const vocabFour = "vocab_04";
 const progressVocabThree = userOne + "__" + vocabThree;
 const progressVocabFour = userOne + "__" + vocabFour;
+const incorrectAnswer = "incorrect";
 
-describe("Parandum Cloud Functions", () => {
+async function deleteCollection(db, collectionPath, batchSize) {
+	const collectionRef = db.collection(collectionPath);
+	const query = collectionRef.orderBy('__name__').limit(batchSize);
+
+	return new Promise((resolve, reject) => {
+		deleteQueryBatch(db, query, resolve).catch(reject);
+	});
+}
+
+async function deleteQueryBatch(db, query, resolve) {
+	const snapshot = await query.get();
+
+	const batchSize = snapshot.size;
+	if (batchSize === 0) {
+		// When there are no documents left, we are done
+		resolve();
+		return;
+	}
+
+	// Delete documents in a batch
+	const batch = db.batch();
+	snapshot.docs.forEach((doc) => {
+		batch.delete(doc.ref);
+	});
+	await batch.commit();
+
+	// Recurse on the next process tick, to avoid
+	// exploding the stack.
+	process.nextTick(() => {
+		deleteQueryBatch(db, query, resolve);
+	});
+}
+
+describe("Parandum Cloud Functions", function () {
+	this.timeout(5000);
 
 	it("Can write & delete to/from online database", async () => {
 		firebase.assertSucceeds(
@@ -254,7 +297,7 @@ describe("Parandum Cloud Functions", () => {
 		const setDataTwo = {
 			"owner": userTwo,
 			"public": true,
-			"title": setOne,
+			"title": setTwo,
 		};
 		const vocabDataOne = {
 			"term": termOne,
@@ -289,7 +332,7 @@ describe("Parandum Cloud Functions", () => {
 		const setDataTwo = {
 			"owner": userTwo,
 			"public": false,
-			"title": setOne,
+			"title": setTwo,
 		};
 		const vocabDataOne = {
 			"term": termOne,
@@ -337,6 +380,7 @@ describe("Parandum Cloud Functions", () => {
 			uid: userOne,
 			mode: "questions",
 			typo: false,
+			setIds: [setOne],
 		};
 		const termDataOne = {
 			"item": termOne,
@@ -370,14 +414,18 @@ describe("Parandum Cloud Functions", () => {
 
 		const firstTermAnswerRequestData = {
 			progressId: progressId,
-			answer: "definition_01",
+			answer: definitionOne,
 		};
 		const secondTermAnswerRequestData = {
 			progressId: progressId,
-			answer: "definition_02",
+			answer: definitionTwo,
+		};
+		const incorrectAnswerRequestData = {
+			progressId: progressId,
+			answer: incorrectAnswer,
 		};
 
-		const firstReturn = await processAnswer(secondTermAnswerRequestData);
+		const firstReturn = await processAnswer(incorrectAnswerRequestData);
 
 		hamjest.assertThat(firstReturn, hamjest.anyOf(
 			hamjest.is({
@@ -436,6 +484,7 @@ describe("Parandum Cloud Functions", () => {
 				uid: userOne,
 				mode: "questions",
 				typo: false,
+				setIds: [setOne],
 			}),
 			hamjest.is({
 				correct: [],
@@ -454,10 +503,11 @@ describe("Parandum Cloud Functions", () => {
 				uid: userOne,
 				mode: "questions",
 				typo: false,
+				setIds: [setOne],
 			})
 		));
 
-		if (firstReturn.nextPrompt.item === "term_01") {
+		if (firstReturn.nextPrompt.item === termOne) {
 			await processAnswer(firstTermAnswerRequestData);
 			await processAnswer(secondTermAnswerRequestData);
 		} else {
@@ -505,6 +555,7 @@ describe("Parandum Cloud Functions", () => {
 			uid: userOne,
 			mode: "questions",
 			typo: false,
+			setIds: [setOne],
 		};
 		const termDataOne = {
 			"item": termOne,
@@ -526,11 +577,11 @@ describe("Parandum Cloud Functions", () => {
 
 		const correctAnswerRequestData = {
 			progressId: progressId,
-			answer: "definition_01",
+			answer: definitionOne,
 		};
 		const incorrectAnswerRequestData = {
 			progressId: progressId,
-			answer: "definition_02",
+			answer: incorrectAnswer,
 		};
 
 		const returnAfterIncorrect = await processAnswer(incorrectAnswerRequestData);
@@ -588,6 +639,7 @@ describe("Parandum Cloud Functions", () => {
 			uid: userOne,
 			mode: "questions",
 			typo: false,
+			setIds: [setOne],
 		};
 		const termDataOne = {
 			"item": termOne,
@@ -635,6 +687,10 @@ describe("Parandum Cloud Functions", () => {
 			progressId: progressId,
 			answer: "02",
 		};
+		const incorrectAnswerRequestData = {
+			progressId: progressId,
+			answer: incorrectAnswer,
+		};
 
 		const returnAfterCorrect = await processAnswer(firstTermAnswerOneRequestData);
 		 
@@ -670,9 +726,10 @@ describe("Parandum Cloud Functions", () => {
 			uid: userOne,
 			mode: "questions",
 			typo: false,
+			setIds: [setOne],
 		});
 
-		const returnAfterIncorrect = await processAnswer(secondTermAnswerTwoRequestData);
+		const returnAfterIncorrect = await processAnswer(incorrectAnswerRequestData);
 
 		const snapAfterIncorrectData = await progressDocId.get().then((doc) => doc.data());
 
@@ -694,6 +751,7 @@ describe("Parandum Cloud Functions", () => {
 				uid: userOne,
 				mode: "questions",
 				typo: false,
+				setIds: [setOne],
 			}),
 			hamjest.is({
 				correct: [],
@@ -712,10 +770,11 @@ describe("Parandum Cloud Functions", () => {
 				uid: userOne,
 				mode: "questions",
 				typo: false,
+				setIds: [setOne],
 			})
 		));
 
-		if (returnAfterIncorrect.nextPrompt.item === "term_01") {
+		if (returnAfterIncorrect.nextPrompt.item === termOne) {
 			await processAnswer(firstTermAnswerOneRequestData);
 			await processAnswer(firstTermAnswerTwoRequestData);
 			await processAnswer(secondTermAnswerOneRequestData);
@@ -747,7 +806,7 @@ describe("Parandum Cloud Functions", () => {
 		assert.strictEqual(snapAfterCorrectData.uid, userOne);
 		assert.strictEqual(snapAfterCorrectData.mode, "questions");
 		assert.strictEqual(snapAfterCorrectData.typo, false);
-	}).timeout(5000);
+	});
 
 	it("processAnswer ignores punctuation", async () => {
 		const processAnswer = test.wrap(cloudFunctions.processAnswer);
@@ -768,6 +827,7 @@ describe("Parandum Cloud Functions", () => {
 			uid: userOne,
 			mode: "questions",
 			typo: false,
+			setIds: [setOne],
 		};
 		const termDataOne = {
 			"item": termOne,
@@ -807,6 +867,889 @@ describe("Parandum Cloud Functions", () => {
 		const returnedData = await processAnswer(requestData);
 
 		assert.equal(returnedData.correct, true);
+	});
+
+	it("processAnswer detects typo correctly for slightly wrong short answer - Levenshtein distance 1", async () => {
+		const processAnswer = test.wrap(cloudFunctions.processAnswer);
+
+		const progressData = {
+			correct: [],
+			current_correct: [],
+			duration: null,
+			incorrect: [],
+			progress: 0,
+			questions: [
+				progressVocabOne
+			],
+			set_title: setOne,
+			start_time: 1627308670962,
+			switch_language: false,
+			uid: userOne,
+			mode: "questions",
+			typo: false,
+			setIds: [setOne],
+		};
+		const termDataOne = {
+			"item": termOne,
+			"sound": soundOne,
+		};
+		const definitionDataOne = {
+			"item": shortDefinitionOne,
+			"sound": soundOne,
+		};
+
+		const progressId = "progress_01";
+		const progressDocId = firestore.collection("progress").doc(progressId);
+
+		await progressDocId.set(progressData);
+		await progressDocId.collection("terms").doc(progressVocabOne)
+			.set(termDataOne);
+		await progressDocId.collection("definitions").doc(progressVocabOne)
+			.set(definitionDataOne);
+
+		const typoOneAnswerRequestData = {
+			progressId: progressId,
+			answer: shortDefinitionOneTypoOne,
+		};
+
+		const returnedData = await processAnswer(typoOneAnswerRequestData);
+
+		assert.deepStrictEqual(returnedData, {
+			typo: true,
+		});
+	});
+
+	it("processAnswer doesn't detect typo for short answer with too many mistakes - Levenshtein distance 2", async () => {
+		const processAnswer = test.wrap(cloudFunctions.processAnswer);
+
+		const progressData = {
+			correct: [],
+			current_correct: [],
+			duration: null,
+			incorrect: [],
+			progress: 0,
+			questions: [
+				progressVocabOne
+			],
+			set_title: setOne,
+			start_time: 1627308670962,
+			switch_language: false,
+			uid: userOne,
+			mode: "questions",
+			typo: false,
+			setIds: [setOne],
+		};
+		const termDataOne = {
+			"item": termOne,
+			"sound": soundOne,
+		};
+		const definitionDataOne = {
+			"item": shortDefinitionOne,
+			"sound": soundOne,
+		};
+
+		const progressId = "progress_01";
+		const progressDocId = firestore.collection("progress").doc(progressId);
+
+		await progressDocId.set(progressData);
+		await progressDocId.collection("terms").doc(progressVocabOne)
+			.set(termDataOne);
+		await progressDocId.collection("definitions").doc(progressVocabOne)
+			.set(definitionDataOne);
+
+		const typoTwoAnswerRequestData = {
+			progressId: progressId,
+			answer: shortDefinitionOneTypoTwo,
+		};
+
+		const returnedData = await processAnswer(typoTwoAnswerRequestData);
+
+		assert.equal(returnedData.typo, false);
+	});
+
+	it("processAnswer detects typo correctly for slightly wrong long answer - Levenshtein distance 1", async () => {
+		const processAnswer = test.wrap(cloudFunctions.processAnswer);
+
+		const progressData = {
+			correct: [],
+			current_correct: [],
+			duration: null,
+			incorrect: [],
+			progress: 0,
+			questions: [
+				progressVocabOne
+			],
+			set_title: setOne,
+			start_time: 1627308670962,
+			switch_language: false,
+			uid: userOne,
+			mode: "questions",
+			typo: false,
+			setIds: [setOne],
+		};
+		const termDataOne = {
+			"item": termOne,
+			"sound": soundOne,
+		};
+		const definitionDataOne = {
+			"item": definitionOne,
+			"sound": soundOne,
+		};
+
+		const progressId = "progress_01";
+		const progressDocId = firestore.collection("progress").doc(progressId);
+
+		await progressDocId.set(progressData);
+		await progressDocId.collection("terms").doc(progressVocabOne)
+			.set(termDataOne);
+		await progressDocId.collection("definitions").doc(progressVocabOne)
+			.set(definitionDataOne);
+
+		const typoOneAnswerRequestData = {
+			progressId: progressId,
+			answer: definitionOneTypoOne,
+		};
+
+		const returnedData = await processAnswer(typoOneAnswerRequestData);
+
+		assert.deepStrictEqual(returnedData, {
+			typo: true,
+		});
+	});
+
+	it("processAnswer detects typo correctly for slightly wrong long answer - Levenshtein distance 2", async () => {
+		const processAnswer = test.wrap(cloudFunctions.processAnswer);
+
+		const progressData = {
+			correct: [],
+			current_correct: [],
+			duration: null,
+			incorrect: [],
+			progress: 0,
+			questions: [
+				progressVocabOne
+			],
+			set_title: setOne,
+			start_time: 1627308670962,
+			switch_language: false,
+			uid: userOne,
+			mode: "questions",
+			typo: false,
+			setIds: [setOne],
+		};
+		const termDataOne = {
+			"item": termOne,
+			"sound": soundOne,
+		};
+		const definitionDataOne = {
+			"item": definitionOne,
+			"sound": soundOne,
+		};
+
+		const progressId = "progress_01";
+		const progressDocId = firestore.collection("progress").doc(progressId);
+
+		await progressDocId.set(progressData);
+		await progressDocId.collection("terms").doc(progressVocabOne)
+			.set(termDataOne);
+		await progressDocId.collection("definitions").doc(progressVocabOne)
+			.set(definitionDataOne);
+
+		const typoTwoAnswerRequestData = {
+			progressId: progressId,
+			answer: definitionOneTypoTwo,
+		};
+
+		const returnedData = await processAnswer(typoTwoAnswerRequestData);
+
+		assert.deepStrictEqual(returnedData, {
+			typo: true,
+		});
+	});
+
+	it("processAnswer detects typo correctly for slightly wrong long answer - Levenshtein distance 3", async () => {
+		const processAnswer = test.wrap(cloudFunctions.processAnswer);
+
+		const progressData = {
+			correct: [],
+			current_correct: [],
+			duration: null,
+			incorrect: [],
+			progress: 0,
+			questions: [
+				progressVocabOne
+			],
+			set_title: setOne,
+			start_time: 1627308670962,
+			switch_language: false,
+			uid: userOne,
+			mode: "questions",
+			typo: false,
+			setIds: [setOne],
+		};
+		const termDataOne = {
+			"item": termOne,
+			"sound": soundOne,
+		};
+		const definitionDataOne = {
+			"item": definitionOne,
+			"sound": soundOne,
+		};
+
+		const progressId = "progress_01";
+		const progressDocId = firestore.collection("progress").doc(progressId);
+
+		await progressDocId.set(progressData);
+		await progressDocId.collection("terms").doc(progressVocabOne)
+			.set(termDataOne);
+		await progressDocId.collection("definitions").doc(progressVocabOne)
+			.set(definitionDataOne);
+		
+		const typoThreeAnswerRequestData = {
+			progressId: progressId,
+			answer: definitionOneTypoThree,
+		};
+
+		const returnedData = await processAnswer(typoThreeAnswerRequestData);
+
+		assert.deepStrictEqual(returnedData, {
+			typo: true,
+		});
+	});
+
+	it("processAnswer doesn't detect typo for long answer with too many mistakes - Levenshtein distance 4", async () => {
+		const processAnswer = test.wrap(cloudFunctions.processAnswer);
+
+		const progressData = {
+			correct: [],
+			current_correct: [],
+			duration: null,
+			incorrect: [],
+			progress: 0,
+			questions: [
+				progressVocabOne
+			],
+			set_title: setOne,
+			start_time: 1627308670962,
+			switch_language: false,
+			uid: userOne,
+			mode: "questions",
+			typo: false,
+			setIds: [setOne],
+		};
+		const termDataOne = {
+			"item": termOne,
+			"sound": soundOne,
+		};
+		const definitionDataOne = {
+			"item": definitionOne,
+			"sound": soundOne,
+		};
+
+		const progressId = "progress_01";
+		const progressDocId = firestore.collection("progress").doc(progressId);
+
+		await progressDocId.set(progressData);
+		await progressDocId.collection("terms").doc(progressVocabOne)
+			.set(termDataOne);
+		await progressDocId.collection("definitions").doc(progressVocabOne)
+			.set(definitionDataOne);
+		
+		const typoFourAnswerRequestData = {
+			progressId: progressId,
+			answer: definitionOneTypoFour,
+		};
+
+		const returnedData = await processAnswer(typoFourAnswerRequestData);
+
+		assert.equal(returnedData.typo, false);
+	});
+
+	it("processAnswer detects typo correctly for empty answer", async () => {
+		const processAnswer = test.wrap(cloudFunctions.processAnswer);
+
+		const progressData = {
+			correct: [],
+			current_correct: [],
+			duration: null,
+			incorrect: [],
+			progress: 0,
+			questions: [
+				progressVocabOne
+			],
+			set_title: setOne,
+			start_time: 1627308670962,
+			switch_language: false,
+			uid: userOne,
+			mode: "questions",
+			typo: false,
+			setIds: [setOne],
+		};
+		const termDataOne = {
+			"item": termOne,
+			"sound": soundOne,
+		};
+		const definitionDataOne = {
+			"item": definitionOne,
+			"sound": soundOne,
+		};
+
+		const progressId = "progress_01";
+		const progressDocId = firestore.collection("progress").doc(progressId);
+
+		await progressDocId.set(progressData);
+		await progressDocId.collection("terms").doc(progressVocabOne)
+			.set(termDataOne);
+		await progressDocId.collection("definitions").doc(progressVocabOne)
+			.set(definitionDataOne);
+
+		const emptyAnswerRequestData = {
+			progressId: progressId,
+			answer: "",
+		};
+
+		const returnedData = await processAnswer(emptyAnswerRequestData);
+
+		assert.deepStrictEqual(returnedData, {
+			typo: true,
+		});
+	});
+
+	it("processAnswer stores correct typo status in progress db collection when typo detected", async () => {
+		const processAnswer = test.wrap(cloudFunctions.processAnswer);
+
+		const progressData = {
+			correct: [],
+			current_correct: [],
+			duration: null,
+			incorrect: [],
+			progress: 0,
+			questions: [
+				progressVocabOne
+			],
+			set_title: setOne,
+			start_time: 1627308670962,
+			switch_language: false,
+			uid: userOne,
+			mode: "questions",
+			typo: false,
+			setIds: [setOne],
+		};
+		const termDataOne = {
+			"item": termOne,
+			"sound": soundOne,
+		};
+		const definitionDataOne = {
+			"item": definitionOne,
+			"sound": soundOne,
+		};
+
+		const progressId = "progress_01";
+		const progressDocId = firestore.collection("progress").doc(progressId);
+
+		await progressDocId.set(progressData);
+		await progressDocId.collection("terms").doc(progressVocabOne)
+			.set(termDataOne);
+		await progressDocId.collection("definitions").doc(progressVocabOne)
+			.set(definitionDataOne);
+
+		const typoOneAnswerRequestData = {
+			progressId: progressId,
+			answer: definitionOneTypoOne,
+		};
+
+		await processAnswer(typoOneAnswerRequestData);
+
+		const snapAfter = await progressDocId.get().then((doc) => doc.data());
+
+		assert.strictEqual(snapAfter.typo, true);
+	});
+
+	it("processAnswer marks an answer as wrong on the second typo (typo - Levenshtein distance 1)", async () => {
+		const processAnswer = test.wrap(cloudFunctions.processAnswer);
+
+		const progressData = {
+			correct: [],
+			current_correct: [],
+			duration: null,
+			incorrect: [],
+			progress: 0,
+			questions: [
+				progressVocabOne
+			],
+			set_title: setOne,
+			start_time: 1627308670962,
+			switch_language: false,
+			uid: userOne,
+			mode: "questions",
+			typo: true,
+			setIds: [setOne],
+		};
+		const termDataOne = {
+			"item": termOne,
+			"sound": soundOne,
+		};
+		const definitionDataOne = {
+			"item": definitionOne,
+			"sound": soundOne,
+		};
+
+		const progressId = "progress_01";
+		const progressDocId = firestore.collection("progress").doc(progressId);
+
+		await progressDocId.set(progressData);
+		await progressDocId.collection("terms").doc(progressVocabOne)
+			.set(termDataOne);
+		await progressDocId.collection("definitions").doc(progressVocabOne)
+			.set(definitionDataOne);
+
+		const typoOneAnswerRequestData = {
+			progressId: progressId,
+			answer: definitionOneTypoOne,
+		};
+
+		const returnedData = await processAnswer(typoOneAnswerRequestData);
+
+		assert.equal(returnedData.correct, false);
+
+		const snapAfter = await progressDocId.get().then((doc) => doc.data());
+
+		assert.strictEqual(snapAfter.typo, false);
+	});
+
+	it("processAnswer marks an answer as wrong on the second typo (empty answer)", async () => {
+		const processAnswer = test.wrap(cloudFunctions.processAnswer);
+
+		const progressData = {
+			correct: [],
+			current_correct: [],
+			duration: null,
+			incorrect: [],
+			progress: 0,
+			questions: [
+				progressVocabOne
+			],
+			set_title: setOne,
+			start_time: 1627308670962,
+			switch_language: false,
+			uid: userOne,
+			mode: "questions",
+			typo: true,
+			setIds: [setOne],
+		};
+		const termDataOne = {
+			"item": termOne,
+			"sound": soundOne,
+		};
+		const definitionDataOne = {
+			"item": definitionOne,
+			"sound": soundOne,
+		};
+
+		const progressId = "progress_01";
+		const progressDocId = firestore.collection("progress").doc(progressId);
+
+		await progressDocId.set(progressData);
+		await progressDocId.collection("terms").doc(progressVocabOne)
+			.set(termDataOne);
+		await progressDocId.collection("definitions").doc(progressVocabOne)
+			.set(definitionDataOne);
+
+		const emptyAnswerRequestData = {
+			progressId: progressId,
+			answer: "",
+		};
+
+		const returnedData = await processAnswer(emptyAnswerRequestData);
+
+		assert.equal(returnedData.correct, false);
+
+		const snapAfter = await progressDocId.get().then((doc) => doc.data());
+
+		assert.strictEqual(snapAfter.typo, false);
+	});
+
+	it("processAnswer stores correct data in completed_progress db collection on test completion (set combination never tested before)", async () => {
+		const processAnswer = test.wrap(cloudFunctions.processAnswer);
+
+		await firestore.collection("completed_progress")
+			.doc(`${setOne}__${setTwo}`)
+			.delete();
+
+		const progressData = {
+			correct: [],
+			current_correct: [],
+			duration: null,
+			incorrect: [],
+			progress: 0,
+			questions: [
+				progressVocabOne
+			],
+			set_title: `${setOne}__${setTwo}`,
+			start_time: 1627308670962,
+			switch_language: false,
+			uid: userOne,
+			mode: "questions",
+			typo: false,
+			setIds: [setOne, setTwo],
+		};
+		const termDataOne = {
+			"item": termOne,
+			"sound": soundOne,
+		};
+		const definitionDataOne = {
+			"item": definitionOne,
+			"sound": soundOne,
+		};
+
+		const progressId = "progress_01";
+		const progressDocId = firestore.collection("progress").doc(progressId);
+		const completedProgressDocId = firestore.collection("completed_progress").doc(`${setOne}__${setTwo}`);
+		
+		await progressDocId.set(progressData);
+		await progressDocId.collection("terms").doc(progressVocabOne)
+			.set(termDataOne);
+		await progressDocId.collection("definitions").doc(progressVocabOne)
+			.set(definitionDataOne);
+
+		const requestData = {
+			progressId: progressId,
+			answer: definitionOne,
+		};
+
+		await processAnswer(requestData);
+
+		const completedProgressSnapAfter = await completedProgressDocId.get().then((doc) => doc.data());
+
+		assert.deepStrictEqual(completedProgressSnapAfter, {
+			attempts: 1,
+			total_percentage: 100,
+			set_title: `${setOne} & ${setTwo}`,
+		});
+	});
+
+	it("processAnswer stores correct data in completed_progress db collection on test completion (set combination has been tested previously)", async () => {
+		const processAnswer = test.wrap(cloudFunctions.processAnswer);
+
+		await firestore.collection("completed_progress")
+			.doc(`${setOne}__${setTwo}`)
+			.delete();
+
+		const progressData = {
+			correct: [],
+			current_correct: [],
+			duration: null,
+			incorrect: [],
+			progress: 0,
+			questions: [
+				progressVocabOne
+			],
+			set_title: `${setOne}__${setTwo}`,
+			start_time: 1627308670962,
+			switch_language: false,
+			uid: userOne,
+			mode: "questions",
+			typo: false,
+			setIds: [setOne, setTwo],
+		};
+		const completedProgressData = {
+			attempts: 1,
+			total_percentage: 0,
+			set_title: `${setOne} & ${setTwo}`,
+		};
+		const termDataOne = {
+			"item": termOne,
+			"sound": soundOne,
+		};
+		const definitionDataOne = {
+			"item": definitionOne,
+			"sound": soundOne,
+		};
+
+		const progressId = "progress_01";
+		const progressDocId = firestore.collection("progress").doc(progressId);
+		const completedProgressDocId = firestore.collection("completed_progress").doc(`${setOne}__${setTwo}`);
+
+		await progressDocId.set(progressData);
+		await completedProgressDocId.set(completedProgressData);
+		await progressDocId.collection("terms").doc(progressVocabOne)
+			.set(termDataOne);
+		await progressDocId.collection("definitions").doc(progressVocabOne)
+			.set(definitionDataOne);
+		
+		const requestData = {
+			progressId: progressId,
+			answer: definitionOne,
+		};
+
+		await processAnswer(requestData);
+
+		const completedProgressSnapAfter = await completedProgressDocId.get().then((doc) => doc.data());
+
+		assert.deepStrictEqual(completedProgressSnapAfter, {
+			attempts: 2,
+			total_percentage: 100,
+			set_title: `${setOne} & ${setTwo}`,
+		});
+	});
+
+	it("processAnswer stores correct data in incorrect_answers db collection on incorrect answer (without typo and when not a member of any groups)", async () => {
+		const processAnswer = test.wrap(cloudFunctions.processAnswer);
+
+		await deleteCollection(
+			firestore,
+			`/users/${userOne}/groups`,
+			500
+		);
+		await deleteCollection(
+			firestore,
+			`/incorrect_answers`,
+			500
+		);
+
+		const progressData = {
+			correct: [],
+			current_correct: [],
+			duration: null,
+			incorrect: [],
+			progress: 0,
+			questions: [
+				progressVocabOne
+			],
+			set_title: setOne,
+			start_time: 1627308670962,
+			switch_language: false,
+			uid: userOne,
+			mode: "questions",
+			typo: false,
+			setIds: [setOne],
+		};
+		const termDataOne = {
+			"item": termOne,
+			"sound": soundOne,
+		};
+		const definitionDataOne = {
+			"item": definitionOne,
+			"sound": soundOne,
+		};
+
+		const progressId = "progress_01";
+		const progressDocId = firestore.collection("progress").doc(progressId);
+
+		await progressDocId.set(progressData);
+		await progressDocId.collection("terms").doc(progressVocabOne)
+			.set(termDataOne);
+		await progressDocId.collection("definitions").doc(progressVocabOne)
+			.set(definitionDataOne);
+
+		const incorrectAnswerRequestData = {
+			progressId: progressId,
+			answer: incorrectAnswer,
+		};
+
+		await processAnswer(incorrectAnswerRequestData);
+
+		const snapAfter = await firestore.collection("incorrect_answers").get().then((querySnapshot) => querySnapshot.docs[0].data());
+
+		assert.deepStrictEqual(snapAfter, {
+			groups: [],
+			term: termOne,
+			definition: definitionOne,
+			uid: userOne,
+			switch_language: false,
+			answer: incorrectAnswer,
+			setIds: [setOne],
+		});
+	});
+
+	it("processAnswer stores correct data in incorrect_answers db collection on incorrect answer (without typo and when a member of groups)", async () => {
+		const processAnswer = test.wrap(cloudFunctions.processAnswer);
+
+		await deleteCollection(
+			firestore,
+			`/users/${userOne}/groups`,
+			500
+		);
+		await deleteCollection(
+			firestore,
+			`/incorrect_answers`,
+			500
+		);
+		
+		const progressData = {
+			correct: [],
+			current_correct: [],
+			duration: null,
+			incorrect: [],
+			progress: 0,
+			questions: [
+				progressVocabOne
+			],
+			set_title: setOne,
+			start_time: 1627308670962,
+			switch_language: false,
+			uid: userOne,
+			mode: "questions",
+			typo: false,
+			setIds: [setOne],
+		};
+		const groupOneData = {
+			role: "owner",
+		};
+		const groupTwoData = {
+			role: "contributor",
+		};
+		const termDataOne = {
+			"item": termOne,
+			"sound": soundOne,
+		};
+		const definitionDataOne = {
+			"item": definitionOne,
+			"sound": soundOne,
+		};
+
+		const progressId = "progress_01";
+		const progressDocId = firestore.collection("progress").doc(progressId);
+		const userGroupsCollectionId = firestore.collection("users").doc(userOne).collection("groups");
+
+		await progressDocId.set(progressData);
+		await userGroupsCollectionId.doc(groupOne).set(groupOneData);
+		await userGroupsCollectionId.doc(groupTwo).set(groupTwoData);
+		await progressDocId.collection("terms").doc(progressVocabOne)
+			.set(termDataOne);
+		await progressDocId.collection("definitions").doc(progressVocabOne)
+			.set(definitionDataOne);
+
+		const incorrectAnswerRequestData = {
+			progressId: progressId,
+			answer: incorrectAnswer,
+		};
+
+		await processAnswer(incorrectAnswerRequestData);
+
+		const snapAfter = await firestore.collection("incorrect_answers").get().then((querySnapshot) => querySnapshot.docs[0].data());
+
+		assert.deepStrictEqual(snapAfter, {
+			groups: [groupOne, groupTwo],
+			term: termOne,
+			definition: definitionOne,
+			uid: userOne,
+			switch_language: false,
+			answer: incorrectAnswer,
+			setIds: [setOne],
+		});
+	});
+
+	it("processAnswer stores no additional data in incorrect_answers db collection when typo detected", async () => {
+		const processAnswer = test.wrap(cloudFunctions.processAnswer);
+
+		await deleteCollection(
+			firestore,
+			`/incorrect_answers`,
+			500
+		);
+
+		const progressData = {
+			correct: [],
+			current_correct: [],
+			duration: null,
+			incorrect: [],
+			progress: 0,
+			questions: [
+				progressVocabOne
+			],
+			set_title: setOne,
+			start_time: 1627308670962,
+			switch_language: false,
+			uid: userOne,
+			mode: "questions",
+			typo: false,
+			setIds: [setOne],
+		};
+		const termDataOne = {
+			"item": termOne,
+			"sound": soundOne,
+		};
+		const definitionDataOne = {
+			"item": definitionOne,
+			"sound": soundOne,
+		};
+
+		const progressId = "progress_01";
+		const progressDocId = firestore.collection("progress").doc(progressId);
+
+		await progressDocId.set(progressData);
+		await progressDocId.collection("terms").doc(progressVocabOne)
+			.set(termDataOne);
+		await progressDocId.collection("definitions").doc(progressVocabOne)
+			.set(definitionDataOne);
+
+		const typoAnswerRequestData = {
+			progressId: progressId,
+			answer: definitionOneTypoOne,
+		};
+
+		await processAnswer(typoAnswerRequestData);
+
+		const snapAfter = await firestore.collection("incorrect_answers").get().then((querySnapshot) => querySnapshot.docs);
+
+		assert.deepStrictEqual(snapAfter, []);
+	});
+
+	it("processAnswer stores no additional data in incorrect_answers db collection when correct answer provided", async () => {
+		const processAnswer = test.wrap(cloudFunctions.processAnswer);
+
+		await deleteCollection(
+			firestore,
+			`/incorrect_answers`,
+			500
+		);
+
+		const progressData = {
+			correct: [],
+			current_correct: [],
+			duration: null,
+			incorrect: [],
+			progress: 0,
+			questions: [
+				progressVocabOne
+			],
+			set_title: setOne,
+			start_time: 1627308670962,
+			switch_language: false,
+			uid: userOne,
+			mode: "questions",
+			typo: false,
+			setIds: [setOne],
+		};
+		const termDataOne = {
+			"item": termOne,
+			"sound": soundOne,
+		};
+		const definitionDataOne = {
+			"item": definitionOne,
+			"sound": soundOne,
+		};
+
+		const progressId = "progress_01";
+		const progressDocId = firestore.collection("progress").doc(progressId);
+
+		await progressDocId.set(progressData);
+		await progressDocId.collection("terms").doc(progressVocabOne)
+			.set(termDataOne);
+		await progressDocId.collection("definitions").doc(progressVocabOne)
+			.set(definitionDataOne);
+
+		const requestData = {
+			progressId: progressId,
+			answer: definitionOne,
+		};
+
+		await processAnswer(requestData);
+
+		const snapAfter = await firestore.collection("incorrect_answers").get().then((querySnapshot) => querySnapshot.docs);
+
+		assert.deepStrictEqual(snapAfter, []);
 	});
 
 	it("setAdmin can change other users' admin states", async () => {
