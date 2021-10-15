@@ -426,11 +426,14 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 		return transaction.get(progressDocId).then((progressDoc) => {
 			if (!progressDoc.exists) {
 				throw new functions.https.HttpsError("not-found", "Progress record " + progressId + " doesn't exist")
-			} else if (uid !== progressDoc.data().uid) {
+			}
+			if (uid !== progressDoc.data().uid) {
 				throw new functions.https.HttpsError("permission-denied", "Wrong user's progress");
-			} else if (progressDoc.data().progress >= progressDoc.data().questions.length || (progressDoc.data().mode === "lives" && progressDoc.data().lives <= 0)) {
+			}
+			if (progressDoc.data().progress >= progressDoc.data().questions.length || (progressDoc.data().mode === "lives" && progressDoc.data().lives <= 0)) {
 				throw new functions.https.HttpsError("permission-denied", "Progress already completed")
-			} else {
+			}
+
 				const currentIndex = progressDoc.data().progress;
 				const currentVocab = progressDoc.data().questions[currentIndex];
 
@@ -471,7 +474,6 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 							const levDistance = levenshtein(answer, cleansedInputAnswer);
 							if (levDistance <= 1 ||
 								answer.length > 5 && levDistance <= 3 ||
-								answer.length > 10 && levDistance <= 4 ||
 								cleansedInputAnswer.includes(answer)) {
 									docData.typo = true;
 									transaction.set(progressDocId, docData);
@@ -571,6 +573,7 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 								transaction.set(completedProgressDocId, {
 									attempts: attempts,
 									total_percentage: totalPercentage,
+								setIds: progressDoc.data().setIds,
 								});
 								returnData.averagePercentage = (totalPercentage / attempts).toFixed(2);
 								transaction.set(progressDocId, docData);
