@@ -384,7 +384,7 @@ export default withRouter(class LoggedInHome extends React.Component {
 								Groups
 							</LinkButton>
 							{
-								this.state.userSets && this.state.userSets.length > 0 &&
+								(!this.props.page.loaded() || (this.state.userSets && this.state.userSets.length > 0)) &&
 								<LinkButton
 									to="/my-sets"
 								>
@@ -523,7 +523,8 @@ export default withRouter(class LoggedInHome extends React.Component {
 								</div>
 							</div>
 						}
-						{this.state.userGroupSets && this.state.userGroupSets.length > 0 && this.state.userGroupSets.map(data =>
+						{this.state.userGroupSets && this.state.userGroupSets.length > 0 && this.state.userGroupSets
+							.map(data =>
 							data.sets && data.sets.length > 0 &&
 								<div key={data.group.id} className="checkbox-list-container">
 									<Link to={`/groups/${data.group.id}`}>
@@ -531,7 +532,49 @@ export default withRouter(class LoggedInHome extends React.Component {
 									</Link>
 
 									<div className="checkbox-list">
-										{data.sets.map(set =>
+										{data.sets
+											.sort((a, b) => {
+												if (a.data().title < b.data().title) {
+													return -1;
+												}
+												if (a.data().title > b.data().title) {
+													return 1;
+												}
+												return 0;
+											})
+											.map(set =>
+												<div key={set.id}>
+													<label>
+														<Checkbox
+															name={set.id}
+															checked={this.state.selections[set.id]}
+															onChange={this.handleSetSelectionChange}
+															inputProps={{ 'aria-label': 'checkbox' }}
+														/>
+														<Link to={`/sets/${set.id}`}>
+															{set.data().title}
+														</Link>
+													</label>
+												</div>
+											)
+										}
+									</div>
+								</div>
+						)}
+						{this.state.publicSets && this.state.publicSets.length > 0 &&
+							<div className="checkbox-list-container">
+								<h3><PublicRoundedIcon /> Public Sets</h3>
+								<div className="checkbox-list">
+									{this.state.publicSets
+										.sort((a, b) => {
+											if (a.data().title < b.data().title) {
+												return -1;
+											}
+											if (a.data().title > b.data().title) {
+												return 1;
+											}
+											return 0;
+										}).map(set =>
 											<div key={set.id}>
 												<label>
 													<Checkbox
@@ -545,29 +588,8 @@ export default withRouter(class LoggedInHome extends React.Component {
 													</Link>
 												</label>
 											</div>
-										)}
-									</div>
-								</div>
-						)}
-						{this.state.publicSets && this.state.publicSets.length > 0 &&
-							<div className="checkbox-list-container">
-								<h3><PublicRoundedIcon /> Public Sets</h3>
-								<div className="checkbox-list">
-									{this.state.publicSets.map(set =>
-										<div key={set.id}>
-											<label>
-												<Checkbox
-													name={set.id}
-													checked={this.state.selections[set.id]}
-													onChange={this.handleSetSelectionChange}
-													inputProps={{ 'aria-label': 'checkbox' }}
-												/>
-												<Link to={`/sets/${set.id}`}>
-													{set.data().title}
-												</Link>
-											</label>
-										</div>
-									)}
+										)
+									}
 								</div>
 							</div>
 						}

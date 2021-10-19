@@ -25,3 +25,7 @@
 	justify-content: flex-start;
 	flex-wrap: wrap;
 }
+
+.set-select-container {
+	margin-bottom: 8px;
+}

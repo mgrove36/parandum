@@ -5,6 +5,7 @@ html {
   --text-color-tinted: #cccccc;
   --background-color: #111111;
   --background-color-dark: #000000;
+  --background-color-light: #222222;
   --overlay-color: #333333;
 
   height: 100%;

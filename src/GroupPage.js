@@ -232,6 +232,10 @@ export default withRouter(class GroupPage extends Component {
 			};
 			delete newState.sets[setId];
 			this.setState(newState);
+		}).catch((error) => {
+			console.log(`Can't remove set from group: ${error}`);
+			newLoadingState.sets[setId].loading = false;
+			this.setState(newLoadingState);
 		});
 	}
 
@@ -443,26 +447,36 @@ export default withRouter(class GroupPage extends Component {
 									?
 									<div className="group-links-container">
 										{
-											Object.keys(this.state.sets).map((setId) =>
-												<div key={setId} className="group-set-link">
-													<Link
-														to={`/sets/${setId}`}
-													>
-														{this.state.sets[setId].displayName}
-													</Link>
-													{
-														this.state.role === "owner" &&
-														<Button
-															className="button--no-background"
-															onClick={() => this.removeSet(setId)}
-															icon={<DeleteRoundedIcon />}
-															loading={this.state.sets[setId].loading}
-															disabled={this.state.sets[setId].loading}
-															title="Remove set"
-														></Button>
+											Object.keys(this.state.sets)
+												.sort((a, b) => {
+													if (this.state.sets[a].displayName < this.state.sets[b].displayName) {
+														return -1;
 													}
-												</div>
-											)
+													if (this.state.sets[a].displayName > this.state.sets[b].displayName) {
+														return 1;
+													}
+													return 0;
+												})
+												.map((setId) =>
+													<div key={setId} className="group-set-link">
+														<Link
+															to={`/sets/${setId}`}
+														>
+															{this.state.sets[setId].displayName}
+														</Link>
+														{
+															this.state.role === "owner" &&
+															<Button
+																className="button--no-background"
+																onClick={() => this.removeSet(setId)}
+																icon={<DeleteRoundedIcon />}
+																loading={this.state.sets[setId].loading}
+																disabled={this.state.sets[setId].loading}
+																title="Remove set"
+															></Button>
+														}
+													</div>
+												)
 										}
 									</div>
 									:

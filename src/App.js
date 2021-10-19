@@ -128,7 +128,7 @@ class App extends React.Component {
     };
     
     this.page = {
-      loaded: !this.state.pageLoading,
+      loaded: () => !this.state.pageLoading,
       load: () => {
         this.setState({
           pageLoading: false,
