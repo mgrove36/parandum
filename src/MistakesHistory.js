@@ -6,6 +6,8 @@ import "./css/History.css";
 import "./css/MistakesHistory.css";
 
 import Collapsible from "react-collapsible";
+import Checkbox from '@material-ui/core/Checkbox';
+import Select from "react-select";
 
 export default class IncorrectHistory extends Component {
 	constructor(props) {
@@ -28,9 +30,17 @@ export default class IncorrectHistory extends Component {
 					hideTextMobile: true,
 				}
 			],
-			incorrectAnswers: [],
 			totalIncorrect: 0,
 			totalTests: 0,
+			sets: {},
+			selectedSet: {
+				value: "all_sets",
+				label: "All sets",
+			},
+			includeCompoundTests: true,
+			incorrectAnswers: [],
+			filteredIncorrectAnswers: [],
+			setsWithHistory: {},
 		};
 
 		let isMounted = true;
@@ -48,51 +58,100 @@ export default class IncorrectHistory extends Component {
 		document.title = "Incorrect | History | Parandum";
 
 		let promises = [];
-		let newState = {};
+		let newState = {
+			sets: {},
+			setsWithHistory: {},
+		};
 
 		promises.push(
 			this.state.db.collection("incorrect_answers")
 				.where("uid", "==", this.state.user.uid)
 				.orderBy("term", "asc")
 				.get()
-				.then((querySnapshot) => {
+				.then(async (querySnapshot) => {
 					let incorrectAnswers = [];
+					let subPromises = [];
 					querySnapshot.docs.map((doc, index, array) => {
-						if (index === 0 || doc.data().term !== array[array.length - 1].data().term || doc.data().definition !== array[array.length - 1].data().definition) {
+						// if (index === 0 || doc.data().term !== array[array.length - 1].data().term || doc.data().definition !== array[array.length - 1].data().definition) {
+						// 	incorrectAnswers.push({
+						// 		term: doc.data().term,
+						// 		definition: doc.data().definition,
+						// 		switchedAnswers: {},
+						// 		notSwitchedAnswers: {},
+						// 		switchedCount: 0,
+						// 		notSwitchedCount: 0,
+						// 	});
+						// }
+
+						// if (doc.data().switch_language) {
+						// 	if (Object.keys(incorrectAnswers[incorrectAnswers.length - 1].switchedAnswers).includes(doc.data().answer)) {
+						// 		incorrectAnswers[incorrectAnswers.length - 1].switchedAnswers[doc.data().answer]++;
+						// 	} else {
+						// 		incorrectAnswers[incorrectAnswers.length - 1].switchedAnswers[doc.data().answer] = 1;
+						// 	}
+						// 	incorrectAnswers[incorrectAnswers.length - 1].switchedCount++;
+						// } else {
+						// 	if (Object.keys(incorrectAnswers[incorrectAnswers.length - 1].notSwitchedAnswers).includes(doc.data().answer)) {
+						// 		incorrectAnswers[incorrectAnswers.length - 1].notSwitchedAnswers[doc.data().answer]++;
+						// 	} else {
+						// 		incorrectAnswers[incorrectAnswers.length - 1].notSwitchedAnswers[doc.data().answer] = 1;
+						// 	}
+						// 	incorrectAnswers[incorrectAnswers.length - 1].notSwitchedCount++;
+						// }
+
+
+
+						if (index === 0 || doc.data().term !== array[index - 1].data().term || doc.data().definition !== array[index - 1].data().definition) {
 							incorrectAnswers.push({
 								term: doc.data().term,
 								definition: doc.data().definition,
-								switchedAnswers: {},
-								notSwitchedAnswers: {},
-								switchedCount: 0,
-								notSwitchedCount: 0,
+								answers: [{
+									answer: doc.data().answer,
+									switchLanguage: doc.data().switch_language,
+									setIds: doc.data().setIds,
+								}],
+								count: doc.data().switch_language ? 0 : 1,
+								switchedCount: doc.data().switch_language ? 1 : 0,
+								setIds: doc.data().setIds,
 							});
+						} else {
+							incorrectAnswers[incorrectAnswers.length - 1].answers.push({
+								answer: doc.data().answer,
+								switchLanguage: doc.data().switch_language,
+								setIds: doc.data().setIds,
+							});
+							doc.data().setIds.map((setId) => {
+								if (!incorrectAnswers[incorrectAnswers.length - 1].setIds.includes(setId))
+									return incorrectAnswers[incorrectAnswers.length - 1].setIds.push(setId);
+								return true;
+							});
+							if (doc.data().switch_language) {
+								incorrectAnswers[incorrectAnswers.length - 1].switchedCount++;
+							} else {
+								incorrectAnswers[incorrectAnswers.length - 1].count++;
+							}
 						}
 
-						if (doc.data().switch_language) {
-							if (Object.keys(incorrectAnswers[incorrectAnswers.length - 1].switchedAnswers).includes(doc.data().answer)) {
-								incorrectAnswers[incorrectAnswers.length - 1].switchedAnswers[doc.data().answer]++;
-							} else {
-								incorrectAnswers[incorrectAnswers.length - 1].switchedAnswers[doc.data().answer] = 1;
-							}
-							incorrectAnswers[incorrectAnswers.length - 1].switchedCount++;
-						} else {
-							if (Object.keys(incorrectAnswers[incorrectAnswers.length - 1].notSwitchedAnswers).includes(doc.data().answer)) {
-								incorrectAnswers[incorrectAnswers.length - 1].notSwitchedAnswers[doc.data().answer]++;
-							} else {
-								incorrectAnswers[incorrectAnswers.length - 1].notSwitchedAnswers[doc.data().answer] = 1;
-							}
-							incorrectAnswers[incorrectAnswers.length - 1].notSwitchedCount++;
-						}
+						doc.data().setIds.map((setId) => subPromises.push(
+							this.state.db.collection("sets")
+								.doc(setId)
+								.get()
+								.then((doc) => 
+									newState.setsWithHistory[setId] = doc.data().title
+								)
+						));
+
 						return true;
 					});
 					newState.incorrectAnswers = incorrectAnswers.sort((a,b) => b.count + b.switchedCount - a.count - a.switchedCount);
+					newState.filteredIncorrectAnswers = newState.incorrectAnswers;
 					newState.totalIncorrect = querySnapshot.docs.length;
+					await Promise.all(subPromises);
 				})
 				.catch((error) => {
 					newState.incorrectAnswers = [];
 					newState.totalIncorrect = 0;
-					console.log(`Couldn't get group progress: ${error}`);
+					console.log(`Couldn't get mistakes history: ${error}`);
 				})
 		);
 
@@ -100,7 +159,16 @@ export default class IncorrectHistory extends Component {
 			this.state.db.collection("progress")
 				.where("uid", "==", this.state.user.uid)
 				.get()
-				.then((querySnapshot) => newState.totalTests = querySnapshot.docs.length)
+				// .then((querySnapshot) => newState.totalTests = querySnapshot.docs.length)
+				.then((querySnapshot) => {
+					newState.progressHistory = querySnapshot.docs.map((doc) =>
+						({
+							setIds: doc.data().setIds,
+						})
+					);
+					console.log(newState.progressHistory);
+					newState.totalTests = newState.progressHistory.length;
+				})
 		);
 
 		await Promise.all(promises);
@@ -117,6 +185,84 @@ export default class IncorrectHistory extends Component {
 		this.props.page.unload();
 	}
 
+	arraysHaveSameMembers = (arr1, arr2) => {
+		const set1 = new Set(arr1);
+		const set2 = new Set(arr2);
+		return arr1.every(item => set2.has(item)) &&
+			arr2.every(item => set1.has(item));
+	}
+
+	handleSetSelectionChange = (selectedSet = this.state.selectedSet) => {
+		let totalIncorrect = 0;
+		const filteredIncorrectAnswers = (selectedSet.value === "all_sets" ?
+			JSON.parse(JSON.stringify(this.state.incorrectAnswers))
+			:
+			JSON.parse(JSON.stringify(this.state.incorrectAnswers))
+				.filter((vocabItem) =>
+					vocabItem.setIds.includes(selectedSet.value)
+				)
+			)
+			.map((vocabItem) => {
+				let newVocabItem = vocabItem;
+				if (selectedSet.value === "all_sets") {
+					if (this.state.includeCompoundTests) {
+						newVocabItem.answers = vocabItem.answers;
+					} else {
+						newVocabItem.answers = vocabItem.answers
+							.filter((answer) =>
+								answer.setIds.length === 1
+							)
+					}
+				} else {
+					newVocabItem.answers = vocabItem.answers
+						.filter((answer) =>
+							this.arraysHaveSameMembers(answer.setIds, [selectedSet.value]) ||
+							(
+								this.state.includeCompoundTests &&
+								answer.setIds.includes(selectedSet.value)
+							)
+						)
+				}
+				newVocabItem.switchedCount = newVocabItem.answers.filter((answer) => answer.switchLanguage === true).length;
+				newVocabItem.count = newVocabItem.answers.length - newVocabItem.switchedCount;
+
+				totalIncorrect += newVocabItem.answers.length;
+
+				return newVocabItem;
+			});
+		console.log(this.state.progressHistory
+			.filter((progressItem) =>
+				this.arraysHaveSameMembers(progressItem.setIds, [selectedSet.value]) ||
+				(
+					this.state.includeCompoundTests &&
+					progressItem.setIds.includes(selectedSet.value)
+				)
+			));
+		this.setState({
+			filteredIncorrectAnswers: filteredIncorrectAnswers,
+			selectedSet: selectedSet,
+			totalIncorrect: totalIncorrect,
+			totalTests: selectedSet.value === "all_sets" ?
+				this.state.progressHistory.length
+				:
+				this.state.progressHistory
+				.filter((progressItem) =>
+					this.arraysHaveSameMembers(progressItem.setIds, [selectedSet.value]) ||
+					(
+						this.state.includeCompoundTests &&
+						progressItem.setIds.includes(selectedSet.value)
+					)
+				)
+				.length,
+		});
+	}
+
+	handleIncludeCompoundTestsChange = (event) => {
+		this.setState({
+			includeCompoundTests: event.target.checked,
+		}, () => this.handleSetSelectionChange());
+	}
+
 	render() {
 		return (
 			<div>
@@ -125,6 +271,88 @@ export default class IncorrectHistory extends Component {
 					<h1>Mistakes</h1>
 
 					<div className="history-sections">
+						<Select
+							className="set-select-container"
+							value={this.state.selectedSet}
+							onChange={this.handleSetSelectionChange}
+							defaultValue={"all_sets"}
+							options={
+								[
+									{
+										value: "all_sets",
+										label: "All sets",
+									}
+								].concat(Object.keys(this.state.setsWithHistory)
+									.sort((a, b) => {
+										if (this.state.setsWithHistory[a] < this.state.setsWithHistory[b]) {
+											return -1;
+										}
+										if (this.state.setsWithHistory[a] > this.state.setsWithHistory[b]) {
+											return 1;
+										}
+										return 0;
+									})
+									.map((setId) => {
+										return {
+											value: setId,
+											label: this.state.setsWithHistory[setId]
+										}
+									})
+								)
+							}
+							theme={theme => {
+								const overlayColor = getComputedStyle(
+									document.querySelector("#root > div")
+								).getPropertyValue("--background-color-light")
+									.trim();
+								const textColor = getComputedStyle(
+									document.querySelector("#root > div")
+								).getPropertyValue("--text-color")
+									.trim();
+								const textColorTinted = getComputedStyle(
+									document.querySelector("#root > div")
+								).getPropertyValue("--text-color-tinted")
+									.trim();
+								const primaryColor = getComputedStyle(
+									document.querySelector("#root > div")
+								).getPropertyValue("--primary-color")
+									.trim();
+								const primaryColorDark = getComputedStyle(
+									document.querySelector("#root > div")
+								).getPropertyValue("--primary-color-dark")
+									.trim();
+
+								return {
+									...theme,
+									borderRadius: 6,
+									colors: {
+										...theme.colors,
+										primary: primaryColor,
+										primary25: primaryColorDark,
+										neutral0: overlayColor,
+										neutral5: overlayColor,
+										neutral10: overlayColor,
+										neutral20: textColorTinted,
+										neutral30: textColor,
+										neutral40: textColor,
+										neutral50: textColor,
+										neutral60: textColorTinted,
+										neutral70: textColor,
+										neutral80: textColor,
+										neutral90: textColor,
+									},
+								}
+							}}
+						/>
+						<label>
+							<Checkbox
+								checked={this.state.includeCompoundTests}
+								onChange={this.handleIncludeCompoundTestsChange}
+								inputProps={{ 'aria-label': 'checkbox' }}
+							/>
+							<span>Include compound tests</span>
+						</label>
+
 						<div className="historical-user-stats-container">
 							<div className="stat-row stat-row--inline">
 								<h1>{this.state.totalIncorrect}</h1>
@@ -149,7 +377,7 @@ export default class IncorrectHistory extends Component {
 							}
 						</div>
 						<div className="mistakes-history-container">
-							{
+							{/* {
 								this.state.incorrectAnswers.map((vocabItem, index) => (
 									<React.Fragment key={index}>
 										<div>
@@ -222,6 +450,70 @@ export default class IncorrectHistory extends Component {
 										</div>
 									</React.Fragment>
 								))
+							} */}
+							{
+								this.state.filteredIncorrectAnswers
+									.map((vocabItem, index) => {
+										const sortedAnswers = vocabItem.answers
+											.sort((a, b) => {
+												if (a.answer < b.answer) {
+													return -1;
+												}
+												if (a.answer > b.answer) {
+													return 1;
+												}
+												return 0;
+											});
+
+										return (
+											<React.Fragment key={index}>
+												<div>
+													<h2>{vocabItem.term}</h2>
+													{
+														vocabItem.switchedCount > 0
+														?
+														<Collapsible transitionTime={300} trigger={<><b>{vocabItem.switchedCount} mistake{vocabItem.switchedCount !== 1 && "s"}</b><ArrowDropDownRoundedIcon /></>}>
+															{
+																vocabItem.switchedCount > 0 &&
+																<div>
+																	{
+																			sortedAnswers
+																			.map((answerItem, index) => answerItem.switchLanguage && (
+																				<p key={index}>{answerItem.answer === "" ? <i>skipped</i> : answerItem.answer}</p>
+																			))
+																	}
+																</div>
+															}
+														</Collapsible>
+														:
+														<b>0 mistakes</b>
+													}
+												</div>
+												<div>
+													<h2>{vocabItem.definition}</h2>
+													{
+														vocabItem.count > 0
+														?
+														<Collapsible transitionTime={300} trigger={<><b>{vocabItem.count} mistake{vocabItem.count !== 1 && "s"}</b><ArrowDropDownRoundedIcon /></>}>
+															{
+																vocabItem.count > 0 &&
+																<div>
+																	{
+																		sortedAnswers
+																			.map((answerItem, index) => !answerItem.switchLanguage && (
+																				<p key={index}>{answerItem.answer === "" ? <i>skipped</i> : answerItem.answer}</p>
+																			))
+																	}
+																</div>
+															}
+														</Collapsible>
+														:
+														<b>0 mistakes</b>
+													}
+												</div>
+											</React.Fragment>
+										)
+									})
 							}
 						</div>
 					</div>

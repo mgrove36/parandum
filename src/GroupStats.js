@@ -122,7 +122,7 @@ export default withRouter(class GroupStats extends Component {
 									}],
 									count: doc.data().switch_language ? 0 : 1,
 									switchedCount: doc.data().switch_language ? 1 : 0,
-									setIds: [doc.data().setIds],
+									setIds: doc.data().setIds,
 								});
 							} else {
 								incorrectAnswers[incorrectAnswers.length - 1].answers.push({
@@ -155,7 +155,7 @@ export default withRouter(class GroupStats extends Component {
 						newState.totalIncorrect = 0;
 						console.log(`Couldn't get group progress: ${error}`);
 					})
-			)
+			);
 
 			await Promise.all(promises);
 		}
@@ -208,11 +208,11 @@ export default withRouter(class GroupStats extends Component {
 							this.arraysHaveSameMembers(answer.setIds, [selectedSet.value]) ||
 							(
 								this.state.includeCompoundTests &&
-								answer.setIds.includes(this.state.selectedSet.value)
+								answer.setIds.includes(selectedSet.value)
 							)
 						)
 				}
-				newVocabItem.switchedCount = newVocabItem.answers.filter((answer) => answer.switchLanguage).length;
+				newVocabItem.switchedCount = newVocabItem.answers.filter((answer) => answer.switchLanguage === true).length;
 				newVocabItem.count = newVocabItem.answers.length - newVocabItem.switchedCount;
 
 				totalIncorrect += newVocabItem.answers.length;
