@@ -209,12 +209,7 @@ exports.createProgress = functions.https.onCall((data, context) => {
 		const progressDocId = db
 			.collection("progress").doc();
 
-		let setTitle;
-		if (allSetTitles.length > 1) {
-			setTitle = allSetTitles.sort().slice(0, -1).join(", ") + " & " + allSetTitles.sort().slice(-1);
-		} else {
-			setTitle = allSetTitles[0];
-		}
+		const setTitle = allSetTitles.sort().slice(0, -1).join(", ") + (allSetTitles.length > 1 ? " & " : "") + allSetTitles.sort().slice(-1);
 
 		let dataToSet = {
 			questions: [],
@@ -583,7 +578,7 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 									.then((setDoc) => setDoc.data().title)
 									.catch((error) => ""))
 							);
-							const setTitle = allSetTitles.slice(0, -1).join(", ") + " & " + allSetTitles.sort().slice(-1);
+							const setTitle = allSetTitles.slice(0, -1).join(", ") + (allSetTitles.length > 1 ? " & " : "") + allSetTitles.sort().slice(-1);
 							if (!isCorrectAnswer) transaction.set(incorrectAnswerDoc, {
 								uid: uid,
 								groups: await userGroups,
