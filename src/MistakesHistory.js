@@ -381,8 +381,53 @@ export default class IncorrectHistory extends Component {
 								this.state.filteredIncorrectAnswers
 									.filter((vocabItem) => vocabItem.answers && vocabItem.answers.length > 0)
 									.map((vocabItem, index) => {
-										const sortedAnswers = vocabItem.answers
+										let [switchedAnswersDict, notSwitchedAnswersDict] = [{}, {}];
+
+										vocabItem.answers
+											.map((answerItem) => {
+												if (answerItem.switchLanguage) {
+													if (switchedAnswersDict.hasOwnProperty(answerItem.answer)) {
+														switchedAnswersDict[answerItem.answer].count++;
+														return false;
+													} else {
+														switchedAnswersDict[answerItem.answer] = {
+															...answerItem,
+															count: 1,
+														};
+														return true;
+													}
+												} else {
+													if (notSwitchedAnswersDict.hasOwnProperty(answerItem.answer)) {
+														notSwitchedAnswersDict[answerItem.answer].count++;
+														return false;
+													} else {
+														notSwitchedAnswersDict[answerItem.answer] = {
+															...answerItem,
+															count: 1,
+														};
+														return true;
+													}
+												}
+											});
+
+										const switchedAnswers = Object.keys(switchedAnswersDict)
+											.map((answerItem) => switchedAnswersDict[answerItem])
 											.sort((a, b) => {
+												const countDifference = b.count - a.count;
+												if (countDifference !== 0) return countDifference;
+												if (a.answer < b.answer) {
+													return -1;
+												}
+												if (a.answer > b.answer) {
+													return 1;
+												}
+												return 0;
+											});
+										const notSwitchedAnswers = Object.keys(notSwitchedAnswersDict)
+											.map((answerItem) => notSwitchedAnswersDict[answerItem])
+											.sort((a, b) => {
+												const countDifference = b.count - a.count;
+												if (countDifference !== 0) return countDifference;
 												if (a.answer < b.answer) {
 													return -1;
 												}
@@ -404,10 +449,10 @@ export default class IncorrectHistory extends Component {
 																vocabItem.switchedCount > 0 &&
 																<div>
 																	{
-																		sortedAnswers
-																			.map((answerItem, index) => answerItem.switchLanguage && (
-																				<p key={index}>{answerItem.answer === "" ? <i>skipped</i> : answerItem.answer}</p>
-																			))
+																		switchedAnswers
+																			.map((answerItem, index) => 
+																				<p key={index}>{answerItem.answer === "" ? <i>skipped</i> : answerItem.answer}{answerItem.count > 1 && <i> (x{answerItem.count})</i>}</p>
+																			)
 																	}
 																</div>
 															}
@@ -426,10 +471,10 @@ export default class IncorrectHistory extends Component {
 																vocabItem.count > 0 &&
 																<div>
 																	{
-																		sortedAnswers
-																			.map((answerItem, index) => !answerItem.switchLanguage && (
-																				<p key={index}>{answerItem.answer === "" ? <i>skipped</i> : answerItem.answer}</p>
-																			))
+																		notSwitchedAnswers
+																			.map((answerItem, index) => 
+																				<p key={index}>{answerItem.answer === "" ? <i>skipped</i> : answerItem.answer}{answerItem.count > 1 && <i> (x{answerItem.count})</i>}</p>
+																			)
 																	}
 																</div>
 															}
