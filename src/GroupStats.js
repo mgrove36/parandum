@@ -346,6 +346,7 @@ export default withRouter(class GroupStats extends Component {
 						<div className="mistakes-history-container">
 							{
 								this.state.filteredIncorrectAnswers
+									.filter((vocabItem) => vocabItem.answers && vocabItem.answers.length > 0)
 									.map((vocabItem, index) => {
 										const sortedAnswers = vocabItem.answers
 											.sort((a, b) => {
@@ -370,7 +371,7 @@ export default withRouter(class GroupStats extends Component {
 																vocabItem.switchedCount > 0 &&
 																<div>
 																	{
-																			sortedAnswers
+																		sortedAnswers
 																			.map((answerItem, index) => answerItem.switchLanguage && (
 																				<p key={index}>{answerItem.answer === "" ? <i>skipped</i> : answerItem.answer}</p>
 																			))
