@@ -328,7 +328,7 @@ export default withRouter(class Progress extends React.Component {
 
 					const data = result.data;
 					let newState = {
-						currentAnswerStatus: data.correct,
+						currentAnswerStatus: data.correct ? null : false,
 						currentCorrect: data.correctAnswers,
 						moreAnswers: data.moreAnswers,
 						nextPrompt: data.nextPrompt ? data.nextPrompt.item : null,
@@ -356,16 +356,12 @@ export default withRouter(class Progress extends React.Component {
 
 					if (this.state.mode === "lives") newState.lives = data.lives;
 	
-					if ((data.correct || data.lives === 0) && !data.moreAnswers && this.state.incorrectAnswers[data.currentVocabId]) {
-						// all answers to question given correctly
-						// answer was previously wrong
-						// store correct answer
-						newState.incorrectAnswers = this.state.incorrectAnswers;
-						newState.incorrectAnswers[data.currentVocabId].answer = data.correctAnswers;
-					} else if (data.correct && data.moreAnswers) {
+					if (data.correct) {
+						// correct answer given
 						newState.answerInput = "";
-						newState.currentAnswerStatus = null;
-					} else if (!data.correct) {
+						// show next question if there are no more answers
+						if (!data.moreAnswers) newState = this.showNextQuestion(newState, newState);
+					} else {
 						// incorrect answer given
 						// store prompt and count=0
 						// store answer if in lives mode and no lives left
@@ -375,6 +371,14 @@ export default withRouter(class Progress extends React.Component {
 							answer: data.lives === 0 ? data.correctAnswers : "",
 							count: 0,
 						};
+					}
+
+					if ((data.correct || data.lives === 0) && !data.moreAnswers && this.state.incorrectAnswers[data.currentVocabId]) {
+						// all answers to question given correctly
+						// answer was previously wrong
+						// store correct answer
+						newState.incorrectAnswers = this.state.incorrectAnswers;
+						newState.incorrectAnswers[data.currentVocabId].answer = data.correctAnswers;
 					}
 
 					let promises = [];
@@ -475,6 +479,15 @@ export default withRouter(class Progress extends React.Component {
 		}
 	}
 
+	showNextQuestion = (newState, currentState) => {
+		if (currentState.nextPrompt === null) newState.setComplete = true;
+		newState.currentCorrect = [];
+		newState.currentPrompt = currentState.nextPrompt;
+		newState.currentSound = currentState.nextSound;
+		newState.currentSetOwner = currentState.nextSetOwner;
+		return newState;
+	}
+
 	nextQuestion = () => {
 		if (this.state.canProceed) {
 			this.startLoading();
@@ -487,11 +500,7 @@ export default withRouter(class Progress extends React.Component {
 			};
 
 			if (!this.state.moreAnswers) {
-				if (this.state.nextPrompt === null) newState.setComplete = true;
-				newState.currentCorrect = [];
-				newState.currentPrompt = this.state.nextPrompt;
-				newState.currentSound = this.state.nextSound;
-				newState.currentSetOwner = this.state.nextSetOwner;
+				newState = this.showNextQuestion(newState, this.state);
 			}
 			
 			this.setState(newState, () => (this.isMounted && !this.state.setComplete) && this.answerInput.focus());
