@@ -10,6 +10,7 @@ import TestStart from './TestStart';
 import ClassicTestStart from './ClassicTestStart';
 import LivesTestStart from './LivesTestStart';
 import CountdownTestStart from './CountdownTestStart';
+import ConfirmationDialog from "./ConfirmationDialog";
 
 import "./css/PopUp.css";
 import "./css/SetPage.css";
@@ -453,24 +454,11 @@ export default withRouter(class SetPage extends React.Component {
 							</>
 							:
 							this.state.showDeleteConfirmation &&
-							<>
-								<div className="overlay" onClick={this.hideDeleteConfirmation}></div>
-								<div className="overlay-content confirmation-dialog">
-									<h3>Are you sure you want to delete this set?</h3>
-									<div className="button-container">	
-										<Button
-											onClick={this.hideDeleteConfirmation}
-										>
-											No
-										</Button>
-										<Button
-											onClick={this.deleteSet}
-										>
-											Yes
-										</Button>
-									</div>
-								</div>
-							</>
+							<ConfirmationDialog
+								yesFunction={this.deleteSet}
+								noFunction={this.hideDeleteConfirmation}
+								message="Are you sure you want to delete this set?"
+							/>
 						}
 
 						{

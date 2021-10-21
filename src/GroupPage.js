@@ -6,6 +6,7 @@ import Button from "./Button";
 import LinkButton from "./LinkButton";
 import Footer from "./Footer";
 import Error404 from "./Error404";
+import ConfirmationDialog from './ConfirmationDialog';
 
 import "./css/GroupPage.css";
 import "./css/ConfirmationDialog.css";
@@ -599,24 +600,11 @@ export default withRouter(class GroupPage extends Component {
 									}
 									{
 										this.state.showDeleteGroup &&
-										<>
-											<div className="overlay" onClick={this.hideDeleteGroup}></div>
-											<div className="overlay-content confirmation-dialog">
-												<h3>Are you sure you want to delete this group?</h3>
-												<div className="button-container">
-													<Button
-														onClick={this.hideDeleteGroup}
-													>
-														No
-													</Button>
-													<Button
-														onClick={this.deleteGroup}
-													>
-														Yes
-													</Button>
-												</div>
-											</div>
-										</>
+										<ConfirmationDialog
+											yesFunction={this.deleteGroup}
+											noFunction={this.hideDeleteGroup}
+											message="Are you sure you want to delete this group?"
+										/>
 									}
 								</>
 							}
