@@ -949,6 +949,7 @@ exports.groupDeleted = functions.firestore.document("groups/{groupId}")
 			if (counter >= 19) {
 				batch.commit();
 				batch = db.batch();
+				counter = 0;
 			}
 		}
 
