@@ -377,82 +377,9 @@ export default class IncorrectHistory extends Component {
 							}
 						</div>
 						<div className="mistakes-history-container">
-							{/* {
-								this.state.incorrectAnswers.map((vocabItem, index) => (
-									<React.Fragment key={index}>
-										<div>
-											<h2>{vocabItem.term}</h2>
-											{
-												vocabItem.switchedCount > 0
-												?
-												<Collapsible transitionTime={300} trigger={<><b>{vocabItem.switchedCount} mistake{vocabItem.switchedCount !== 1 && "s"}</b><ArrowDropDownRoundedIcon /></>}>
-													{
-														<div>
-															{
-																Object.keys(vocabItem.switchedAnswers).sort((a, b) => {
-																	if (a < b) {
-																		return -1;
-																	}
-																	if (a > b) {
-																		return 1;
-																	}
-																	return 0;
-																}).map((answer, index) =>
-																	<p key={index}>
-																		{answer === "" ? <i>skipped</i> : answer}
-																		{
-																			vocabItem.switchedAnswers[answer] > 1 &&
-																			<i>{` (x${vocabItem.switchedAnswers[answer]})`}</i>
-																		}
-																	</p>
-																)
-															}
-														</div>
-													}
-												</Collapsible>
-												:
-												<b>0 mistakes</b>
-											}
-										</div>
-										<div>
-											<h2>{vocabItem.definition}</h2>
-											{
-												vocabItem.notSwitchedCount > 0
-												?
-												<Collapsible transitionTime={300} trigger={<><b>{vocabItem.notSwitchedCount} mistake{vocabItem.notSwitchedCount !== 1 && "s"}</b><ArrowDropDownRoundedIcon /></>}>
-													{
-														<div>
-															{
-																Object.keys(vocabItem.notSwitchedAnswers).sort((a, b) => {
-																	if (a < b) {
-																		return -1;
-																	}
-																	if (a > b) {
-																		return 1;
-																	}
-																	return 0;
-																}).map((answer, index) =>
-																	<p key={index}>
-																		{answer === "" ? <i>skipped</i> : answer}
-																		{
-																			vocabItem.notSwitchedAnswers[answer] > 1 &&
-																			<i>{` (x${vocabItem.notSwitchedAnswers[answer]})`}</i>
-																		}
-																	</p>
-																)
-															}
-														</div>
-													}
-												</Collapsible>
-												:
-												<b>0 mistakes</b>
-											}
-										</div>
-									</React.Fragment>
-								))
-							} */}
 							{
 								this.state.filteredIncorrectAnswers
+									.filter((vocabItem) => vocabItem.answers && vocabItem.answers.length > 0)
 									.map((vocabItem, index) => {
 										const sortedAnswers = vocabItem.answers
 											.sort((a, b) => {
@@ -477,7 +404,7 @@ export default class IncorrectHistory extends Component {
 																vocabItem.switchedCount > 0 &&
 																<div>
 																	{
-																			sortedAnswers
+																		sortedAnswers
 																			.map((answerItem, index) => answerItem.switchLanguage && (
 																				<p key={index}>{answerItem.answer === "" ? <i>skipped</i> : answerItem.answer}</p>
 																			))
