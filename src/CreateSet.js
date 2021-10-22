@@ -225,6 +225,7 @@ export default withRouter(class CreateSet extends React.Component {
 							placeholder="Set Title"
 							className="set-title-input"
 							ref={inputEl => (this.setNameInput = inputEl)}
+							autocomplete="off"
 						/>
 					</h2>
 
@@ -249,11 +250,13 @@ export default withRouter(class CreateSet extends React.Component {
 									type="text"
 									name={`term_${index}`}
 									onChange={this.onTermInputChange}
+									autocomplete="off"
 								/>
 								<input
 									type="text"
 									name={`definition_${index}`}
 									onChange={this.onDefinitionInputChange}
+									autocomplete="off"
 								/>
 							</div>
 						)}

@@ -294,6 +294,7 @@ export default withRouter(class UserGroups extends Component {
 								placeholder="Group Name"
 								onKeyDown={this.handleGroupNameInputKeypress}
 								ref={inputEl => (this.groupNameInput = inputEl)}
+								autocomplete="off"
 							/>
 							<Button
 								onClick={this.createGroup}
@@ -326,6 +327,7 @@ export default withRouter(class UserGroups extends Component {
 								placeholder="Join Code"
 								onKeyDown={this.handleJoinCodeInputKeypress}
 								ref={inputEl => (this.joinCodeInput = inputEl)}
+								autocomplete="off"
 							/>
 							<Button
 								onClick={this.joinGroup}
