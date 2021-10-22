@@ -298,6 +298,95 @@ exports.createProgress = functions.https.onCall((data, context) => {
 });
 
 /**
+ * Creates new progress document using the incorrect answers from another progess document.
+ * @param {string} data The progress ID of the existing progress document to use.
+ * @return {string} The ID of the created progress document.
+*/
+exports.createProgressWithIncorrect = functions.https.onCall((data, context) => {
+	const uid = LOCAL_TESTING ? "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3" : context.auth.uid;
+
+	if (context.app == undefined && !LOCAL_TESTING) {
+		throw new functions.https.HttpsError(
+			"failed-precondition",
+			"The function must be called from an App Check verified app.");
+	}
+
+	return db.runTransaction(async (transaction) => {
+		if (typeof data !== "string") {
+			throw new functions.https.HttpsError("invalid-argument", "Progress ID must be a string");
+		}
+
+		const oldProgressDocId = db.collection("progress").doc(data);
+		return transaction.get(oldProgressDocId)
+			.then(async (doc) => {
+				if (!doc.exists) throw new functions.https.HttpsError("invalid-argument", "Progress record doesn't exist");
+				if (doc.data().uid !== uid) throw new functions.https.HttpsError("permission-denied", "Can't use other users' progress records");
+				if (doc.data().incorrect.length < 1) throw new functions.https.HttpsError("failed-precondition", "Progress record must have at least one incorrect answer");
+
+				let progressData = doc.data();
+				let dataToSet = {
+					correct: [],
+					incorrect: [],
+					questions: shuffleArray([... new Set(progressData.incorrect)]),
+					duration: null,
+					progress: 0,
+					start_time: Date.now(),
+					set_title: progressData.set_title,
+					uid: progressData.uid,
+					switch_language: progressData.switch_language,
+					mode: progressData.mode,
+					current_correct: [],
+					typo: false,
+					setIds: progressData.setIds,
+				};
+				if (progressData.mode === "lives") {
+					dataToSet.lives = progressData.start_lives;
+					dataToSet.start_lives = progressData.start_lives;
+				}
+
+				const newProgressDocId = db.collection("progress").doc();
+				let batches = [db.batch()];
+				let promises = [];
+
+				dataToSet.questions.map(async (vocabId, index) => {
+					if (index % 248 === 0) {
+						batches.push(db.batch());
+					}
+					let currentBatchIndex = batches.length - 1;
+					promises.push(transaction.get(oldProgressDocId.collection("terms").doc(vocabId))
+						.then((termDoc) => {
+							return batches[currentBatchIndex].set(
+								newProgressDocId.collection("terms").doc(vocabId),
+								termDoc.data()
+							);
+						}));
+					promises.push(transaction.get(oldProgressDocId.collection("definitions").doc(vocabId))
+						.then((termDoc) => {
+							return batches[currentBatchIndex].set(
+								newProgressDocId.collection("definitions").doc(vocabId),
+								termDoc.data()
+							);
+						}));
+				});
+
+				batches[batches.length - 1].set(
+					newProgressDocId,
+					dataToSet
+				);
+
+				await Promise.all(promises);
+
+				await Promise.all(batches.map((batch) => batch.commit()));
+
+				return newProgressDocId.id;
+			})
+			.catch((error) => {
+				throw new functions.https.HttpsError("unknown", "Can't create new progress record from existing one");
+			});
+	});
+});
+
+/**
  * Processes a response to a question in a vocab set.
  * @param {string} progressId The ID of the progress file to retrieve the prompt from.
  * @return {string} item The term/definition prompt for the next question.

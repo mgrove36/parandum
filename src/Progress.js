@@ -3,18 +3,60 @@ import { withRouter } from "react-router-dom";
 import { HomeRounded as HomeRoundedIcon, ArrowForwardRounded as ArrowForwardRoundedIcon, SettingsRounded as SettingsRoundedIcon, CloseRounded as CloseRoundedIcon, PeopleRounded as PeopleRoundedIcon, QuestionAnswerRounded as QuestionAnswerRoundedIcon } from "@material-ui/icons";
 import NavBar from "./NavBar";
 import Button from "./Button";
-import LinkButton from "./LinkButton";
 import Error404 from "./Error404";
 import SettingsContent from "./SettingsContent";
 import Footer from "./Footer";
 import LineChart from './LineChart';
 import ProgressStats from './ProgressStats';
+import ConfirmationDialog from "./ConfirmationDialog";
 
 import "./css/PopUp.css";
 import "./css/Progress.css";
 import "./css/Chart.css";
 
 export default withRouter(class Progress extends React.Component {
+	changeableStateItems = {
+		loading: false,
+		canProceed: true,
+		canStartTest: true,
+		showTestRestart: false,
+		showIncorrectTestStart: false,
+		progressInaccessible: false,
+		correct: 0,
+		incorrect: 0,
+		totalQuestions: 0,
+		progress: 0,
+		setTitle: "",
+		switchLanguage: false,
+		answerInput: "",
+		currentPrompt: "",
+		currentSound: false,
+		currentSetOwner: "",
+		nextPrompt: "",
+		nextSound: false,
+		nextSetOwner: "",
+		currentAnswerStatus: null,
+		currentCorrect: [],
+		moreAnswers: true,
+		duration: 0,
+		incorrectAnswers: {},
+		showSettings: false,
+		soundInput: this.props.sound,
+		themeInput: this.props.theme,
+		coloredEdgesInput: this.props.coloredEdges,
+		setIds: [],
+		attemptNumber: 1,
+		attemptHistory: {},
+		questions: [],
+		originalTotalQuestions: 1,
+		lives: 1,
+		startLives: null,
+		setComplete: false,
+		averagePercentage: null,
+		pageLoaded: false,
+		startTime: null,
+	}
+
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -22,9 +64,9 @@ export default withRouter(class Progress extends React.Component {
 			db: props.db,
 			functions: {
 				processAnswer: props.functions.httpsCallable("processAnswer"),
+				createProgress: props.functions.httpsCallable("createProgress"),
+				createProgressWithIncorrect: props.functions.httpsCallable("createProgressWithIncorrect"),
 			},
-			loading: false,
-			canProceed: true,
 			navbarItems: [
 				{
 					type: "button",
@@ -39,40 +81,7 @@ export default withRouter(class Progress extends React.Component {
 					hideTextMobile: true,
 				}
 			],
-			progressInaccessible: false,
-			correct: 0,
-			incorrect: 0,
-			totalQuestions: 0,
-			progress: 0,
-			setTitle: "",
-			switchLanguage: false,
-			answerInput: "",
-			currentPrompt: "",
-			currentSound: false,
-			currentSetOwner: "",
-			nextPrompt: "",
-			nextSound: false,
-			nextSetOwner: "",
-			currentAnswerStatus: null,
-			currentCorrect: [],
-			moreAnswers: true,
-			duration: 0,
-			incorrectAnswers: {},
-			showSettings: false,
-			soundInput: this.props.sound,
-			themeInput: this.props.theme,
-			coloredEdgesInput: this.props.coloredEdges,
-			setIds: [],
-			attemptNumber: 1,
-			attemptHistory: {},
-			questions: [],
-			originalTotalQuestions: 1,
-			lives: 1,
-			startLives: null,
-			setComplete: false,
-			averagePercentage: null,
-			pageLoaded: false,
-			startTime: null,
+			...this.changeableStateItems,
 		};
 		
 		let isMounted = true;
@@ -87,6 +96,10 @@ export default withRouter(class Progress extends React.Component {
 	}
 
 	async componentDidMount() {
+		this.unlisten = this.props.history.listen((location, action) => {
+			if (location.pathname.startsWith("/progress/")) this.setState(this.changeableStateItems, () => this.componentDidMount());
+		});
+
 		const progressId = this.props.match.params.progressId;
 		const progressRef = this.state.db.collection("progress").doc(progressId);
 		
@@ -129,94 +142,95 @@ export default withRouter(class Progress extends React.Component {
 			];
 		});
 
-		if (!newState.progressInaccessible && !setDone) {
-			let nextPromptRef;
-			if (!newState.switchLanguage) {
-				nextPromptRef = progressRef
-					.collection("terms")
-					.doc(newState.questions[newState.progress]);
-			} else {
-				nextPromptRef = progressRef
-					.collection("definitions")
-					.doc(newState.questions[newState.progress]);
-			}
-	
-			await nextPromptRef.get().then((doc) => {
-				newState.currentPrompt = doc.data().item;
-				newState.currentSound = doc.data().sound === true;
-			}).catch((error) => {
-				newState.progressInaccessible = true;
-				console.log(`Progress data inaccessible: ${error}`);
-			});
-		} else if (setDone) {
-			newState.moreAnswers = false;
-			newState.currentAnswerStatus = true;
-			newState.duration = duration;
-
-			let promises = [];
-			
-			promises.push(this.state.db.collection("progress")
-				.where("uid", "==", this.state.user.uid)
-				.where("setIds", "==", newState.setIds)
-				.orderBy("start_time")
-				.get()
-				.then((querySnapshot) => {
-					newState.attemptNumber = querySnapshot.docs.map((doc) => doc.id).indexOf(this.props.match.params.progressId) + 1;
-					if (querySnapshot.docs.length > 1)
-						newState.attemptHistory = querySnapshot.docs.filter((doc) => doc.data().duration !== null)
-							.map((doc) => {
-								if (doc.id === this.props.match.params.progressId) newState.startTime = doc.data().start_time;
-								return {
-									x: new Date(doc.data().start_time),
-									y: (doc.data().correct.length / doc.data().questions.length * 100),
-								}
-							});
-				}));
-
-			promises.push(this.state.db.collection("completed_progress")
-				.doc(setIds.sort().join("__"))
-				.get()
-				.then((completedProgressDoc) => {
-					newState.averagePercentage = (completedProgressDoc.data().total_percentage / completedProgressDoc.data().attempts).toFixed(2);
+		if (!newState.progressInaccessible) {
+			if (!setDone) {
+				let nextPromptRef;
+				if (!newState.switchLanguage) {
+					nextPromptRef = progressRef
+						.collection("terms")
+						.doc(newState.questions[newState.progress]);
+				} else {
+					nextPromptRef = progressRef
+						.collection("definitions")
+						.doc(newState.questions[newState.progress]);
+				}
+		
+				await nextPromptRef.get().then((doc) => {
+					newState.currentPrompt = doc.data().item;
+					newState.currentSound = doc.data().sound === true;
 				}).catch((error) => {
-					console.log(`Couldn't get average percentage: ${error}`);
-					newState.averagePercentage = null;
-				}));
+					newState.progressInaccessible = true;
+					console.log(`Progress data inaccessible: ${error}`);
+				});
+			} else {
+				newState.moreAnswers = false;
+				newState.currentAnswerStatus = true;
+				newState.duration = duration;
 
-			if (incorrectAnswers.length > 0) {
-				newState.incorrectAnswers = {};
-				
-				promises.push(Promise.all(incorrectAnswers.map((vocabId) => {
-					if (newState.incorrectAnswers[vocabId]) {
-						return newState.incorrectAnswers[vocabId].count++;
-					} else {
-						newState.incorrectAnswers[vocabId] = {
-							count: 1,
-						};
+				let promises = [];
+				promises.push(this.state.db.collection("progress")
+					.where("uid", "==", this.state.user.uid)
+					.where("setIds", "==", newState.setIds)
+					.orderBy("start_time")
+					.get()
+					.then((querySnapshot) => {
+						newState.attemptNumber = querySnapshot.docs.map((doc) => doc.id).indexOf(this.props.match.params.progressId) + 1;
+						if (querySnapshot.docs.length > 1)
+							newState.attemptHistory = querySnapshot.docs.filter((doc) => doc.data().duration !== null)
+								.map((doc) => {
+									if (doc.id === this.props.match.params.progressId) newState.startTime = doc.data().start_time;
+									return {
+										x: new Date(doc.data().start_time),
+										y: (doc.data().correct.length / doc.data().questions.length * 100),
+									}
+								});
+					}));
 
-						return Promise.all([
-							progressRef.collection("terms")
-								.doc(vocabId)
-								.get().then((termDoc) => {
-									newState.switchLanguage ? newState.incorrectAnswers[vocabId].answer = termDoc.data().item.split("/") : newState.incorrectAnswers[vocabId].prompt = termDoc.data().item;
-								}),
-							progressRef.collection("definitions")
-								.doc(vocabId)
-								.get().then((definitionDoc) => {
-									newState.switchLanguage ? newState.incorrectAnswers[vocabId].prompt = definitionDoc.data().item : newState.incorrectAnswers[vocabId].answer = definitionDoc.data().item.split("/");
-								})
-						]);
-					}
-				})).catch((error) => {
-					console.log(`Couldn't retrieve incorrect answers: ${error}`);
-				}));
+				promises.push(this.state.db.collection("completed_progress")
+					.doc(setIds.sort().join("__"))
+					.get()
+					.then((completedProgressDoc) => {
+						newState.averagePercentage = (completedProgressDoc.data().total_percentage / completedProgressDoc.data().attempts).toFixed(2);
+					}).catch((error) => {
+						console.log(`Couldn't get average percentage: ${error}`);
+						newState.averagePercentage = null;
+					}));
+
+				if (incorrectAnswers.length > 0) {
+					newState.incorrectAnswers = {};
+					
+					promises.push(Promise.all(incorrectAnswers.map((vocabId) => {
+						if (newState.incorrectAnswers[vocabId]) {
+							return newState.incorrectAnswers[vocabId].count++;
+						} else {
+							newState.incorrectAnswers[vocabId] = {
+								count: 1,
+							};
+
+							return Promise.all([
+								progressRef.collection("terms")
+									.doc(vocabId)
+									.get().then((termDoc) => {
+										newState.switchLanguage ? newState.incorrectAnswers[vocabId].answer = termDoc.data().item.split("/") : newState.incorrectAnswers[vocabId].prompt = termDoc.data().item;
+									}),
+								progressRef.collection("definitions")
+									.doc(vocabId)
+									.get().then((definitionDoc) => {
+										newState.switchLanguage ? newState.incorrectAnswers[vocabId].prompt = definitionDoc.data().item : newState.incorrectAnswers[vocabId].answer = definitionDoc.data().item.split("/");
+									})
+							]);
+						}
+					})).catch((error) => {
+						console.log(`Couldn't retrieve incorrect answers: ${error}`);
+					}));
+				}
+
+				await Promise.all(promises);
 			}
-
-			await Promise.all(promises);
 		}
 
 		this.setState(newState, () => {
-			if (!setDone) this.answerInput.focus();
+			if (!newState.progressInaccessible && !setDone) this.answerInput.focus();
 		});
 
 		this.props.page.load();
@@ -230,6 +244,7 @@ export default withRouter(class Progress extends React.Component {
 	componentWillUnmount() {
 		this.isMounted = false;
 		this.props.page.unload();
+		this.unlisten();
 	}
 
 	showSettings = () => {
@@ -277,7 +292,7 @@ export default withRouter(class Progress extends React.Component {
 		}
 	}
 
-	showNextItem = () => {
+	proceed = () => {
 		if (this.state.canProceed) {
 			if (this.state.currentAnswerStatus === null) {
 				this.processAnswer();
@@ -342,6 +357,7 @@ export default withRouter(class Progress extends React.Component {
 						loading: false,
 						canProceed: true,
 						typo: false,
+						canStartTest: true,
 					};
 
 					if (data.correct) {
@@ -519,11 +535,98 @@ export default withRouter(class Progress extends React.Component {
 		return `${hours}:${minutes}:${seconds}`;
 	}
 
+	startLoading = () => {
+		this.setState({
+			canStartTest: false,
+			loading: true,
+		});
+	}
+
+	stopLoading = () => {
+		this.setState({
+			canStartTest: true,
+			loading: false,
+		});
+	}
+
+	recreateSameTest = () => {
+		if (!this.state.loading) {
+			this.state.functions.createProgress({
+				sets: this.state.setIds,
+				switch_language: this.state.switchLanguage,
+				mode: this.state.mode,
+				limit: this.state.mode === "questions" ? this.state.progress - this.state.incorrect
+					: this.state.mode === "lives" ? this.state.lives
+					: 1,
+			}).then((result) => {
+				const progressId = result.data;
+				this.stopLoading();
+				this.props.history.push("/progress/" + progressId);
+
+				this.props.logEvent("restart_test", {
+					progress_id: progressId,
+				});
+			}).catch((error) => {
+				console.log(`Couldn't start test: ${error}`);
+				this.stopLoading();
+			});
+
+			this.startLoading();
+		}
+	}
+
+	createTestWithIncorrect = () => {
+		if (!this.state.loading) {
+			this.state.functions.createProgressWithIncorrect(this.props.match.params.progressId).then((result) => {
+				const progressId = result.data;
+				this.stopLoading();
+				this.props.history.push("/progress/" + progressId);
+	
+				this.props.logEvent("start_test_with_incorrect", {
+					progress_id: progressId,
+				});
+			}).catch((error) => {
+				console.log(`Couldn't create test with incorrect answers: ${error}`);
+				this.stopLoading();
+			});
+	
+			this.startLoading();
+		}
+	}
+
+	showTestRestart = () => {
+		if (this.state.canStartTest) {
+			this.setState({
+				showTestRestart: true,
+			});
+		}
+	}
+
+	hideTestRestart = () => {
+		this.setState({
+			showTestRestart: false,
+		});
+	}
+
+	showIncorrectTestStart = () => {
+		if (this.state.canStartTest) {
+			this.setState({
+				showIncorrectTestStart: true,
+			});
+		}
+	}
+
+	hideIncorrectTestStart = () => {
+		this.setState({
+			showIncorrectTestStart: false,
+		});
+	}
+
 	render() {
 		return (
 			<div>
 			{
-				this.state.pageLoaded &&
+				this.props.page.loaded &&
 				(this.state.progressInaccessible
 				?
 				<Error404 />
@@ -537,7 +640,7 @@ export default withRouter(class Progress extends React.Component {
 							<div>
 								<p className="current-prompt">{this.state.currentPrompt}</p>
 								<form className="answer-input-container" onSubmit={(e) => e.preventDefault()} >
-									<input type="submit" className="form-submit" onClick={this.showNextItem} />
+									<input type="submit" className="form-submit" onClick={this.proceed} />
 									<input
 										type="text"
 										name="answer_input"
@@ -632,6 +735,23 @@ export default withRouter(class Progress extends React.Component {
 									</div>
 								}
 							</div>
+
+							<div className="progress-end-button-container">
+								<Button
+									onClick={this.showTestRestart}
+								>
+									Restart test
+								</Button>
+								{
+									this.state.incorrect > 0 &&
+									<Button
+										onClick={this.showIncorrectTestStart}
+									>
+										Create test with incorrect
+									</Button>
+								}
+							</div>
+
 							{
 								this.state.incorrectAnswers && Object.keys(this.state.incorrectAnswers).length > 0 &&
 								<>
@@ -663,15 +783,6 @@ export default withRouter(class Progress extends React.Component {
 									<LineChart data={this.state.attemptHistory} currentPointX={this.state.startTime} />
 								</>
 							}
-
-							<div className="progress-end-button-container">
-								<LinkButton
-									to="/"
-									className="progress-end-button"
-								>
-									Done
-								</LinkButton>
-							</div>
 						</main>
 						:
 						<main className="progress-container">
@@ -679,7 +790,7 @@ export default withRouter(class Progress extends React.Component {
 							<div>
 								<p className="current-prompt">{this.state.currentPrompt}</p>
 								<form className="answer-input-container answer-input-container--answer-entered" onSubmit={(e) => e.preventDefault()} >
-									<input type="submit" className="form-submit" onClick={this.showNextItem} />
+									<input type="submit" className="form-submit" onClick={this.proceed} />
 									<input
 										type="text"
 										name="answer_input"
@@ -780,6 +891,24 @@ export default withRouter(class Progress extends React.Component {
 								></Button>
 							</div>
 						</>
+					}
+					{
+						this.state.showTestRestart &&
+						<ConfirmationDialog
+							yesFunction={this.recreateSameTest}
+							noFunction={this.hideTestRestart}
+							message="Restart test?"
+							loading={this.state.loading}
+						/>
+					}
+					{
+						this.state.showIncorrectTestStart &&
+						<ConfirmationDialog
+							yesFunction={this.createTestWithIncorrect}
+							noFunction={this.hideIncorrectTestStart}
+							message="Create test with incorrect answers?"
+							loading={this.state.loading}
+						/>
 					}
 				</>)
 			}

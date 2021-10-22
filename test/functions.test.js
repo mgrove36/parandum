@@ -31,6 +31,10 @@ const soundOne = true;
 const vocabTwo = "vocab_02";
 const termTwo = "term_02";
 const definitionTwo = "definition_02";
+const vocabThree = "vocab_03";
+const termThree = "term_03";
+const definitionThree = "definition_03";
+const soundThree = true;
 const soundTwo = true;
 const groupOne = "group_01";
 const groupTwo = "group_02";
@@ -39,11 +43,11 @@ const doubleDefinitionTwo = "definition/02";
 const punctuationDefinitionOne = "definition .,()-_'\"01";
 const progressVocabOne = userOne + "__" + vocabOne;
 const progressVocabTwo = userOne + "__" + vocabTwo;
-const vocabThree = "vocab_03";
 const vocabFour = "vocab_04";
 const progressVocabThree = userOne + "__" + vocabThree;
 const progressVocabFour = userOne + "__" + vocabFour;
 const incorrectAnswer = "incorrect";
+const progressOne = "progress_01";
 
 async function deleteCollection(db, collectionPath, batchSize) {
 	const collectionRef = db.collection(collectionPath);
@@ -2069,6 +2073,8 @@ describe("Parandum Cloud Functions", function () {
 		const groupId = await createGroup(groupOne);
 		const groupDocId = firestore.collection("groups").doc(groupId);
 		
+		await new Promise(res => setTimeout(res, 1000));
+
 		const snapGroupAfter = await groupDocId.get().then((doc) => doc.data());
 
 		const userGroupDocId = firestore.collection("users").doc(userOne).collection("groups").doc(groupId);
@@ -2089,6 +2095,421 @@ describe("Parandum Cloud Functions", function () {
 		assert.deepStrictEqual(joinCodeSnap.data(), {
 			group: groupId,
 		});
+	});
+
+	it("createProgressWithIncorrect correctly creates new progress record from progress record with incorrect answers in questions mode", async () => {
+		const createProgressWithIncorrect = test.wrap(cloudFunctions.createProgressWithIncorrect);
+
+		const vocabIdOne = `${setOne}__${vocabOne}`;
+		const vocabIdTwo = `${setOne}__${vocabTwo}`;
+		const vocabIdThree = `${setTwo}__${vocabThree}`;
+
+		const progressData = {
+			correct: [vocabIdTwo],
+			incorrect: [vocabIdTwo, vocabIdTwo, vocabIdOne],
+			questions: [vocabIdOne, vocabIdTwo, vocabIdThree],
+			duration: null,
+			progress: 1,
+			start_time: 1627308670962,
+			set_title: `${setOne} & ${setTwo}`,
+			uid: userOne,
+			switch_language: false,
+			mode: "questions",
+			current_correct: [],
+			typo: false,
+			setIds: [setOne, setTwo],
+		};
+		const termDataOne = {
+			term: termOne,
+			sound: soundOne,
+		};
+		const termDataTwo = {
+			item: termTwo,
+			sound: soundTwo,
+		};
+		const termDataThree = {
+			term: termThree,
+			sound: soundThree,
+		};
+		const definitionDataOne = {
+			item: definitionOne,
+			sound: soundOne,
+		};
+		const definitionDataTwo = {
+			item: definitionTwo,
+			sound: soundTwo,
+		};
+		const definitionDataThree = {
+			item: definitionThree,
+			sound: soundThree,
+		};
+
+		const progressDocId = firestore.collection("progress").doc(progressOne);
+
+		await progressDocId.set(progressData);
+		await progressDocId
+			.collection("terms").doc(vocabIdOne).set(termDataOne);
+		await progressDocId
+			.collection("terms").doc(vocabIdTwo).set(termDataTwo);
+		await progressDocId
+			.collection("terms").doc(vocabIdThree).set(termDataThree);
+		await progressDocId
+			.collection("definitions").doc(vocabIdOne).set(definitionDataOne);
+		await progressDocId
+			.collection("definitions").doc(vocabIdTwo).set(definitionDataTwo);
+		await progressDocId
+			.collection("definitions").doc(vocabIdThree).set(definitionDataThree);
+
+		const returnData = await createProgressWithIncorrect(progressOne);
+		assert.strictEqual(typeof returnData, "string");
+		await progressDocId.get((doc) => {
+			const data = doc.data();
+			assert.deepStrictEqual(data.correct, []);
+			assert.deepStrictEqual(data.incorrect, []);
+			assert.deepStrictEqual(data.correct, []);
+			hamjest.assertThat(data.questions, hamjest.anyOf(
+				hamjest.is([vocabOne, vocabTwo, vocabThree]),
+				hamjest.is([vocabOne, vocabThree, vocabTwo]),
+				hamjest.is([vocabTwo, vocabThree, vocabOne]),
+				hamjest.is([vocabTwo, vocabOne, vocabThree]),
+				hamjest.is([vocabOne, vocabTwo, vocabThree]),
+				hamjest.is([vocabOne, vocabThree, vocabTwo])
+			));
+			assert.strictEqual(data.duration, null);
+			assert.strictEqual(data.progress, 0);
+			assert.strictEqual(data.start_time, 1627308670962);
+			assert.strictEqual(data.set_title, `${setOne} & ${setTwo}`);
+			assert.strictEqual(data.uid, userOne);
+			assert.strictEqual(data.switch_language, false);
+			assert.strictEqual(data.mode, "questions");
+			assert.deepStrictEqual(data.current_correct, []);
+			assert.strictEqual(data.typo, false);
+			assert.deepStrictEqual(data.setIds, []);
+
+		});
+		await progressDocId
+			.collection("terms").doc(`${setOne}__${vocabOne}`).get()
+			.then((doc) => assert.deepStrictEqual(doc.data(), termDataOne));
+		await progressDocId
+			.collection("terms").doc(`${setOne}__${vocabTwo}`).get()
+			.then((doc) => assert.deepStrictEqual(doc.data(), termDataTwo));
+		await progressDocId
+			.collection("terms").doc(`${setTwo}__${vocabThree}`).get()
+			.then((doc) => assert.deepStrictEqual(doc.data(), termDataThree));
+		await progressDocId
+			.collection("definitions").doc(`${setOne}__${vocabOne}`).get()
+			.then((doc) => assert.deepStrictEqual(doc.data(), definitionDataOne));
+		await progressDocId
+			.collection("definitions").doc(`${setOne}__${vocabTwo}`).get()
+			.then((doc) => assert.deepStrictEqual(doc.data(), definitionDataTwo));
+		await progressDocId
+			.collection("definitions").doc(`${setTwo}__${vocabThree}`).get()
+			.then((doc) => assert.deepStrictEqual(doc.data(), definitionDataThree));
+	});
+
+	it("createProgressWithIncorrect correctly creates new progress record from progress record with incorrect answers in lives mode", async () => {
+		const createProgressWithIncorrect = test.wrap(cloudFunctions.createProgressWithIncorrect);
+
+		const vocabIdOne = `${setOne}__${vocabOne}`;
+		const vocabIdTwo = `${setOne}__${vocabTwo}`;
+		const vocabIdThree = `${setTwo}__${vocabThree}`;
+
+		const progressData = {
+			correct: [vocabIdTwo],
+			incorrect: [vocabIdTwo, vocabIdTwo, vocabIdOne],
+			questions: [vocabIdOne, vocabIdTwo, vocabIdThree],
+			duration: null,
+			progress: 1,
+			start_time: 1627308670962,
+			set_title: `${setOne} & ${setTwo}`,
+			uid: userOne,
+			switch_language: false,
+			mode: "lives",
+			current_correct: [],
+			typo: false,
+			setIds: [setOne, setTwo],
+			lives: 2,
+			start_lives: 5,
+		};
+		const termDataOne = {
+			term: termOne,
+			sound: soundOne,
+		};
+		const termDataTwo = {
+			item: termTwo,
+			sound: soundTwo,
+		};
+		const termDataThree = {
+			term: termThree,
+			sound: soundThree,
+		};
+		const definitionDataOne = {
+			item: definitionOne,
+			sound: soundOne,
+		};
+		const definitionDataTwo = {
+			item: definitionTwo,
+			sound: soundTwo,
+		};
+		const definitionDataThree = {
+			item: definitionThree,
+			sound: soundThree,
+		};
+
+		const progressDocId = firestore.collection("progress").doc(progressOne);
+
+		await progressDocId.set(progressData);
+		await progressDocId
+			.collection("terms").doc(vocabIdOne).set(termDataOne);
+		await progressDocId
+			.collection("terms").doc(vocabIdTwo).set(termDataTwo);
+		await progressDocId
+			.collection("terms").doc(vocabIdThree).set(termDataThree);
+		await progressDocId
+			.collection("definitions").doc(vocabIdOne).set(definitionDataOne);
+		await progressDocId
+			.collection("definitions").doc(vocabIdTwo).set(definitionDataTwo);
+		await progressDocId
+			.collection("definitions").doc(vocabIdThree).set(definitionDataThree);
+
+		const returnData = await createProgressWithIncorrect(progressOne);
+		assert.strictEqual(typeof returnData, "string");
+		await progressDocId.get((doc) => {
+			const data = doc.data();
+			assert.deepStrictEqual(data.correct, []);
+			assert.deepStrictEqual(data.incorrect, []);
+			assert.deepStrictEqual(data.correct, []);
+			hamjest.assertThat(data.questions, hamjest.anyOf(
+				hamjest.is([vocabOne, vocabTwo, vocabThree]),
+				hamjest.is([vocabOne, vocabThree, vocabTwo]),
+				hamjest.is([vocabTwo, vocabThree, vocabOne]),
+				hamjest.is([vocabTwo, vocabOne, vocabThree]),
+				hamjest.is([vocabOne, vocabTwo, vocabThree]),
+				hamjest.is([vocabOne, vocabThree, vocabTwo])
+			));
+			assert.strictEqual(data.duration, null);
+			assert.strictEqual(data.progress, 0);
+			assert.strictEqual(data.start_time, 1627308670962);
+			assert.strictEqual(data.set_title, `${setOne} & ${setTwo}`);
+			assert.strictEqual(data.uid, userOne);
+			assert.strictEqual(data.switch_language, false);
+			assert.strictEqual(data.mode, "questions");
+			assert.deepStrictEqual(data.current_correct, []);
+			assert.strictEqual(data.typo, false);
+			assert.deepStrictEqual(data.setIds, []);
+			assert.strictEqual(data.lives, 5);
+			assert.strictEqual(data.start_lives, 5);
+		});
+		await progressDocId
+			.collection("terms").doc(`${setOne}__${vocabOne}`).get()
+			.then((doc) => assert.deepStrictEqual(doc.data(), termDataOne));
+		await progressDocId
+			.collection("terms").doc(`${setOne}__${vocabTwo}`).get()
+			.then((doc) => assert.deepStrictEqual(doc.data(), termDataTwo));
+		await progressDocId
+			.collection("terms").doc(`${setTwo}__${vocabThree}`).get()
+			.then((doc) => assert.deepStrictEqual(doc.data(), termDataThree));
+		await progressDocId
+			.collection("definitions").doc(`${setOne}__${vocabOne}`).get()
+			.then((doc) => assert.deepStrictEqual(doc.data(), definitionDataOne));
+		await progressDocId
+			.collection("definitions").doc(`${setOne}__${vocabTwo}`).get()
+			.then((doc) => assert.deepStrictEqual(doc.data(), definitionDataTwo));
+		await progressDocId
+			.collection("definitions").doc(`${setTwo}__${vocabThree}`).get()
+			.then((doc) => assert.deepStrictEqual(doc.data(), definitionDataThree));
+	});
+
+	it("createProgressWithIncorrect won't create new progress record when old progress record belongs to different user", async () => {
+		const createProgressWithIncorrect = test.wrap(cloudFunctions.createProgressWithIncorrect);
+
+		const progressData = {
+			correct: [vocabTwo],
+			incorrect: [vocabTwo, vocabTwo, vocabOne],
+			questions: [vocabOne, vocabTwo, vocabThree],
+			duration: null,
+			progress: 1,
+			start_time: 1627308670962,
+			set_title: `${setOne} & ${setTwo}`,
+			uid: userTwo,
+			switch_language: false,
+			mode: "questions",
+			current_correct: [],
+			typo: false,
+			setIds: [setOne, setTwo],
+		};
+		const termDataOne = {
+			term: termOne,
+			sound: soundOne,
+		};
+		const termDataTwo = {
+			item: termTwo,
+			sound: soundTwo,
+		};
+		const termDataThree = {
+			term: termThree,
+			sound: soundThree,
+		};
+		const definitionDataOne = {
+			item: definitionOne,
+			sound: soundOne,
+		};
+		const definitionDataTwo = {
+			item: definitionTwo,
+			sound: soundTwo,
+		};
+		const definitionDataThree = {
+			item: definitionThree,
+			sound: soundThree,
+		};
+
+		const progressDocId = firestore.collection("progress").doc(progressOne);
+
+		await progressDocId.set(progressData);
+		await progressDocId
+			.collection("terms").doc(`${setOne}__${vocabOne}`).set(termDataOne);
+		await progressDocId
+			.collection("terms").doc(`${setOne}__${vocabTwo}`).set(termDataTwo);
+		await progressDocId
+			.collection("terms").doc(`${setTwo}__${vocabThree}`).set(termDataThree);
+		await progressDocId
+			.collection("definitions").doc(`${setOne}__${vocabOne}`).set(definitionDataOne);
+		await progressDocId
+			.collection("definitions").doc(`${setOne}__${vocabTwo}`).set(definitionDataTwo);
+		await progressDocId
+			.collection("definitions").doc(`${setTwo}__${vocabThree}`).set(definitionDataThree);
+
+		firebase.assertFails(createProgressWithIncorrect(progressOne));
+	});
+
+	it("createProgressWithIncorrect won't create new progress record when progress ID argument isn't a string", async () => {
+		const createProgressWithIncorrect = test.wrap(cloudFunctions.createProgressWithIncorrect);
+
+		const progressData = {
+			correct: [vocabTwo],
+			incorrect: [vocabTwo, vocabTwo, vocabOne],
+			questions: [vocabOne, vocabTwo, vocabThree],
+			duration: null,
+			progress: 1,
+			start_time: 1627308670962,
+			set_title: `${setOne} & ${setTwo}`,
+			uid: userTwo,
+			switch_language: false,
+			mode: "questions",
+			current_correct: [],
+			typo: false,
+			setIds: [setOne, setTwo],
+		};
+		const termDataOne = {
+			term: termOne,
+			sound: soundOne,
+		};
+		const termDataTwo = {
+			item: termTwo,
+			sound: soundTwo,
+		};
+		const termDataThree = {
+			term: termThree,
+			sound: soundThree,
+		};
+		const definitionDataOne = {
+			item: definitionOne,
+			sound: soundOne,
+		};
+		const definitionDataTwo = {
+			item: definitionTwo,
+			sound: soundTwo,
+		};
+		const definitionDataThree = {
+			item: definitionThree,
+			sound: soundThree,
+		};
+
+		const progressDocId = firestore.collection("progress").doc("1");
+
+		await progressDocId.set(progressData);
+		await progressDocId
+			.collection("terms").doc(`${setOne}__${vocabOne}`).set(termDataOne);
+		await progressDocId
+			.collection("terms").doc(`${setOne}__${vocabTwo}`).set(termDataTwo);
+		await progressDocId
+			.collection("terms").doc(`${setTwo}__${vocabThree}`).set(termDataThree);
+		await progressDocId
+			.collection("definitions").doc(`${setOne}__${vocabOne}`).set(definitionDataOne);
+		await progressDocId
+			.collection("definitions").doc(`${setOne}__${vocabTwo}`).set(definitionDataTwo);
+		await progressDocId
+			.collection("definitions").doc(`${setTwo}__${vocabThree}`).set(definitionDataThree);
+
+		firebase.assertFails(createProgressWithIncorrect(1));
+	});
+
+	it("createProgressWithIncorrect won't create new progress record when old progress record doesn't exist", async () => {
+		const createProgressWithIncorrect = test.wrap(cloudFunctions.createProgressWithIncorrect);
+
+		firebase.assertFails(createProgressWithIncorrect("invalid"));
+	});
+
+	it("createProgressWithIncorrect won't create new progress record when old progress record has no incorrect answers", async () => {
+		const createProgressWithIncorrect = test.wrap(cloudFunctions.createProgressWithIncorrect);
+
+		const progressData = {
+			correct: [vocabTwo],
+			incorrect: [],
+			questions: [vocabOne, vocabTwo, vocabThree],
+			duration: null,
+			progress: 1,
+			start_time: 1627308670962,
+			set_title: `${setOne} & ${setTwo}`,
+			uid: userOne,
+			switch_language: false,
+			mode: "questions",
+			current_correct: [],
+			typo: false,
+			setIds: [setOne, setTwo],
+		};
+		const termDataOne = {
+			term: termOne,
+			sound: soundOne,
+		};
+		const termDataTwo = {
+			item: termTwo,
+			sound: soundTwo,
+		};
+		const termDataThree = {
+			term: termThree,
+			sound: soundThree,
+		};
+		const definitionDataOne = {
+			item: definitionOne,
+			sound: soundOne,
+		};
+		const definitionDataTwo = {
+			item: definitionTwo,
+			sound: soundTwo,
+		};
+		const definitionDataThree = {
+			item: definitionThree,
+			sound: soundThree,
+		};
+
+		const progressDocId = firestore.collection("progress").doc(progressOne);
+
+		await progressDocId.set(progressData);
+		await progressDocId
+			.collection("terms").doc(`${setOne}__${vocabOne}`).set(termDataOne);
+		await progressDocId
+			.collection("terms").doc(`${setOne}__${vocabTwo}`).set(termDataTwo);
+		await progressDocId
+			.collection("terms").doc(`${setTwo}__${vocabThree}`).set(termDataThree);
+		await progressDocId
+			.collection("definitions").doc(`${setOne}__${vocabOne}`).set(definitionDataOne);
+		await progressDocId
+			.collection("definitions").doc(`${setOne}__${vocabTwo}`).set(definitionDataTwo);
+		await progressDocId
+			.collection("definitions").doc(`${setTwo}__${vocabThree}`).set(definitionDataThree);
+
+		firebase.assertFails(createProgressWithIncorrect(progressOne));
 	});
 
 	/*xit("getGroupMembers returns group members correctly", async () => {
