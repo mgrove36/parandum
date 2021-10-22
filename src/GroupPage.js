@@ -385,7 +385,7 @@ export default withRouter(class GroupPage extends Component {
 											value={this.state.groupName}
 											onKeyDown={this.handleInputKeypress}
 											ref={inputEl => (this.groupNameInput = inputEl)}
-											autocomplete="off"
+											autoComplete="off"
 										/>
 										<Button
 											onClick={this.renameGroup}

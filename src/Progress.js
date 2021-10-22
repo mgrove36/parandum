@@ -545,7 +545,7 @@ export default withRouter(class Progress extends React.Component {
 										onChange={this.handleAnswerInput}
 										value={this.state.answerInput}
 										ref={inputEl => (this.answerInput = inputEl)}
-										autocomplete="off"
+										autoComplete="off"
 									/>
 									<Button
 										onClick={() => this.processAnswer()}
@@ -687,7 +687,7 @@ export default withRouter(class Progress extends React.Component {
 										value={this.state.answerInput}
 										ref={inputEl => (this.answerInput = inputEl)}
 										readOnly
-										autocomplete="off"
+										autoComplete="off"
 									/>
 									<Button
 										onClick={() => this.nextQuestion()}

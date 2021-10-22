@@ -48,7 +48,7 @@ export default function ClassicTestStart(props) {
 						min={1}
 						max={props.max}
 						size="1"
-						autocomplete="off"
+						autoComplete="off"
 					/>
 				</div>
 

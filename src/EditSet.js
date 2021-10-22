@@ -292,7 +292,7 @@ export default withRouter(class EditSet extends Component {
 								placeholder="Set Title"
 								value={this.state.inputs.title}
 								className="set-title-input"
-								autocomplete="off"
+								autoComplete="off"
 							/>
 						</h2>
 						<Button
@@ -326,14 +326,14 @@ export default withRouter(class EditSet extends Component {
 									name={`term_${index}`}
 									onChange={this.onTermInputChange}
 									value={this.state.inputContents[index] ? this.state.inputContents[index].term : ""}
-									autocomplete="off"
+									autoComplete="off"
 								/>
 								<input
 									type="text"
 									name={`definition_${index}`}
 									onChange={this.onDefinitionInputChange}
 									value={this.state.inputContents[index] ? this.state.inputContents[index].definition : ""}
-									autocomplete="off"
+									autoComplete="off"
 								/>
 							</div>
 						)}
