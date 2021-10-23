@@ -458,7 +458,7 @@ function arraysHaveSameMembers(arr1, arr2) {
  * @return {string} The original string with the unwanted characters removed.
  */
 function cleanseVocabString(item) {
-	const chars = /[ °"§%()\[\]{}=\\?´`'#<>|,;.:+_-!£$^&*~/]+/g;
+	const chars = /[\p{P}\p{S} ]+/ug;
 	return item.replace(chars, "");
 }
 
