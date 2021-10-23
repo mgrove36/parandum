@@ -458,7 +458,7 @@ function arraysHaveSameMembers(arr1, arr2) {
  * @return {string} The original string with the unwanted characters removed.
  */
 function cleanseVocabString(item) {
-	const chars = /[ °"§%()\[\]{}=\\?´`'#<>|,;.:+_-]+/g;
+	const chars = /[ °"§%()\[\]{}=\\?´`'#<>|,;.:+_-!£$^&*~/]+/g;
 	return item.replace(chars, "");
 }
 
@@ -527,7 +527,7 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 				const mode = docData.mode;
 				const correctAnswers = answerDoc.data().item;
 				const splitCorrectAnswers = correctAnswers.split("/");
-				const cleansedSplitCorrectAnswers = cleanseVocabString(correctAnswers).split("/");
+				const cleansedSplitCorrectAnswers = splitCorrectAnswers.map((answer) => cleanseVocabString(answer));
 				const cleansedInputAnswer = cleanseVocabString(inputAnswer);
 
 				let isCorrectAnswer = false;
