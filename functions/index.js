@@ -172,7 +172,7 @@ exports.createProgress = functions.https.onCall((data, context) => {
 	
 	return db.runTransaction(async (transaction) => {
 		const setsId = db.collection("sets");
-		let allSetTitles = [];
+		let setTitlesDict = {};
 		let allVocab = [];
 
 		await Promise.all(data.sets.map((setId) => {
@@ -192,7 +192,7 @@ exports.createProgress = functions.https.onCall((data, context) => {
 						throw new functions.https.HttpsError("failed-precondition", "Set must have at least one term/definition pair");
 					}
 					
-					allSetTitles.push(setDoc.data().title);
+					setTitlesDict[setId] = setDoc.data().title;
 
 					return setVocab.docs.map((vocabDoc) => {
 						let newVocabData = vocabDoc;
@@ -209,7 +209,18 @@ exports.createProgress = functions.https.onCall((data, context) => {
 		const progressDocId = db
 			.collection("progress").doc();
 
-		const setTitle = allSetTitles.sort().slice(0, -1).join(", ") + (allSetTitles.length > 1 ? " & " : "") + allSetTitles.sort().slice(-1);
+		const allSetTitles = [...Object.values(setTitlesDict)].sort();
+		const setTitle = allSetTitles.slice(0, -1).join(", ") + (allSetTitles.length > 1 ? " & " : "") + allSetTitles.slice(-1);
+
+		const setIds = data.sets.sort((a, b) => {
+			if (a < b) {
+				return -1;
+			}
+			if (a > b) {
+				return 1;
+			}
+			return 0;
+		});
 
 		let dataToSet = {
 			questions: [],
@@ -223,15 +234,8 @@ exports.createProgress = functions.https.onCall((data, context) => {
 			switch_language: switchLanguage,
 			duration: null,
 			mode: mode,
-			setIds: data.sets.sort((a, b) => {
-				if (a < b) {
-					return -1;
-				}
-				if (a > b) {
-					return 1;
-				}
-				return 0;
-			}),
+			setIds: setIds,
+			set_titles: setIds.map((setId) => setTitlesDict[setId]),
 			typo: false,
 		}
 
@@ -648,6 +652,7 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 								answer: inputAnswer.trim(),
 								switch_language: progressDoc.data().switch_language,
 								setIds: progressDoc.data().setIds,
+								set_titles: progressDoc.data().set_titles,
 							});
 
 							const totalPercentage = completedProgressDoc.data().total_percentage + (docData.correct.length / docData.questions.length * 100);
@@ -661,12 +666,7 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 							transaction.set(progressDocId, docData);
 							return returnData;
 						}).catch(async (error) => {
-							const allSetTitles = await Promise.all(progressDoc.data().setIds.map((setId) =>
-								transaction.get(db.collection("sets")
-									.doc(setId))
-									.then((setDoc) => setDoc.data().title)
-									.catch((error) => ""))
-							);
+							const allSetTitles = progressDoc.data().set_titles;
 							const setTitle = allSetTitles.slice(0, -1).join(", ") + (allSetTitles.length > 1 ? " & " : "") + allSetTitles.sort().slice(-1);
 							if (!isCorrectAnswer) transaction.set(incorrectAnswerDoc, {
 								uid: uid,
@@ -676,6 +676,7 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 								answer: inputAnswer.trim(),
 								switch_language: progressDoc.data().switch_language,
 								setIds: progressDoc.data().setIds,
+								set_titles: progressDoc.data().set_titles,
 							});
 
 							const totalPercentage = docData.correct.length / docData.questions.length * 100;
@@ -706,6 +707,7 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 									answer: inputAnswer.trim(),
 									switch_language: progressDoc.data().switch_language,
 									setIds: progressDoc.data().setIds,
+									set_titles: progressDoc.data().set_titles,
 								});
 
 								returnData.nextPrompt = {
@@ -729,6 +731,7 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 									answer: inputAnswer.trim(),
 									switch_language: progressDoc.data().switch_language,
 									setIds: progressDoc.data().setIds,
+									set_titles: progressDoc.data().set_titles,
 								});
 
 								const sound = promptDoc.data().sound;

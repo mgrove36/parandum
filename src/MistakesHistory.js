@@ -132,14 +132,17 @@ export default class IncorrectHistory extends Component {
 							}
 						}
 
-						doc.data().setIds.map((setId) => subPromises.push(
-							this.state.db.collection("sets")
-								.doc(setId)
-								.get()
-								.then((doc) => 
-									newState.setsWithHistory[setId] = doc.data().title
-								)
-						));
+						// doc.data().setIds.map((setId) => subPromises.push(
+						// 	this.state.db.collection("sets")
+						// 		.doc(setId)
+						// 		.get()
+						// 		.then((doc) => 
+						// 			newState.setsWithHistory[setId] = doc.data().title
+						// 		)
+						// ));
+						doc.data().setIds.map((setId, setIndex) =>
+							newState.setsWithHistory[setId] = doc.data().set_titles[setIndex]
+						);
 
 						return true;
 					});
@@ -166,7 +169,6 @@ export default class IncorrectHistory extends Component {
 							setIds: doc.data().setIds,
 						})
 					);
-					console.log(newState.progressHistory);
 					newState.totalTests = newState.progressHistory.length;
 				})
 		);
@@ -230,14 +232,6 @@ export default class IncorrectHistory extends Component {
 
 				return newVocabItem;
 			});
-		console.log(this.state.progressHistory
-			.filter((progressItem) =>
-				this.arraysHaveSameMembers(progressItem.setIds, [selectedSet.value]) ||
-				(
-					this.state.includeCompoundTests &&
-					progressItem.setIds.includes(selectedSet.value)
-				)
-			));
 		this.setState({
 			filteredIncorrectAnswers: filteredIncorrectAnswers,
 			selectedSet: selectedSet,

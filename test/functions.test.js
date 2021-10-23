@@ -147,6 +147,7 @@ describe("Parandum Cloud Functions", function () {
 		assert.strictEqual(snapAfter.progress, 0);
 		assert.deepStrictEqual(snapAfter.setIds, [setOne]);
 		assert.strictEqual(snapAfter.set_title, setOne);
+		assert.deepStrictEqual(snapAfter.set_titles, [setOne]);
 		assert.notStrictEqual(snapAfter.start_time, null);
 		assert.strictEqual(snapAfter.switch_language, false);
 		assert.strictEqual(snapAfter.uid, userOne);
@@ -232,6 +233,7 @@ describe("Parandum Cloud Functions", function () {
 		assert.strictEqual(snapAfter.progress, 0);
 		assert.deepStrictEqual(snapAfter.setIds, [setOne, setTwo]);
 		assert.strictEqual(snapAfter.set_title, `${setOne} & ${setTwo}`);
+		assert.deepStrictEqual(snapAfter.set_titles, [setOne, setTwo]);
 		assert.notStrictEqual(snapAfter.start_time, null);
 		assert.strictEqual(snapAfter.switch_language, false);
 		assert.strictEqual(snapAfter.uid, userOne);
@@ -287,6 +289,7 @@ describe("Parandum Cloud Functions", function () {
 		assert.strictEqual(snapAfter.progress, 0);
 		assert.deepStrictEqual(snapAfter.setIds, [setOne]);
 		assert.strictEqual(snapAfter.set_title, setOne);
+		assert.deepStrictEqual(snapAfter.set_titles, [setOne]);
 		assert.notStrictEqual(snapAfter.start_time, null);
 		assert.strictEqual(snapAfter.switch_language, false);
 		assert.strictEqual(snapAfter.uid, userOne);
@@ -379,6 +382,7 @@ describe("Parandum Cloud Functions", function () {
 				progressVocabTwo
 			],
 			set_title: setOne,
+			set_titles: [setOne],
 			start_time: 1627308670962,
 			switch_language: false,
 			uid: userOne,
@@ -483,6 +487,7 @@ describe("Parandum Cloud Functions", function () {
 					progressVocabTwo
 				],
 				set_title: setOne,
+				set_titles: [setOne],
 				start_time: 1627308670962,
 				switch_language: false,
 				uid: userOne,
@@ -502,6 +507,7 @@ describe("Parandum Cloud Functions", function () {
 					progressVocabOne
 				],
 				set_title: setOne,
+				set_titles: [setOne],
 				start_time: 1627308670962,
 				switch_language: false,
 				uid: userOne,
@@ -534,6 +540,7 @@ describe("Parandum Cloud Functions", function () {
 		assert.notStrictEqual(snapAfterCorrectData.duration, null);
 		assert.strictEqual(snapAfterCorrectData.progress, 3);
 		assert.strictEqual(snapAfterCorrectData.set_title, setOne);
+		assert.deepStrictEqual(snapAfterCorrectData.set_titles, [setOne]);
 		assert.strictEqual(snapAfterCorrectData.start_time, 1627308670962);
 		assert.strictEqual(snapAfterCorrectData.switch_language, false);
 		assert.strictEqual(snapAfterCorrectData.uid, userOne);
@@ -554,6 +561,7 @@ describe("Parandum Cloud Functions", function () {
 				progressVocabOne
 			],
 			set_title: setOne,
+			set_titles: [setOne],
 			start_time: 1627308670962,
 			switch_language: false,
 			uid: userOne,
@@ -638,6 +646,7 @@ describe("Parandum Cloud Functions", function () {
 				progressVocabTwo
 			],
 			set_title: setOne,
+			set_titles: [setOne],
 			start_time: 1627308670962,
 			switch_language: false,
 			uid: userOne,
@@ -725,6 +734,7 @@ describe("Parandum Cloud Functions", function () {
 				progressVocabTwo
 			],
 			set_title: setOne,
+			set_titles: [setOne],
 			start_time: 1627308670962,
 			switch_language: false,
 			uid: userOne,
@@ -750,6 +760,7 @@ describe("Parandum Cloud Functions", function () {
 					progressVocabTwo
 				],
 				set_title: setOne,
+				set_titles: [setOne],
 				start_time: 1627308670962,
 				switch_language: false,
 				uid: userOne,
@@ -769,6 +780,7 @@ describe("Parandum Cloud Functions", function () {
 					progressVocabOne
 				],
 				set_title: setOne,
+				set_titles: [setOne],
 				start_time: 1627308670962,
 				switch_language: false,
 				uid: userOne,
@@ -805,6 +817,7 @@ describe("Parandum Cloud Functions", function () {
 		assert.notStrictEqual(snapAfterCorrectData.duration, null);
 		assert.strictEqual(snapAfterCorrectData.progress, 3);
 		assert.strictEqual(snapAfterCorrectData.set_title, setOne);
+		assert.deepStrictEqual(snapAfterCorrectData.set_titles, [setOne]);
 		assert.strictEqual(snapAfterCorrectData.start_time, 1627308670962);
 		assert.strictEqual(snapAfterCorrectData.switch_language, false);
 		assert.strictEqual(snapAfterCorrectData.uid, userOne);
@@ -826,6 +839,7 @@ describe("Parandum Cloud Functions", function () {
 				progressVocabTwo
 			],
 			set_title: setOne,
+			set_titles: [setOne],
 			start_time: 1627308670962,
 			switch_language: false,
 			uid: userOne,
@@ -886,6 +900,7 @@ describe("Parandum Cloud Functions", function () {
 				progressVocabOne
 			],
 			set_title: setOne,
+			set_titles: [setOne],
 			start_time: 1627308670962,
 			switch_language: false,
 			uid: userOne,
@@ -936,6 +951,7 @@ describe("Parandum Cloud Functions", function () {
 				progressVocabOne
 			],
 			set_title: setOne,
+			set_titles: [setOne],
 			start_time: 1627308670962,
 			switch_language: false,
 			uid: userOne,
@@ -984,6 +1000,7 @@ describe("Parandum Cloud Functions", function () {
 				progressVocabOne
 			],
 			set_title: setOne,
+			set_titles: [setOne],
 			start_time: 1627308670962,
 			switch_language: false,
 			uid: userOne,
@@ -1034,6 +1051,7 @@ describe("Parandum Cloud Functions", function () {
 				progressVocabOne
 			],
 			set_title: setOne,
+			set_titles: [setOne],
 			start_time: 1627308670962,
 			switch_language: false,
 			uid: userOne,
@@ -1084,6 +1102,7 @@ describe("Parandum Cloud Functions", function () {
 				progressVocabOne
 			],
 			set_title: setOne,
+			set_titles: [setOne],
 			start_time: 1627308670962,
 			switch_language: false,
 			uid: userOne,
@@ -1134,6 +1153,7 @@ describe("Parandum Cloud Functions", function () {
 				progressVocabOne
 			],
 			set_title: setOne,
+			set_titles: [setOne],
 			start_time: 1627308670962,
 			switch_language: false,
 			uid: userOne,
@@ -1182,6 +1202,7 @@ describe("Parandum Cloud Functions", function () {
 				progressVocabOne
 			],
 			set_title: setOne,
+			set_titles: [setOne],
 			start_time: 1627308670962,
 			switch_language: false,
 			uid: userOne,
@@ -1232,6 +1253,7 @@ describe("Parandum Cloud Functions", function () {
 				progressVocabOne
 			],
 			set_title: setOne,
+			set_titles: [setOne],
 			start_time: 1627308670962,
 			switch_language: false,
 			uid: userOne,
@@ -1282,6 +1304,7 @@ describe("Parandum Cloud Functions", function () {
 				progressVocabOne
 			],
 			set_title: setOne,
+			set_titles: [setOne],
 			start_time: 1627308670962,
 			switch_language: false,
 			uid: userOne,
@@ -1334,6 +1357,7 @@ describe("Parandum Cloud Functions", function () {
 				progressVocabOne
 			],
 			set_title: setOne,
+			set_titles: [setOne],
 			start_time: 1627308670962,
 			switch_language: false,
 			uid: userOne,
@@ -1390,6 +1414,7 @@ describe("Parandum Cloud Functions", function () {
 				progressVocabOne
 			],
 			set_title: `${setOne}__${setTwo}`,
+			set_titles: [setOne, setTwo],
 			start_time: 1627308670962,
 			switch_language: false,
 			uid: userOne,
@@ -1449,6 +1474,7 @@ describe("Parandum Cloud Functions", function () {
 				progressVocabOne
 			],
 			set_title: `${setOne}__${setTwo}`,
+			set_titles: [setOne, setTwo],
 			start_time: 1627308670962,
 			switch_language: false,
 			uid: userOne,
@@ -1521,6 +1547,7 @@ describe("Parandum Cloud Functions", function () {
 				progressVocabOne
 			],
 			set_title: setOne,
+			set_titles: [setOne],
 			start_time: 1627308670962,
 			switch_language: false,
 			uid: userOne,
@@ -1563,6 +1590,7 @@ describe("Parandum Cloud Functions", function () {
 			switch_language: false,
 			answer: incorrectAnswer,
 			setIds: [setOne],
+			set_titles: [setOne],
 		});
 	});
 
@@ -1590,6 +1618,7 @@ describe("Parandum Cloud Functions", function () {
 				progressVocabOne
 			],
 			set_title: setOne,
+			set_titles: [setOne],
 			start_time: 1627308670962,
 			switch_language: false,
 			uid: userOne,
@@ -1641,6 +1670,7 @@ describe("Parandum Cloud Functions", function () {
 			switch_language: false,
 			answer: incorrectAnswer,
 			setIds: [setOne],
+			set_titles: [setOne],
 		});
 	});
 
@@ -1663,6 +1693,7 @@ describe("Parandum Cloud Functions", function () {
 				progressVocabOne
 			],
 			set_title: setOne,
+			set_titles: [setOne],
 			start_time: 1627308670962,
 			switch_language: false,
 			uid: userOne,
@@ -1719,6 +1750,7 @@ describe("Parandum Cloud Functions", function () {
 				progressVocabOne
 			],
 			set_title: setOne,
+			set_titles: [setOne],
 			start_time: 1627308670962,
 			switch_language: false,
 			uid: userOne,

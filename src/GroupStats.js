@@ -56,7 +56,6 @@ export default withRouter(class GroupStats extends Component {
 	}
 
 	async componentDidMount() {
-		let promises = [];
 		let newState = {
 			sets: {},
 			setsWithHistory: {},
@@ -77,40 +76,39 @@ export default withRouter(class GroupStats extends Component {
 			});
 
 		if (newState.role === "owner") {
-			promises.push(
-				this.state.db
-					.collection("groups")
-					.doc(this.props.match.params.groupId)
-					.get()
-					.then(async (groupDoc) => {
-						document.title = `Stats | ${groupDoc.data().display_name} | Parandum`;
-						newState.groupName = groupDoc.data().display_name;
-						
-						return Promise.all(groupDoc.data().sets.map((setId) => {
-							return this.state.db.collection("sets")
-								.doc(setId)
-								.get()
-								.then((doc) => {
-									newState.sets[setId] = {
-										title: doc.data().title,
-									};
-								});
-						}));
-					}).catch((error) => {
-						console.log(`Can't access group: ${error}`);
-						newState.groupName = "";
-						document.title = "Stats | Parandum";
-					})
-			);
+			await this.state.db
+				.collection("groups")
+				.doc(this.props.match.params.groupId)
+				.get()
+				.then(async (groupDoc) => {
+					document.title = `Stats | ${groupDoc.data().display_name} | Parandum`;
+					newState.groupName = groupDoc.data().display_name;
+					
+					return Promise.all(groupDoc.data().sets.map((setId) => {
+						return this.state.db.collection("sets")
+							.doc(setId)
+							.get()
+							.then((doc) => {
+								newState.sets[setId] = {
+									title: doc.data().title,
+								};
+							});
+					}));
+				}).catch((error) => {
+					console.log(`Can't access group: ${error}`);
+					newState.groupName = "";
+					document.title = "Stats | Parandum";
+				});
 
-			promises.push(
-				this.state.db.collection("incorrect_answers")
-					.where("groups", "array-contains", this.props.match.params.groupId)
-					.orderBy("term", "asc")
-					.get()
-					.then((querySnapshot) => {
-						let incorrectAnswers = [];
-						querySnapshot.docs.map((doc, index, array) => {
+			const groupSetIds = Object.keys(newState.sets);
+			if (groupSetIds.length > 0) await this.state.db.collection("incorrect_answers")
+				.where("groups", "array-contains", this.props.match.params.groupId)
+				.orderBy("term", "asc")
+				.get()
+				.then((querySnapshot) => {
+					let incorrectAnswers = [];
+					querySnapshot.docs.map((doc, index, array) => {
+						if (doc.data().setIds.some(item => groupSetIds.includes(item))) {
 							if (index === 0 || doc.data().term !== array[index - 1].data().term || doc.data().definition !== array[index - 1].data().definition) {
 								incorrectAnswers.push({
 									term: doc.data().term,
@@ -145,19 +143,18 @@ export default withRouter(class GroupStats extends Component {
 							doc.data().setIds.map((setId) => newState.setsWithHistory[setId] = true);
 
 							return true;
-						});
-						newState.incorrectAnswers = incorrectAnswers.sort((a, b) => b.count + b.switchedCount - a.count - a.switchedCount);
-						newState.filteredIncorrectAnswers = newState.incorrectAnswers;
-						newState.totalIncorrect = querySnapshot.docs.length;
-					})
-					.catch((error) => {
-						newState.incorrectAnswers = [];
-						newState.totalIncorrect = 0;
-						console.log(`Couldn't get group progress: ${error}`);
-					})
-			);
-
-			await Promise.all(promises);
+						}
+						return false;
+					});
+					newState.incorrectAnswers = incorrectAnswers.sort((a, b) => b.count + b.switchedCount - a.count - a.switchedCount);
+					newState.filteredIncorrectAnswers = newState.incorrectAnswers;
+					newState.totalIncorrect = querySnapshot.docs.length;
+				})
+				.catch((error) => {
+					newState.incorrectAnswers = [];
+					newState.totalIncorrect = 0;
+					console.log(`Couldn't get group progress: ${error}`);
+				});
 		}
 
 		this.setState(newState);
