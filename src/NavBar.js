@@ -4,7 +4,7 @@ import "./css/NavBar.css";
 import Button from "./Button";
 import LinkButton from "./LinkButton";
 
-export default function Navbar(props) {
+export default function NavBar(props) {
 	const navbarItems = props.items;
 	return (
 		<nav>
