@@ -302,13 +302,6 @@ export default withRouter(class Progress extends React.Component {
 		}
 	}
 
-	startLoading = () => {
-		this.setState({
-			loading: true,
-			canProceed: false,
-		});
-	}
-
 	cleanseVocabString = (item) => {
 		const chars = " .,()-_'\"";
 
@@ -539,6 +532,7 @@ export default withRouter(class Progress extends React.Component {
 		this.setState({
 			canStartTest: false,
 			loading: true,
+			canProceed: false,
 		});
 	}
 
