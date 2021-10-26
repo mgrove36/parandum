@@ -20,6 +20,7 @@ export default withRouter(class EditSet extends Component {
 				public: false,
 			},
 			inputContents: [],
+			originalInputContents: [],
 			setInaccessible: false,
 			navbarItems: [
 				{
@@ -91,6 +92,7 @@ export default withRouter(class EditSet extends Component {
 						public: setDoc.data().public,
 					},
 					inputContents: vocab,
+					originalInputContents: JSON.parse(JSON.stringify(vocab)),
 					canMakeSetNonPublic: !(setDoc.data().groups && setDoc.data().groups.length > 0),
 				};
 
@@ -229,7 +231,7 @@ export default withRouter(class EditSet extends Component {
 		}, this.handleSetDataChange());
 	}
 
-	saveSet = () => {
+	saveSet = async () => {
 		if (this.state.canSaveSet) {
 			this.setState({
 				loading: true,
@@ -240,30 +242,49 @@ export default withRouter(class EditSet extends Component {
 			const setId = this.props.match.params.setId;
 			const setDocRef = db.collection("sets").doc(setId);
 	
-			setDocRef.update({
-				title: this.state.inputs.title,
-				public: this.state.inputs.public,
-			}).then(() => {
-				const batch = db.batch();
-	
-				this.state.inputContents.map((contents) => {
-					const vocabDocRef = setDocRef.collection("vocab").doc(contents.vocabId);
-					return batch.set(vocabDocRef, {
-						term: contents.term,
-						definition: contents.definition,
-						sound: contents.sound,
-					})
-				})
-	
-				// TODO: sound files
-	
-				batch.commit().then(() => {
-					this.stopLoading();
-					this.props.history.push("/sets/" + setDocRef.id);
-				}).catch((e) => {
-					console.log("Couldn't update set. Batch commit error: " + e);
-					this.stopLoading();
-				})
+			let promises = [];
+			let batches = [db.batch()];
+
+			this.state.inputContents.map((contents, index) => {
+				if (index % 248 === 0) {
+					promises.push(batches[batches.length - 1].commit());
+					batches.push(db.batch());
+				}
+				const vocabDocRef = setDocRef.collection("vocab").doc(contents.vocabId);
+				return batches[batches.length - 1].set(vocabDocRef, {
+					term: contents.term,
+					definition: contents.definition,
+					sound: contents.sound,
+				});
+			})
+
+			// TODO: sound files
+			
+			if (this.state.inputContents.length < this.state.originalInputContents.length) {
+				let batchItems = this.state.inputContents.length % 248;
+				for (let i = this.state.inputContents.length; i < this.state.originalInputContents.length; i++) {
+					if (batchItems + i % 248 === 0) {
+						if (batchItems !== 0) batchItems = 0;
+						promises.push(batches[batches.length - 1].commit());
+						batches.push(db.batch());
+					}
+
+					const vocabDocRef = setDocRef
+						.collection("vocab")
+						.doc(this.state.originalInputContents[i].vocabId);
+					
+					batches[batches.length - 1].delete(vocabDocRef);
+				}
+			}
+			
+			if (!batches[batches.length - 1]._delegate._committed) promises.push(batches[batches.length - 1].commit().catch(() => null));
+
+			Promise.all(promises).then(() => {
+				this.stopLoading();
+				this.props.history.push("/sets/" + setDocRef.id);
+			}).catch((error) => {
+				console.log("Couldn't update set: " + error);
+				this.stopLoading();
 			});
 		}
 	}

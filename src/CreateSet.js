@@ -170,44 +170,40 @@ export default withRouter(class CreateSet extends React.Component {
 	
 			const db = this.state.db;
 			const setDocRef = db.collection("sets").doc();
-			// const setDocRef = doc(collection(this.state.db, "sets"));
 			
 			setDocRef.set({
-				title: this.state.inputs.title,
-				public: this.state.inputs.public,
-				owner: this.state.user.uid,
-				groups: [],
-			})
-			// setDoc(setDocRef, {
-			// 	title: this.state.inputs.title,
-			// 	public: this.state.inputs.public,
-			// 	owner: this.state.user.uid,
-			// 	groups: [],
-			// })
-			.then(() => {
-				const batch = db.batch();
-				// const batch = writeBatch(this.state.db);
-				
-				this.state.inputContents.map((contents) => {
-					const vocabDocRef = setDocRef.collection("vocab").doc();
-					// const vocabDocRef = doc(collection(setDocRef, "vocab"));
-					return batch.set(vocabDocRef, {
-						term: contents.term,
-						definition: contents.definition,
-						sound: false,
+					title: this.state.inputs.title,
+					public: this.state.inputs.public,
+					owner: this.state.user.uid,
+					groups: [],
+				})
+				.then(() => {
+					let promises = [];
+					let batches = [db.batch()];
+
+					this.state.inputContents.map((contents, index) => {
+						if (index % 248 === 0) {
+							promises.push(batches[batches.length - 1].commit());
+							batches.push(db.batch());
+						}
+						const vocabDocRef = setDocRef.collection("vocab").doc();
+						return batches[batches.length - 1].set(vocabDocRef, {
+							term: contents.term,
+							definition: contents.definition,
+							sound: false,
+						});
 					})
-				})
-		
-				// TODO: sound files
-		
-				batch.commit().then(() => {
-					this.stopLoading();
-					this.props.history.push("/sets/" + setDocRef.id);
-				}).catch((e) => {
-					console.log("Couldn't create set. Batch commit error: " + e);
-					this.stopLoading();
-				})
-			});
+
+					if (!batches[batches.length - 1]._delegate._committed) promises.push(batches[batches.length - 1].commit().catch(() => null));
+
+					Promise.all(promises).then(() => {
+						this.stopLoading();
+						this.props.history.push("/sets/" + setDocRef.id);
+					}).catch((error) => {
+						console.log("Couldn't update set: " + error);
+						this.stopLoading();
+					});
+				});
 		}
 	}
 
