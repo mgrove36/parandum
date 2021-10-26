@@ -17,6 +17,11 @@ service cloud.firestore {
 		function isSetOwner(setId) {
 			return get(/databases/$(database)/documents/sets/$(setId)).data.owner == request.auth.uid;
 		}
+		
+		function isSetOwnerAndHasNoGroups(setId) {
+			let data = get(/databases/$(database)/documents/sets/$(setId)).data;
+			return data.owner == request.auth.uid && (data == null || data.groups == null || data.groups == []);
+		}
 
 		function isSetOwnerOrIsPublic(setId) {
 			let data = get(/databases/$(database)/documents/sets/$(setId)).data;
@@ -190,7 +195,7 @@ service cloud.firestore {
 				allow read: if isSignedIn() && isSetOwnerOrIsPublic(setId);
 				allow create: if isSignedIn() && isSetOwner(setId) && verifyCreateFields(getPossibleCreateFields()) && verifyVocabFieldTypes();
 				allow update: if isSignedIn() && isSetOwner(setId) && verifyUpdateFields(getPossibleUpdateFields()) && verifyVocabFieldTypes();
-				allow delete: if isSignedIn() && isSetOwner(setId);
+				allow delete: if isSignedIn() && isSetOwnerAndHasNoGroups(setId);
 			}
 		}
 
