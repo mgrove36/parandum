@@ -293,7 +293,7 @@ exports.createProgress = functions.https.onCall((data, context) => {
 			data.dataToSet
 		);
 
-		promises.push(batches[batches.length - 1].commit());
+		if (!((batches[batches.length - 1]._delegate && batches[batches.length - 1]._delegate._committed === true) || batches[batches.length - 1]._committed === true)) promises.push(batches[batches.length - 1].commit());
 
 		await Promise.all(promises);
 

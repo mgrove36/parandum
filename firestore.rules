@@ -20,7 +20,7 @@ service cloud.firestore {
 		
 		function isSetOwnerAndHasNoGroups(setId) {
 			let data = get(/databases/$(database)/documents/sets/$(setId)).data;
-			return data.owner == request.auth.uid && (data == null || data.groups == null || data.groups == []);
+			return data.owner == request.auth.uid && (data == null || !("groups" in data) || data.groups == []);
 		}
 
 		function isSetOwnerOrIsPublic(setId) {
