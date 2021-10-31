@@ -107,8 +107,9 @@ export default withRouter(class GroupStats extends Component {
 				.get()
 				.then((querySnapshot) => {
 					let incorrectAnswers = [];
-					querySnapshot.docs.map((doc, index, array) => {
-						if (doc.data().setIds.some(item => groupSetIds.includes(item))) {
+					querySnapshot.docs
+						.filter((doc) => doc.data().setIds.some(item => groupSetIds.includes(item)))
+						.map((doc, index, array) => {
 							if (index === 0 || doc.data().term !== array[index - 1].data().term || doc.data().definition !== array[index - 1].data().definition) {
 								incorrectAnswers.push({
 									term: doc.data().term,
@@ -143,8 +144,6 @@ export default withRouter(class GroupStats extends Component {
 							doc.data().setIds.map((setId) => newState.setsWithHistory[setId] = true);
 
 							return true;
-						}
-						return false;
 					});
 					newState.incorrectAnswers = incorrectAnswers.sort((a, b) => b.count + b.switchedCount - a.count - a.switchedCount);
 					newState.filteredIncorrectAnswers = newState.incorrectAnswers;
