@@ -104,6 +104,7 @@ export default withRouter(class GroupStats extends Component {
 			if (groupSetIds.length > 0) await this.state.db.collection("incorrect_answers")
 				.where("groups", "array-contains", this.props.match.params.groupId)
 				.orderBy("term", "asc")
+            			.orderBy("definition", "asc")
 				.get()
 				.then((querySnapshot) => {
 					let incorrectAnswers = [];
