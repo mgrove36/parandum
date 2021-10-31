@@ -108,8 +108,9 @@ export default withRouter(class GroupStats extends Component {
 				.get()
 				.then((querySnapshot) => {
 					let incorrectAnswers = [];
-					querySnapshot.docs
-						.filter((doc) => doc.data().setIds.some(item => groupSetIds.includes(item)))
+					const docs = querySnapshot.docs
+						.filter((doc) => doc.data().setIds.some(item => groupSetIds.includes(item)));
+					docs
 						.map((doc, index, array) => {
 							if (index === 0 || doc.data().term !== array[index - 1].data().term || doc.data().definition !== array[index - 1].data().definition) {
 								incorrectAnswers.push({
@@ -148,7 +149,7 @@ export default withRouter(class GroupStats extends Component {
 					});
 					newState.incorrectAnswers = incorrectAnswers.sort((a, b) => b.count + b.switchedCount - a.count - a.switchedCount);
 					newState.filteredIncorrectAnswers = newState.incorrectAnswers;
-					newState.totalIncorrect = querySnapshot.docs.length;
+					newState.totalIncorrect = docs.length;
 				})
 				.catch((error) => {
 					newState.incorrectAnswers = [];
