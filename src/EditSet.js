@@ -348,6 +348,8 @@ export default withRouter(class EditSet extends Component {
 									onChange={this.onTermInputChange}
 									value={this.state.inputContents[index] ? this.state.inputContents[index].term : ""}
 									autoComplete="off"
+									autoCapitalize="none"
+									autoCorrect="off"
 								/>
 								<input
 									type="text"
@@ -355,6 +357,8 @@ export default withRouter(class EditSet extends Component {
 									onChange={this.onDefinitionInputChange}
 									value={this.state.inputContents[index] ? this.state.inputContents[index].definition : ""}
 									autoComplete="off"
+									autoCapitalize="none"
+									autoCorrect="off"
 								/>
 							</div>
 						)}

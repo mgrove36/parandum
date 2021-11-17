@@ -328,6 +328,8 @@ export default withRouter(class UserGroups extends Component {
 								onKeyDown={this.handleJoinCodeInputKeypress}
 								ref={inputEl => (this.joinCodeInput = inputEl)}
 								autoComplete="off"
+								autoCapitalize="none"
+								autoCorrect="off"
 							/>
 							<Button
 								onClick={this.joinGroup}

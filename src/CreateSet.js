@@ -247,12 +247,16 @@ export default withRouter(class CreateSet extends React.Component {
 									name={`term_${index}`}
 									onChange={this.onTermInputChange}
 									autoComplete="off"
+									autoCapitalize="none"
+									autoCorrect="off"
 								/>
 								<input
 									type="text"
 									name={`definition_${index}`}
 									onChange={this.onDefinitionInputChange}
 									autoComplete="off"
+									autoCapitalize="none"
+									autoCorrect="off"
 								/>
 							</div>
 						)}
