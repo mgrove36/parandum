@@ -19,7 +19,7 @@ import MistakesHistory from "./MistakesHistory";
 import TermsOfService from "./TermsOfService";
 import PrivacyPolicy from "./PrivacyPolicy";
 import Button from "./Button";
-import { CheckRounded as CheckRoundedIcon } from "@material-ui/icons";
+import { CheckRounded as CheckRoundedIcon } from "@mui/icons-material";
 import Loader from "./puff-loader.svg";
 
 import RouteChangeTracker from './RouteChangeTracker';

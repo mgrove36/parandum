@@ -1,6 +1,13 @@
 import React, { Component } from 'react';
 import { withRouter, Link } from "react-router-dom";
-import { TimelineRounded as TimelineRoundedIcon, HomeRounded as HomeRoundedIcon, EditRounded as EditRoundedIcon, ArrowForwardRounded as ArrowForwardRoundedIcon, DeleteRounded as DeleteRoundedIcon } from "@material-ui/icons";
+import {
+  TimelineRounded as TimelineRoundedIcon,
+  HomeRounded as HomeRoundedIcon,
+  EditRounded as EditRoundedIcon,
+  ArrowForwardRounded as ArrowForwardRoundedIcon,
+  DeleteRounded as DeleteRoundedIcon,
+  GroupRemoveRounded as GroupRemoveRoundedIcon
+} from "@mui/icons-material";
 import NavBar from "./NavBar";
 import Button from "./Button";
 import LinkButton from "./LinkButton";

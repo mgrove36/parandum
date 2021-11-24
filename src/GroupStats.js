@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { ArrowDropDownRounded as ArrowDropDownRoundedIcon, GroupRounded as GroupRoundedIcon, HomeRounded as HomeRoundedIcon } from "@material-ui/icons";
+import { ArrowDropDownRounded as ArrowDropDownRoundedIcon, GroupRounded as GroupRoundedIcon, HomeRounded as HomeRoundedIcon } from "@mui/icons-material";
 import { withRouter } from 'react-router-dom';
 import Select from "react-select";
 import NavBar from "./NavBar";

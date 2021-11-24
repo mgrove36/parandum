@@ -4,9 +4,10 @@
   "private": true,
   "dependencies": {
     "@babel/core": "^7.15.5",
+    "@emotion/styled": "^11.6.0",
     "@firebase/app": "^0.6.20",
-    "@material-ui/core": "^4.12.3",
-    "@material-ui/icons": "^4.11.2",
+    "@mui/icons-material": "^5.2.0",
+    "@mui/material": "^5.2.0",
     "apexcharts": "^3.28.1",
     "css-what": "^5.0.1",
     "firebase": "^8.10.0",

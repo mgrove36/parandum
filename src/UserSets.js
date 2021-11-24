@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { withRouter, Link } from 'react-router-dom';
-import { HomeRounded as HomeRoundedIcon, EditRounded as EditRoundedIcon } from "@material-ui/icons";
+import { HomeRounded as HomeRoundedIcon, EditRounded as EditRoundedIcon } from "@mui/icons-material";
 import NavBar from "./NavBar";
 import Footer from "./Footer";
 

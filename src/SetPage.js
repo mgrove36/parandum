@@ -1,6 +1,6 @@
 import React from 'react';
 import { withRouter } from "react-router-dom";
-import { HomeRounded as HomeRoundedIcon, PlayArrowRounded as PlayArrowRoundedIcon, EditRounded as EditRoundedIcon, CloudQueueRounded as CloudQueueRoundedIcon, GroupAddRounded as GroupAddRoundedIcon, CloseRounded as CloseRoundedIcon, DeleteRounded as DeleteRoundedIcon } from "@material-ui/icons";
+import { HomeRounded as HomeRoundedIcon, PlayArrowRounded as PlayArrowRoundedIcon, EditRounded as EditRoundedIcon, CloudQueueRounded as CloudQueueRoundedIcon, GroupAddRounded as GroupAddRoundedIcon, CloseRounded as CloseRoundedIcon, DeleteRounded as DeleteRoundedIcon } from "@mui/icons-material";
 import NavBar from "./NavBar";
 import Button from "./Button";
 import LinkButton from "./LinkButton";

@@ -1,6 +1,6 @@
 import React from 'react';
 import Checkbox from '@material-ui/core/Checkbox';
-import { CheckRounded as CheckRoundedIcon } from "@material-ui/icons";
+import { CheckRounded as CheckRoundedIcon } from "@mui/icons-material";
 import Button from "./Button";
 
 import "./css/SettingsContent.css";

@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { HomeRounded as HomeRoundedIcon } from "@material-ui/icons";
+import { HomeRounded as HomeRoundedIcon } from "@mui/icons-material";
 import NavBar from "./NavBar";
 import Footer from "./Footer";
 

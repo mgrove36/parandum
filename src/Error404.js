@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import NavBar from './NavBar';
 import Footer from "./Footer";
-import { HomeRounded as HomeRoundedIcon } from "@material-ui/icons";
+import { HomeRounded as HomeRoundedIcon } from "@mui/icons-material";
 
 export default function PageNotFound(props) {
 	const navbarItems = [

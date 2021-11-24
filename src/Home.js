@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import "@material-ui/core";
-import { AccountCircleRounded as AccountCircleIcon } from "@material-ui/icons";
+import { AccountCircleRounded as AccountCircleIcon } from "@mui/icons-material";
 import "./css/Home.css";
 import NavBar from './NavBar';
 import Footer from "./Footer";
