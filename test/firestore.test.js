@@ -117,16 +117,40 @@ describe("Parandum Firestore database", () => {
 		await firebase.assertSucceeds(testDoc.get());
 	});
 
-	it("Can delete current user's groups", async () => {
+	it("Can delete current user's groups when not group owner", async () => {
+		const admin = getAdminFirestore();
+		await admin.collection("users").doc(myId).collection("groups").doc(groupOne).set({ role: "member" });
+
 		const db = getFirestore(myAuth);
 		const testDoc = db.collection("users").doc(myId).collection("groups").doc(groupOne);
 		await firebase.assertSucceeds(testDoc.delete());
 	});
 
-	it("Can't delete other users' groups", async () => {
+	it("Can't delete current user's groups when group owner", async () => {
+		const admin = getAdminFirestore();
+		await admin.collection("users").doc(myId).collection("groups").doc(groupOne).set({ role: "owner" });
+
+		const db = getFirestore(myAuth);
+		const testDoc = db.collection("users").doc(myId).collection("groups").doc(groupOne);
+		await firebase.assertFails(testDoc.delete());
+	});
+
+	it("Can't delete other users' groups when not group owner", async () => {
+		const admin = getAdminFirestore();
+		await admin.collection("users").doc(myId).collection("groups").doc(groupOne).set({ role: "member" });
+
 		const db = getFirestore(myAuth);
 		const testDoc = db.collection("users").doc(theirId).collection("groups").doc(groupOne);
 		await firebase.assertFails(testDoc.delete());
+	});
+
+	it("Can delete other users' groups when group owner", async () => {
+		const admin = getAdminFirestore();
+		await admin.collection("users").doc(myId).collection("groups").doc(groupOne).set({ role: "owner" });
+
+		const db = getFirestore(myAuth);
+		const testDoc = db.collection("users").doc(theirId).collection("groups").doc(groupOne);
+		await firebase.assertSucceeds(testDoc.delete());
 	});
 
 	it("Can delete other users' groups when admin", async () => {

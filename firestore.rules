@@ -94,7 +94,8 @@ service cloud.firestore {
 					return [requiredFields, allFields];
 				}
 
-				allow read, delete: if isSignedIn() && (isSignedInUser() || getGroupRole(groupId) == "owner" || isAdmin()); // is current user's data or is owner of group or is admin
+				allow read: if isSignedIn() && (isSignedInUser() || getGroupRole(groupId) == "owner" || isAdmin()); // is current user's data or is owner of group or is admin
+				allow delete: if isSignedIn() && ((isSignedInUser() && getGroupRole(groupId) != "owner") || (!isSignedInUser() && getGroupRole(groupId) == "owner") || isAdmin())
 				allow create: if isSignedIn() && isSignedInUser() && (getRequestField("role", "") == "member" || (isAdmin() && verifyGroupFieldTypes())) && verifyCreateFields(getPossibleGroupFields());
 				allow update: if isSignedIn() &&
 					(getGroupRole(groupId) == "owner" || isAdmin()) &&
