@@ -342,6 +342,7 @@ exports.createProgressWithIncorrect = functions.https.onCall((data, context) => 
 					current_correct: [],
 					typo: false,
 					setIds: progressData.setIds,
+					set_titles: progressData.set_titles,
 				};
 				if (progressData.mode === "lives") {
 					dataToSet.lives = progressData.start_lives;
