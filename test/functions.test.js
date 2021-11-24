@@ -2150,6 +2150,7 @@ describe("Parandum Cloud Functions", function () {
 			current_correct: [],
 			typo: false,
 			setIds: [setOne, setTwo],
+			set_titles: [setOne, setTwo],
 		};
 		const termDataOne = {
 			term: termOne,
@@ -2194,18 +2195,15 @@ describe("Parandum Cloud Functions", function () {
 
 		const returnData = await createProgressWithIncorrect(progressOne);
 		assert.strictEqual(typeof returnData, "string");
-		await progressDocId.get((doc) => {
+		const newProgressDocId = firestore.collection("progress").doc(returnData);
+		await newProgressDocId.get((doc) => {
 			const data = doc.data();
 			assert.deepStrictEqual(data.correct, []);
 			assert.deepStrictEqual(data.incorrect, []);
 			assert.deepStrictEqual(data.correct, []);
 			hamjest.assertThat(data.questions, hamjest.anyOf(
-				hamjest.is([vocabOne, vocabTwo, vocabThree]),
-				hamjest.is([vocabOne, vocabThree, vocabTwo]),
-				hamjest.is([vocabTwo, vocabThree, vocabOne]),
-				hamjest.is([vocabTwo, vocabOne, vocabThree]),
-				hamjest.is([vocabOne, vocabTwo, vocabThree]),
-				hamjest.is([vocabOne, vocabThree, vocabTwo])
+				hamjest.is([vocabOne, vocabTwo]),
+				hamjest.is([vocabTwo, vocabOne])
 			));
 			assert.strictEqual(data.duration, null);
 			assert.strictEqual(data.progress, 0);
@@ -2216,27 +2214,21 @@ describe("Parandum Cloud Functions", function () {
 			assert.strictEqual(data.mode, "questions");
 			assert.deepStrictEqual(data.current_correct, []);
 			assert.strictEqual(data.typo, false);
-			assert.deepStrictEqual(data.setIds, []);
-
+			assert.deepStrictEqual(data.setIds, [setOne, setTwo]);
+			assert.deepStrictEqual(data.set_titles, [setOne, setTwo]);
 		});
-		await progressDocId
+		await newProgressDocId
 			.collection("terms").doc(`${setOne}__${vocabOne}`).get()
 			.then((doc) => assert.deepStrictEqual(doc.data(), termDataOne));
-		await progressDocId
+		await newProgressDocId
 			.collection("terms").doc(`${setOne}__${vocabTwo}`).get()
 			.then((doc) => assert.deepStrictEqual(doc.data(), termDataTwo));
-		await progressDocId
-			.collection("terms").doc(`${setTwo}__${vocabThree}`).get()
-			.then((doc) => assert.deepStrictEqual(doc.data(), termDataThree));
-		await progressDocId
+		await newProgressDocId
 			.collection("definitions").doc(`${setOne}__${vocabOne}`).get()
 			.then((doc) => assert.deepStrictEqual(doc.data(), definitionDataOne));
-		await progressDocId
+		await newProgressDocId
 			.collection("definitions").doc(`${setOne}__${vocabTwo}`).get()
 			.then((doc) => assert.deepStrictEqual(doc.data(), definitionDataTwo));
-		await progressDocId
-			.collection("definitions").doc(`${setTwo}__${vocabThree}`).get()
-			.then((doc) => assert.deepStrictEqual(doc.data(), definitionDataThree));
 	});
 
 	it("createProgressWithIncorrect correctly creates new progress record from progress record with incorrect answers in lives mode", async () => {
@@ -2262,6 +2254,7 @@ describe("Parandum Cloud Functions", function () {
 			setIds: [setOne, setTwo],
 			lives: 2,
 			start_lives: 5,
+			set_titles: [setOne, setTwo],
 		};
 		const termDataOne = {
 			term: termOne,
@@ -2306,18 +2299,15 @@ describe("Parandum Cloud Functions", function () {
 
 		const returnData = await createProgressWithIncorrect(progressOne);
 		assert.strictEqual(typeof returnData, "string");
-		await progressDocId.get((doc) => {
+		const newProgressDocId = firestore.collection("progress").doc(returnData);
+		await newProgressDocId.get((doc) => {
 			const data = doc.data();
 			assert.deepStrictEqual(data.correct, []);
 			assert.deepStrictEqual(data.incorrect, []);
 			assert.deepStrictEqual(data.correct, []);
 			hamjest.assertThat(data.questions, hamjest.anyOf(
-				hamjest.is([vocabOne, vocabTwo, vocabThree]),
-				hamjest.is([vocabOne, vocabThree, vocabTwo]),
-				hamjest.is([vocabTwo, vocabThree, vocabOne]),
-				hamjest.is([vocabTwo, vocabOne, vocabThree]),
-				hamjest.is([vocabOne, vocabTwo, vocabThree]),
-				hamjest.is([vocabOne, vocabThree, vocabTwo])
+				hamjest.is([vocabOne, vocabTwo]),
+				hamjest.is([vocabTwo, vocabOne])
 			));
 			assert.strictEqual(data.duration, null);
 			assert.strictEqual(data.progress, 0);
@@ -2331,25 +2321,20 @@ describe("Parandum Cloud Functions", function () {
 			assert.deepStrictEqual(data.setIds, []);
 			assert.strictEqual(data.lives, 5);
 			assert.strictEqual(data.start_lives, 5);
+			assert.deepStrictEqual(data.set_titles, [setOne, setTwo]);
 		});
-		await progressDocId
+		await newProgressDocId
 			.collection("terms").doc(`${setOne}__${vocabOne}`).get()
 			.then((doc) => assert.deepStrictEqual(doc.data(), termDataOne));
-		await progressDocId
+		await newProgressDocId
 			.collection("terms").doc(`${setOne}__${vocabTwo}`).get()
 			.then((doc) => assert.deepStrictEqual(doc.data(), termDataTwo));
-		await progressDocId
-			.collection("terms").doc(`${setTwo}__${vocabThree}`).get()
-			.then((doc) => assert.deepStrictEqual(doc.data(), termDataThree));
-		await progressDocId
+		await newProgressDocId
 			.collection("definitions").doc(`${setOne}__${vocabOne}`).get()
 			.then((doc) => assert.deepStrictEqual(doc.data(), definitionDataOne));
-		await progressDocId
+		await newProgressDocId
 			.collection("definitions").doc(`${setOne}__${vocabTwo}`).get()
 			.then((doc) => assert.deepStrictEqual(doc.data(), definitionDataTwo));
-		await progressDocId
-			.collection("definitions").doc(`${setTwo}__${vocabThree}`).get()
-			.then((doc) => assert.deepStrictEqual(doc.data(), definitionDataThree));
 	});
 
 	it("createProgressWithIncorrect won't create new progress record when old progress record belongs to different user", async () => {
