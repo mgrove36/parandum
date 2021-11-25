@@ -1,5 +1,5 @@
 import React from "react";
-import { CloseRounded as CloseRoundedIcon, ArrowForwardRounded as ArrowForwardRoundedIcon } from "@mui/icons-material";
+import { CloseRounded as CloseRoundedIcon, ArrowForwardRounded as ArrowForwardRoundedIcon } from "@material-ui/icons";
 import Button from "./Button";
 import Checkbox from '@material-ui/core/Checkbox';
 

@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { withRouter, Prompt } from "react-router-dom";
-import { HomeRounded as HomeRoundedIcon } from "@mui/icons-material";
+import { HomeRounded as HomeRoundedIcon } from "@material-ui/icons";
 import NavBar from "./NavBar";
 import Button from "./Button";
 import Error404 from "./Error404";

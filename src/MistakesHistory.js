@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { ArrowDropDownRounded as ArrowDropDownRoundedIcon, HistoryRounded as HistoryRoundedIcon, HomeRounded as HomeRoundedIcon } from "@mui/icons-material";
+import { ArrowDropDownRounded as ArrowDropDownRoundedIcon, HistoryRounded as HistoryRoundedIcon, HomeRounded as HomeRoundedIcon } from "@material-ui/icons";
 import NavBar from "./NavBar";
 import Footer from "./Footer";
 import "./css/History.css";

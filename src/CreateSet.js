@@ -3,7 +3,7 @@ import { withRouter } from 'react-router-dom';
 import NavBar from "./NavBar";
 import Button from "./Button";
 import Footer from "./Footer";
-import { HomeRounded as HomeRoundedIcon, CheckCircleOutlineRounded as CheckCircleOutlineRoundedIcon } from "@mui/icons-material";
+import { HomeRounded as HomeRoundedIcon, CheckCircleOutlineRounded as CheckCircleOutlineRoundedIcon } from "@material-ui/icons";
 import Checkbox from '@material-ui/core/Checkbox';
 
 // import { doc, collection, setDoc, writeBatch } from "firebase/firestore";

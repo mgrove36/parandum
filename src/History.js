@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { TimelineRounded as TimelineRoundedIcon, HomeRounded as HomeRoundedIcon, QuestionAnswerRounded as QuestionAnswerRoundedIcon, PeopleRounded as PeopleRoundedIcon, SwapHorizRounded as SwapHorizRoundedIcon, DeleteRounded as DeleteRoundedIcon } from "@mui/icons-material";
+import { TimelineRounded as TimelineRoundedIcon, HomeRounded as HomeRoundedIcon, QuestionAnswerRounded as QuestionAnswerRoundedIcon, PeopleRounded as PeopleRoundedIcon, SwapHorizRounded as SwapHorizRoundedIcon, DeleteRounded as DeleteRoundedIcon } from "@material-ui/icons";
 import NavBar from "./NavBar";
 import Button from "./Button";
 import Footer from "./Footer";

@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { HomeRounded as HomeRoundedIcon, GroupAddRounded as GroupAddRoundedIcon, GroupRounded as GroupRoundedIcon, CloseRounded as CloseRoundedIcon, ArrowForwardRounded as ArrowForwardRoundedIcon, PersonRounded as PersonRoundedIcon, EditRounded as EditRoundedIcon, VisibilityRounded as VisibilityRoundedIcon } from "@mui/icons-material";
+import { HomeRounded as HomeRoundedIcon, GroupAddRounded as GroupAddRoundedIcon, GroupRounded as GroupRoundedIcon, CloseRounded as CloseRoundedIcon, ArrowForwardRounded as ArrowForwardRoundedIcon, PersonRounded as PersonRoundedIcon, EditRounded as EditRoundedIcon, VisibilityRounded as VisibilityRoundedIcon } from "@material-ui/icons";
 import NavBar from "./NavBar";
 import Button from "./Button";
 import Footer from "./Footer";

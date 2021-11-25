@@ -6,8 +6,8 @@ import {
   EditRounded as EditRoundedIcon,
   ArrowForwardRounded as ArrowForwardRoundedIcon,
   DeleteRounded as DeleteRoundedIcon,
-  GroupRemoveRounded as GroupRemoveRoundedIcon
-} from "@mui/icons-material";
+  ExitToAppRounded as ExitToAppRoundedIcon
+} from "@material-ui/icons";
 import NavBar from "./NavBar";
 import Button from "./Button";
 import LinkButton from "./LinkButton";
@@ -486,7 +486,7 @@ export default withRouter(
                     <div className="button-container">
                       <Button
                         onClick={this.showLeaveGroup}
-                        icon={<GroupRemoveRoundedIcon />}
+                        icon={<ExitToAppRoundedIcon />}
                         className="button--round"
                         title="Leave group"
                       ></Button>

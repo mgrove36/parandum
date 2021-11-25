@@ -5,7 +5,7 @@ import "./css/Login.css";
 import "./css/PopUp.css";
 import { Link } from 'react-router-dom';
 import "@material-ui/core";
-import { CloseRounded as CloseRoundedIcon } from "@mui/icons-material";
+import { CloseRounded as CloseRoundedIcon } from "@material-ui/icons";
 
 import "firebase/auth";
 

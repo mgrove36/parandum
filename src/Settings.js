@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { HomeRounded as HomeRoundedIcon } from "@mui/icons-material";
+import { HomeRounded as HomeRoundedIcon } from "@material-ui/icons";
 import NavBar from "./NavBar";
 import Button from "./Button";
 import { withRouter } from "react-router-dom";
