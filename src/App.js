@@ -19,6 +19,7 @@ import MistakesHistory from "./MistakesHistory";
 import TermsOfService from "./TermsOfService";
 import PrivacyPolicy from "./PrivacyPolicy";
 import Button from "./Button";
+import SearchSets from './SearchSets';
 import { CheckRounded as CheckRoundedIcon } from "@material-ui/icons";
 import Loader from "./puff-loader.svg";
 
@@ -293,6 +294,9 @@ class App extends React.Component {
                 </Route>
                 <Route path="/sets/:setId" exact>
                   <SetPage db={db} functions={functions} user={this.state.user} logEvent={analytics.logEvent} page={this.page} />
+                </Route>
+                <Route path="/search" exact>
+                  <SearchSets db={db} functions={functions} user={this.state.user} logEvent={analytics.logEvent} page={this.page} />
                 </Route>
                 <Route path="/groups" exact>
                   <UserGroups db={db} functions={functions} user={this.state.user} logEvent={analytics.logEvent} page={this.page} />

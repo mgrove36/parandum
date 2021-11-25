@@ -1,7 +1,7 @@
 import React from 'react';
 import NavBar from "./NavBar";
 import { Link } from "react-router-dom";
-import { TimelineRounded as TimelineRoundedIcon, ExitToAppRounded as ExitToAppRoundedIcon, HistoryRounded as HistoryRoundedIcon, SettingsRounded as SettingsRoundedIcon, PersonRounded as PersonRoundedIcon, PublicRounded as PublicRoundedIcon, GroupRounded as GroupRoundedIcon, AddRounded as AddRoundedIcon, SwapHorizRounded as SwapHorizRoundedIcon, PeopleRounded as PeopleRoundedIcon, DeleteRounded as DeleteRoundedIcon, QuestionAnswerRounded as QuestionAnswerRoundedIcon } from "@material-ui/icons";
+import { TimelineRounded as TimelineRoundedIcon, ExitToAppRounded as ExitToAppRoundedIcon, HistoryRounded as HistoryRoundedIcon, SettingsRounded as SettingsRoundedIcon, PersonRounded as PersonRoundedIcon, GroupRounded as GroupRoundedIcon, AddRounded as AddRoundedIcon, SwapHorizRounded as SwapHorizRoundedIcon, PeopleRounded as PeopleRoundedIcon, DeleteRounded as DeleteRoundedIcon, QuestionAnswerRounded as QuestionAnswerRoundedIcon, SearchRounded as SearchRoundedIcon } from "@material-ui/icons";
 import Checkbox from '@material-ui/core/Checkbox';
 
 import Xarrow from 'react-xarrows';
@@ -93,11 +93,6 @@ export default withRouter(class LoggedInHome extends React.Component {
 		const userSetsRef = this.state.db.collection("sets")
 			.where("owner", "==", this.state.user.uid)
 			.orderBy("title");
-		const publicSetsRef = this.state.db.collection("sets")
-			.where("public", "==", true)
-			.where("owner", "!=", this.state.user.uid)
-			.orderBy("owner")
-			.orderBy("title");
 		const userGroupsRef = this.state.db.collection("users")
 			.doc(this.state.user.uid)
 			.collection("groups");
@@ -114,12 +109,6 @@ export default withRouter(class LoggedInHome extends React.Component {
 			newState.userSets = userSetsQuerySnapshot.docs;
 
 			userSetsQuerySnapshot.docs.map((doc) => newState.selections[doc.id] = false);
-
-		});
-		const publicSetsQuery = publicSetsRef.get().then((publicSetsQuerySnapshot) => {
-			newState.publicSets = publicSetsQuerySnapshot.docs;
-
-			publicSetsQuerySnapshot.docs.map((doc) => newState.selections[doc.id] = false);
 
 		});
 		const userGroupsQuery = userGroupsRef.get().then(async (userGroupsQuerySnapshot) => {
@@ -179,7 +168,6 @@ export default withRouter(class LoggedInHome extends React.Component {
 
 		Promise.all([
 			userSetsQuery,
-			publicSetsQuery,
 			userGroupsQuery,
 			progressQuery
 		]).then(() => {
@@ -378,22 +366,23 @@ export default withRouter(class LoggedInHome extends React.Component {
 							>
 								Test ({Object.values(this.state.selections).filter(x => x === true).length})
 							</Button>
-							<LinkButton
-								to="/groups"
-							>
-								Groups
-							</LinkButton>
 							{
 								(!this.props.page.loaded() || (this.state.userSets && this.state.userSets.length > 0)) &&
 								<LinkButton
 									to="/my-sets"
-								>
+									>
 									My Sets
 								</LinkButton>
 							}
-							<LinkButton id="create-set-button-desktop" to="/create-set" icon={<AddRoundedIcon/>} className="button--round" title="Create set"></LinkButton>
+							<LinkButton to="/create-set" icon={<AddRoundedIcon/>} className="button--round" title="Create set"></LinkButton>
+							<LinkButton to="/search" icon={<SearchRoundedIcon/>} className="button--round" title="Search sets"></LinkButton>
+							<LinkButton to="/groups" icon={<GroupRoundedIcon/>} className="button--round" title="Groups"></LinkButton>
 						</div>
-						<LinkButton id="create-set-button-mobile" to="/create-set" icon={<AddRoundedIcon />} className="button--round buttons--mobile" title="Create set"></LinkButton>
+						<div className="button-container buttons--mobile">
+							<LinkButton id="create-set-button-mobile" to="/create-set" icon={<AddRoundedIcon />} className="button--round buttons--mobile" title="Create set"></LinkButton>
+							<LinkButton to="/search" icon={<SearchRoundedIcon/>} className="button--round" title="Search sets"></LinkButton>
+							<LinkButton to="/groups" icon={<GroupRoundedIcon/>} className="button--round" title="Groups"></LinkButton>
+						</div>
 					</div>
 					<div className="page-header page-header--left buttons--mobile">
 						<Button
@@ -402,11 +391,6 @@ export default withRouter(class LoggedInHome extends React.Component {
 						>
 							Test ({Object.values(this.state.selections).filter(x => x === true).length})
 						</Button>
-						<LinkButton
-							to="/groups"
-						>
-							Groups
-						</LinkButton>
 						{
 							this.state.userSets && this.state.userSets.length > 0 &&
 							<LinkButton
@@ -493,7 +477,11 @@ export default withRouter(class LoggedInHome extends React.Component {
 					<div className="form set-list">
 						{this.state.userSets && this.state.userSets.length > 0 &&
 							<div className="checkbox-list-container">
-								<h3><PersonRoundedIcon /> Personal Sets</h3>
+								<Link
+									to="/my-sets"
+								>
+									<h3><PersonRoundedIcon /> My Sets</h3>
+								</Link>
 								<div className="checkbox-list">
 									{this.state.userSets
 										.sort((a, b) => {
@@ -561,38 +549,6 @@ export default withRouter(class LoggedInHome extends React.Component {
 									</div>
 								</div>
 						)}
-						{this.state.publicSets && this.state.publicSets.length > 0 &&
-							<div className="checkbox-list-container">
-								<h3><PublicRoundedIcon /> Public Sets</h3>
-								<div className="checkbox-list">
-									{this.state.publicSets
-										.sort((a, b) => {
-											if (a.data().title < b.data().title) {
-												return -1;
-											}
-											if (a.data().title > b.data().title) {
-												return 1;
-											}
-											return 0;
-										}).map(set =>
-											<div key={set.id}>
-												<label>
-													<Checkbox
-														name={set.id}
-														checked={this.state.selections[set.id]}
-														onChange={this.handleSetSelectionChange}
-														inputProps={{ 'aria-label': 'checkbox' }}
-													/>
-													<Link to={`/sets/${set.id}`}>
-														{set.data().title}
-													</Link>
-												</label>
-											</div>
-										)
-									}
-								</div>
-							</div>
-						}
 					</div>
 				</main>
 				<Footer />
