@@ -1,0 +1,20 @@
+.search-box-container {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	flex-wrap: wrap;
+	margin-bottom: 12px;
+}
+
+.search-box {
+	border: 1px solid var(--text-color-tinted);
+	border-radius: 6px;
+	flex-grow: 1;
+	margin-right: 8px;
+	font-size: 18px;
+	padding: 8px 12px;
+}
+
+.load-more-button {
+	margin: auto;
+}
