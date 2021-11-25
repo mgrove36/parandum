@@ -71,7 +71,8 @@ export default withRouter(class UserGroups extends Component {
 							setCount: groupDoc.data().sets.length,
 							memberCount: Object.keys(groupDoc.data().users).length,
 						};
-					});
+					})
+					.catch((err) => console.log(`Can't access group: ${err}`));
 			}));
 
 			this.setState(newState);
