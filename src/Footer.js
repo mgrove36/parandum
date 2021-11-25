@@ -12,6 +12,7 @@ export default function Footer(props) {
 					<Link to="/privacy">Privacy policy</Link>
 				</>
 			}
+			<span>v{process.env.REACT_APP_VERSION}</span>
 		</footer>
 	)
 }
