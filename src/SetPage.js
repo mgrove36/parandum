@@ -174,7 +174,8 @@ export default withRouter(class SetPage extends React.Component {
 							.then((groupDoc) => {
 								newState.groups[userGroupDoc.id] = groupDoc.data().display_name;
 								newState.addSetToGroupLoading[userGroupDoc.id] = false;
-							});
+							})
+							.catch((err) => console.log(`Can't get group, possibly due to outdated cached data: ${err}`));
 					return true;
 				}));
 			})

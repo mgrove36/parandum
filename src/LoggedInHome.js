@@ -128,11 +128,9 @@ export default withRouter(class LoggedInHome extends React.Component {
 
 			return Promise.all(userGroupsQuerySnapshot.docs.map((group) => {
 				const groupData = groupRef.doc(group.id).get().catch((error) => {
-					console.log(`Couldn't get group data: ${error}`);
+					console.log(`Couldn't get group data, possibly due to outdated cached data: ${error}`);
 					return true;
 				});
-
-				newState.user.groups.push(group.id);
 
 				return userGroupSetsRef
 					.where("public", "==", true)
@@ -140,6 +138,8 @@ export default withRouter(class LoggedInHome extends React.Component {
 					.get().then(async (userGroupSetsQuerySnapshot) => {
 						groupData.then((result) => {
 							if (typeof result !== "undefined" && typeof result.data === "function" && userGroupSetsQuerySnapshot.docs.length > 0) {
+								newState.user.groups.push(group.id);
+
 								userGroupSets.push({
 									group: result,
 									sets: userGroupSetsQuerySnapshot.docs,
