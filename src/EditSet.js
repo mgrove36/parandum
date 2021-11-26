@@ -146,13 +146,22 @@ export default withRouter(class EditSet extends Component {
 	}
 
 	handleSetDataChange = () => {
-		const numberOfVocabPairs = this.state.inputContents.map(contents =>
-			this.cleanseVocabString(contents.term) !== "" &&
-			this.cleanseVocabString(contents.definition) !== "")
+		let vocabWithTextExists = false;
+		const noInvalidPairs = this.state.inputContents.map(contents => {
+				const cleansedTerm = this.cleanseVocabString(contents.term);
+				const cleansedDefinition = this.cleanseVocabString(contents.definition);
+				const emptyVocabTermPresent = cleansedTerm === "" || cleansedDefinition === "";
+				if (emptyVocabTermPresent && cleansedTerm !== cleansedDefinition) {
+					return true;
+				} else if (!emptyVocabTermPresent) {
+					vocabWithTextExists = true;
+				}
+				return false;
+			})
 			.filter(x => x === true)
-			.length;
+			.length === 0;
 
-		if (this.state.inputs.title !== "" && numberOfVocabPairs > 0 && numberOfVocabPairs === this.state.inputContents.length) {
+		if (this.state.inputs.title !== "" && noInvalidPairs && vocabWithTextExists) {
 			this.setState({
 				canSaveSet: true,
 			})
@@ -251,11 +260,15 @@ export default withRouter(class EditSet extends Component {
 					batches.push(db.batch());
 				}
 				const vocabDocRef = setDocRef.collection("vocab").doc(contents.vocabId);
-				return batches[batches.length - 1].set(vocabDocRef, {
-					term: contents.term,
-					definition: contents.definition,
-					sound: contents.sound,
-				});
+				if (contents.term === "") {
+					return batches[batches.length - 1].delete(vocabDocRef);
+				} else {
+					return batches[batches.length - 1].set(vocabDocRef, {
+						term: contents.term,
+						definition: contents.definition,
+						sound: contents.sound,
+					});
+				}
 			})
 
 			// TODO: sound files

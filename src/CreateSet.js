@@ -78,13 +78,22 @@ export default withRouter(class CreateSet extends React.Component {
 	}
 
 	handleSetDataChange = () => {
-		const numberOfVocabPairs = this.state.inputContents.map(contents => 
-			this.cleanseVocabString(contents.term) !== "" &&
-			this.cleanseVocabString(contents.definition) !== "")
+		let vocabWithTextExists = false;
+		const noInvalidPairs = this.state.inputContents.map(contents => {
+				const cleansedTerm = this.cleanseVocabString(contents.term);
+				const cleansedDefinition = this.cleanseVocabString(contents.definition);
+				const emptyVocabTermPresent = cleansedTerm === "" || cleansedDefinition === "";
+				if (emptyVocabTermPresent && cleansedTerm !== cleansedDefinition) {
+					return true;
+				} else if (!emptyVocabTermPresent) {
+					vocabWithTextExists = true;
+				}
+				return false;
+			})
 			.filter(x => x === true)
-			.length;
+			.length === 0;
 
-		if (this.state.inputs.title !== "" && numberOfVocabPairs > 0 && numberOfVocabPairs === this.state.inputContents.length) {
+		if (this.state.inputs.title !== "" && noInvalidPairs && vocabWithTextExists) {
 			this.setState({
 				canCreateSet: true,
 			})
@@ -181,18 +190,27 @@ export default withRouter(class CreateSet extends React.Component {
 					let promises = [];
 					let batches = [db.batch()];
 
-					this.state.inputContents.map((contents, index) => {
-						if (index % 248 === 0) {
-							promises.push(batches[batches.length - 1].commit());
-							batches.push(db.batch());
-						}
-						const vocabDocRef = setDocRef.collection("vocab").doc();
-						return batches[batches.length - 1].set(vocabDocRef, {
-							term: contents.term,
-							definition: contents.definition,
-							sound: false,
+					this.state.inputContents
+						.filter(contents => 
+							this.cleanseVocabString(contents.term) !== "" &&
+							this.cleanseVocabString(contents.definition) !== ""
+						)
+						.map((contents, index) => {
+							if (index % 248 === 0) {
+								promises.push(batches[batches.length - 1].commit());
+								batches.push(db.batch());
+							}
+							const vocabDocRef = setDocRef.collection("vocab").doc();
+							if (contents.term === "") {
+								return batches[batches.length - 1].delete(vocabDocRef);
+							} else {
+								return batches[batches.length - 1].set(vocabDocRef, {
+									term: contents.term,
+									definition: contents.definition,
+									sound: true,
+								});
+							}
 						});
-					})
 
 					if (!batches[batches.length - 1]._delegate._committed) promises.push(batches[batches.length - 1].commit().catch(() => null));
 
@@ -200,7 +218,7 @@ export default withRouter(class CreateSet extends React.Component {
 						this.stopLoading();
 						this.props.history.push("/sets/" + setDocRef.id);
 					}).catch((error) => {
-						console.log("Couldn't update set: " + error);
+						console.log("Couldn't save set: " + error);
 						this.stopLoading();
 					});
 				});
