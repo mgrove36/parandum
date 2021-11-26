@@ -320,171 +320,161 @@ export default withRouter(class Progress extends React.Component {
 	
 			this.startLoading();
 	
-			if (!cleansedCurrentCorrect.includes(this.cleanseVocabString(this.state.answerInput))) {
-				this.state.functions.processAnswer({
-					answer: this.state.answerInput,
-					progressId: this.props.match.params.progressId,
-				}).then(async (result) => {
-					if (result.data.typo) {
-						this.setState({
-							typo: true,
-							loading: false,
-							canProceed: true,
-						});
-						return true;
-					}
-
-					const data = result.data;
-					let newState = {
-						currentAnswerStatus: data.correct ? null : false,
-						currentCorrect: data.correctAnswers,
-						moreAnswers: data.moreAnswers,
-						nextPrompt: data.nextPrompt ? data.nextPrompt.item : null,
-						nextSound: data.nextPrompt ? data.nextPrompt.sound : null,
-						nextSetOwner: data.nextPrompt ? data.nextPrompt.set_owner : null,
-						progress: data.progress,
-						totalQuestions: data.totalQuestions,
-						correct: data.totalCorrect,
-						incorrect: data.totalIncorrect,
-						currentVocabId: data.currentVocabId,
-						loading: false,
-						canProceed: true,
-						typo: false,
-						canStartTest: true,
-					};
-
-					if (data.correct) {
-						this.props.logEvent("correct_answer", {
-							progress_id: this.props.match.params.progressId,
-						});
-					} else {
-						this.props.logEvent("incorrect_answer", {
-							progress_id: this.props.match.params.progressId,
-						});
-					}
-
-					if (this.state.mode === "lives") newState.lives = data.lives;
-	
-					if (data.correct) {
-						// correct answer given
-						newState.answerInput = "";
-						// show next question if there are no more answers
-						if (!data.moreAnswers) newState = this.showNextQuestion(newState, newState);
-					} else {
-						// incorrect answer given
-						// store prompt and count=0
-						// store answer if in lives mode and no lives left
-						newState.incorrectAnswers = this.state.incorrectAnswers;
-						newState.incorrectAnswers[data.currentVocabId] = {
-							prompt: this.state.currentPrompt,
-							answer: data.lives === 0 ? data.correctAnswers : "",
-							count: 0,
-						};
-					}
-
-					if ((data.correct || data.lives === 0) && !data.moreAnswers && this.state.incorrectAnswers[data.currentVocabId]) {
-						// all answers to question given correctly
-						// answer was previously wrong
-						// store correct answer
-						newState.incorrectAnswers = this.state.incorrectAnswers;
-						newState.incorrectAnswers[data.currentVocabId].answer = data.correctAnswers;
-					}
-
-					let promises = [];
-
-					if (data.duration) {
-						// test done
-						newState.duration = data.duration;
-						newState.averagePercentage = data.averagePercentage;
-
-						this.props.logEvent("test_complete", {
-							progress_id: this.props.match.params.progressId,
-						});
-
-						promises.push(this.state.db.collection("progress")
-							.where("uid", "==", this.state.user.uid)
-							.where("setIds", "==", this.state.setIds)
-							.orderBy("start_time")
-							.get()
-							.then((querySnapshot) => {
-								newState.attemptNumber = querySnapshot.docs.map((doc) => doc.id).indexOf(this.props.match.params.progressId) + 1;
-								if (querySnapshot.docs.length > 1)
-									newState.attemptHistory = querySnapshot.docs.filter((doc) => doc.data().duration !== null)
-										.map((doc) => {
-											if (doc.id === this.props.match.params.progressId) newState.startTime = doc.data().start_time;
-											return {
-												x: new Date(doc.data().start_time),
-												y: (doc.data().correct.length / doc.data().questions.length * 100),
-											}
-										});
-							}));
-					}
-
-					if (data.incorrectAnswers) {
-						let unsavedAnswers = {};
-
-						if (!newState.incorrectAnswers) {
-							newState.incorrectAnswers = {};
-						}
-
-						data.incorrectAnswers.map((vocabId) => {
-							if (newState.incorrectAnswers[vocabId] && newState.incorrectAnswers[vocabId].answer !== "") {
-								// already been logged including prompt and correct answer
-								newState.incorrectAnswers[vocabId].count++;
-							} else {
-								// not been saved yet
-								// update count in unsaved answers
-								unsavedAnswers[vocabId] ? unsavedAnswers[vocabId]++ : unsavedAnswers[vocabId] = 1;
-							}
-							return true;
-						});
-
-						promises.push(Promise.all(Object.keys(unsavedAnswers).map((vocabId) => {
-							// get and store vocab docs that haven't already been stored (due to refresh)
-							const progressDocRef = this.state.db
-								.collection("progress")
-								.doc(this.props.match.params.progressId);
-
-							newState.incorrectAnswers[vocabId] = {
-								count: unsavedAnswers[vocabId],
-							};
-
-							return Promise.all([
-								progressDocRef.collection("terms")
-									.doc(vocabId)
-									.get().then((termDoc) => {
-										this.state.switchLanguage ? newState.incorrectAnswers[vocabId].answer = termDoc.data().item.split("/") : newState.incorrectAnswers[vocabId].prompt = termDoc.data().item;
-									}),
-								progressDocRef.collection("definitions")
-									.doc(vocabId)
-									.get().then((definitionDoc) => {
-										this.state.switchLanguage ? newState.incorrectAnswers[vocabId].prompt = definitionDoc.data().item : newState.incorrectAnswers[vocabId].answer = definitionDoc.data().item.split("/");
-									})
-							]);
-						})));
-					}
-
-					await Promise.all(promises);
-	
-					this.setState(newState, () => {
-						if (!newState.duration) this.answerInput.focus()
-					});
-				}).catch((error) => {
-					console.log(`Couldn't process answer: ${error}`);
+			this.state.functions.processAnswer({
+				answer: this.state.answerInput,
+				progressId: this.props.match.params.progressId,
+			}).then(async (result) => {
+				if (result.data.typo) {
 					this.setState({
+						typo: true,
 						loading: false,
 						canProceed: true,
 					});
-				});
-			} else {
-				this.setState({
-					currentAnswerStatus: null,
-					answerInput: "",
+					return true;
+				}
+
+				const data = result.data;
+				let newState = {
+					currentAnswerStatus: data.correct ? null : false,
+					currentCorrect: data.correctAnswers,
+					moreAnswers: data.moreAnswers,
+					nextPrompt: data.nextPrompt ? data.nextPrompt.item : null,
+					nextSound: data.nextPrompt ? data.nextPrompt.sound : null,
+					nextSetOwner: data.nextPrompt ? data.nextPrompt.set_owner : null,
+					progress: data.progress,
+					totalQuestions: data.totalQuestions,
+					correct: data.totalCorrect,
+					incorrect: data.totalIncorrect,
+					currentVocabId: data.currentVocabId,
 					loading: false,
 					canProceed: true,
 					typo: false,
+					canStartTest: true,
+				};
+
+				if (data.correct) {
+					this.props.logEvent("correct_answer", {
+						progress_id: this.props.match.params.progressId,
+					});
+				} else {
+					this.props.logEvent("incorrect_answer", {
+						progress_id: this.props.match.params.progressId,
+					});
+				}
+
+				if (this.state.mode === "lives") newState.lives = data.lives;
+
+				if (data.correct) {
+					// correct answer given
+					newState.answerInput = "";
+					// show next question if there are no more answers
+					if (!data.moreAnswers) newState = this.showNextQuestion(newState, newState);
+				} else {
+					// incorrect answer given
+					// store prompt and count=0
+					// store answer if in lives mode and no lives left
+					newState.incorrectAnswers = this.state.incorrectAnswers;
+					newState.incorrectAnswers[data.currentVocabId] = {
+						prompt: this.state.currentPrompt,
+						answer: data.lives === 0 ? data.correctAnswers : "",
+						count: 0,
+					};
+				}
+
+				if ((data.correct || data.lives === 0) && !data.moreAnswers && this.state.incorrectAnswers[data.currentVocabId]) {
+					// all answers to question given correctly
+					// answer was previously wrong
+					// store correct answer
+					newState.incorrectAnswers = this.state.incorrectAnswers;
+					newState.incorrectAnswers[data.currentVocabId].answer = data.correctAnswers;
+				}
+
+				let promises = [];
+
+				if (data.duration) {
+					// test done
+					newState.duration = data.duration;
+					newState.averagePercentage = data.averagePercentage;
+
+					this.props.logEvent("test_complete", {
+						progress_id: this.props.match.params.progressId,
+					});
+
+					promises.push(this.state.db.collection("progress")
+						.where("uid", "==", this.state.user.uid)
+						.where("setIds", "==", this.state.setIds)
+						.orderBy("start_time")
+						.get()
+						.then((querySnapshot) => {
+							newState.attemptNumber = querySnapshot.docs.map((doc) => doc.id).indexOf(this.props.match.params.progressId) + 1;
+							if (querySnapshot.docs.length > 1)
+								newState.attemptHistory = querySnapshot.docs.filter((doc) => doc.data().duration !== null)
+									.map((doc) => {
+										if (doc.id === this.props.match.params.progressId) newState.startTime = doc.data().start_time;
+										return {
+											x: new Date(doc.data().start_time),
+											y: (doc.data().correct.length / doc.data().questions.length * 100),
+										}
+									});
+						}));
+				}
+
+				if (data.incorrectAnswers) {
+					let unsavedAnswers = {};
+
+					if (!newState.incorrectAnswers) {
+						newState.incorrectAnswers = {};
+					}
+
+					data.incorrectAnswers.map((vocabId) => {
+						if (newState.incorrectAnswers[vocabId] && newState.incorrectAnswers[vocabId].answer !== "") {
+							// already been logged including prompt and correct answer
+							newState.incorrectAnswers[vocabId].count++;
+						} else {
+							// not been saved yet
+							// update count in unsaved answers
+							unsavedAnswers[vocabId] ? unsavedAnswers[vocabId]++ : unsavedAnswers[vocabId] = 1;
+						}
+						return true;
+					});
+
+					promises.push(Promise.all(Object.keys(unsavedAnswers).map((vocabId) => {
+						// get and store vocab docs that haven't already been stored (due to refresh)
+						const progressDocRef = this.state.db
+							.collection("progress")
+							.doc(this.props.match.params.progressId);
+
+						newState.incorrectAnswers[vocabId] = {
+							count: unsavedAnswers[vocabId],
+						};
+
+						return Promise.all([
+							progressDocRef.collection("terms")
+								.doc(vocabId)
+								.get().then((termDoc) => {
+									this.state.switchLanguage ? newState.incorrectAnswers[vocabId].answer = termDoc.data().item.split("/") : newState.incorrectAnswers[vocabId].prompt = termDoc.data().item;
+								}),
+							progressDocRef.collection("definitions")
+								.doc(vocabId)
+								.get().then((definitionDoc) => {
+									this.state.switchLanguage ? newState.incorrectAnswers[vocabId].prompt = definitionDoc.data().item : newState.incorrectAnswers[vocabId].answer = definitionDoc.data().item.split("/");
+								})
+						]);
+					})));
+				}
+
+				await Promise.all(promises);
+
+				this.setState(newState, () => {
+					if (!newState.duration) this.answerInput.focus()
 				});
-			}
+			}).catch((error) => {
+				console.log(`Couldn't process answer: ${error}`);
+				this.setState({
+					loading: false,
+					canProceed: true,
+				});
+			});
 		}
 	}
 
