@@ -532,7 +532,23 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 				const mode = docData.mode;
 				const correctAnswers = answerDoc.data().item;
 				const splitCorrectAnswers = correctAnswers.split("/");
-				const cleansedSplitCorrectAnswers = splitCorrectAnswers.map((answer) => cleanseVocabString(answer));
+				let prevCorrect = progressDoc.data().current_correct;
+
+				let notDoneSplitCorrectAnswers = [...splitCorrectAnswers];
+				let cleansedDoneSplitCorrectAnswers = [];
+				prevCorrect.map((item) => {
+					const index = notDoneSplitCorrectAnswers.indexOf(item);
+					if (index !== -1) {
+						cleansedDoneSplitCorrectAnswers.push(
+							cleanseVocabString(
+								notDoneSplitCorrectAnswers.splice(index, 1)[0]
+							)
+						);
+					}
+				});
+				const cleansedNotDoneSplitCorrectAnswers = notDoneSplitCorrectAnswers.map((answer) => cleanseVocabString(answer));
+
+				const cleansedSplitCorrectAnswers = cleansedNotDoneSplitCorrectAnswers.concat(cleansedDoneSplitCorrectAnswers);
 				const cleansedInputAnswer = cleanseVocabString(inputAnswer);
 
 				let isCorrectAnswer = false;
@@ -555,7 +571,7 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 						};
 					}
 					let typo = false;
-					cleansedSplitCorrectAnswers.forEach((answer, index, array) => {
+					cleansedNotDoneSplitCorrectAnswers.forEach((answer, index, array) => {
 						const levDistance = levenshtein(answer, cleansedInputAnswer);
 						if (levDistance <= 1 ||
 							answer.length > 5 && levDistance <= 3 ||
@@ -570,8 +586,6 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 						typo: true,
 					};
 				}
-
-				let prevCorrect = progressDoc.data().current_correct;
 				
 				var returnData = {
 					mode: mode,
@@ -598,7 +612,8 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 
 					if (!prevCorrect) {
 						docData.current_correct = [splitCorrectAnswers[correctAnswerIndex]];
-					} else if (!prevCorrect.includes(splitCorrectAnswers[correctAnswerIndex])) {
+					// } else if (!prevCorrect.includes(splitCorrectAnswers[correctAnswerIndex])) {
+					} else if (correctAnswerIndex < notDoneSplitCorrectAnswers.length) {
 						docData.current_correct.push(splitCorrectAnswers[correctAnswerIndex]);
 					}
 					
