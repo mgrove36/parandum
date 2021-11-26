@@ -12,7 +12,7 @@ import CountdownTestStart from "./CountdownTestStart";
 
 import "./css/SearchSets.css";
 
-const paginationFrequency = 30;
+const paginationFrequency = 24;
 
 export default withRouter(class SearchSets extends Component {
 	constructor(props) {
