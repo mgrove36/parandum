@@ -611,10 +611,9 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 					}
 
 					if (!prevCorrect) {
-						docData.current_correct = [splitCorrectAnswers[correctAnswerIndex]];
-					// } else if (!prevCorrect.includes(splitCorrectAnswers[correctAnswerIndex])) {
+						docData.current_correct = [notDoneSplitCorrectAnswers[correctAnswerIndex]];
 					} else if (correctAnswerIndex < notDoneSplitCorrectAnswers.length) {
-						docData.current_correct.push(splitCorrectAnswers[correctAnswerIndex]);
+						docData.current_correct.push(notDoneSplitCorrectAnswers[correctAnswerIndex]);
 					}
 					
 					if (docData.current_correct.length === splitCorrectAnswers.length) {
