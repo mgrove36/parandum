@@ -93,7 +93,7 @@ export default withRouter(class CreateSet extends React.Component {
 			.filter(x => x === true)
 			.length === 0;
 
-		if (this.state.inputs.title !== "" && noInvalidPairs && vocabWithTextExists) {
+		if (this.state.inputs.title.trim() !== "" && noInvalidPairs && vocabWithTextExists) {
 			this.setState({
 				canCreateSet: true,
 			})
@@ -125,7 +125,7 @@ export default withRouter(class CreateSet extends React.Component {
 
 		this.setState({
 			inputContents: inputContents,
-		}, this.handleSetDataChange());
+		}, this.handleSetDataChange);
 	}
 
 	onDefinitionInputChange = (event) => {
@@ -149,7 +149,7 @@ export default withRouter(class CreateSet extends React.Component {
 
 		this.setState({
 			inputContents: inputContents,
-		}, this.handleSetDataChange());
+		}, this.handleSetDataChange);
 	}
 
 	onSetTitleInputChange = (event) => {
@@ -158,7 +158,7 @@ export default withRouter(class CreateSet extends React.Component {
 				...this.state.inputs,
 				title: event.target.value,
 			}
-		}, this.handleSetDataChange());
+		}, this.handleSetDataChange);
 	}
 
 	onPublicSetInputChange = (event) => {

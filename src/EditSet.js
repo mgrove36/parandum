@@ -161,7 +161,7 @@ export default withRouter(class EditSet extends Component {
 			.filter(x => x === true)
 			.length === 0;
 
-		if (this.state.inputs.title !== "" && noInvalidPairs && vocabWithTextExists) {
+		if (this.state.inputs.title.trim() !== "" && noInvalidPairs && vocabWithTextExists) {
 			this.setState({
 				canSaveSet: true,
 			})
@@ -194,7 +194,7 @@ export default withRouter(class EditSet extends Component {
 
 		this.setState({
 			inputContents: inputContents,
-		}, this.handleSetDataChange());
+		}, this.handleSetDataChange);
 	}
 
 	onDefinitionInputChange = (event) => {
@@ -219,7 +219,7 @@ export default withRouter(class EditSet extends Component {
 
 		this.setState({
 			inputContents: inputContents,
-		}, this.handleSetDataChange());
+		}, this.handleSetDataChange);
 	}
 
 	onSetTitleInputChange = (event) => {
@@ -228,7 +228,7 @@ export default withRouter(class EditSet extends Component {
 				...this.state.inputs,
 				title: event.target.value,
 			}
-		}, this.handleSetDataChange());
+		}, this.handleSetDataChange);
 	}
 
 	onPublicSetInputChange = (event) => {
@@ -237,7 +237,7 @@ export default withRouter(class EditSet extends Component {
 				...this.state.inputs,
 				public: event.target.checked,
 			}
-		}, this.handleSetDataChange());
+		});
 	}
 
 	saveSet = async () => {
