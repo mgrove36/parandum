@@ -316,8 +316,6 @@ export default withRouter(class Progress extends React.Component {
 
 	processAnswer = async () => {
 		if (this.state.canProceed) {
-			const cleansedCurrentCorrect = this.state.currentCorrect.map(item => this.cleanseVocabString(item));
-	
 			this.startLoading();
 	
 			this.state.functions.processAnswer({
