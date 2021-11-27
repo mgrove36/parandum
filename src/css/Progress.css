@@ -9,7 +9,7 @@
 	max-width: 500px;
 	flex-grow: 1;
 	margin-right: 8px;
-	font-size: 24px;
+	font-size: 36px;
 }
 
 .answer-input-container.answer-input-container--answer-entered > input {
@@ -25,7 +25,7 @@
 }
 
 .current-prompt {
-	font-size: 24px;
+	font-size: 46px;
 }
 
 .progress-end-incorrect-answers {
@@ -129,15 +129,36 @@
 }
 
 
-@media screen and (max-width: 660px) {
+@media screen and (max-width: 880px) {
+	.current-prompt {
+		font-size: 36px;
+	}
+	.answer-input-container > input {
+		font-size: 32px;
+	}
+}
+
+@media screen and (max-width: 700px) {
 	.progress-settings-overlay-content > .settings-themes-container {
 		width: 100%;
+	}
+	.current-prompt {
+		font-size: 30px;
+	}
+	.answer-input-container > input {
+		font-size: 26px;
 	}
 }
 
 @media screen and (max-width: 500px) {
 	.progress-settings-overlay-content {
 		width: 75%;
+	}
+	.current-prompt {
+		font-size: 26px;
+	}
+	.answer-input-container > input {
+		font-size: 24px;
 	}
 }
 
