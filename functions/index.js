@@ -634,11 +634,20 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 
 					returnData.progress = ++docData.progress;
 					docData.incorrect.push(currentVocab);
-					docData.questions.push(currentVocab);
-					const doneQuestions = docData.questions.slice(0, docData.progress);
-					const notDoneQuestions = docData.questions.slice(docData.progress);
 					docData.current_correct = [];
-					docData.questions = doneQuestions.concat(shuffleArray(notDoneQuestions));
+					if (docData.questions.length > docData.progress) {
+						docData.questions.splice(
+							Math.floor(
+								Math.random() * (
+									docData.questions.length - docData.progress
+								)
+							) + docData.progress + 1,
+							0,
+							currentVocab
+						);
+					} else {
+					docData.questions.push(currentVocab);
+					}
 					returnData.totalQuestions = docData.questions.length;
 					returnData.totalIncorrect = docData.incorrect.length;
 
