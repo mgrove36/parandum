@@ -9,6 +9,8 @@ import Footer from "./Footer";
 import LineChart from './LineChart';
 import ProgressStats from './ProgressStats';
 import ConfirmationDialog from "./ConfirmationDialog";
+import CorrectSound from "./CorrectSound.mp3";
+import IncorrectSound from "./IncorrectSound.mp3";
 
 import "./css/PopUp.css";
 import "./css/Progress.css";
@@ -55,6 +57,7 @@ export default withRouter(class Progress extends React.Component {
 		averagePercentage: null,
 		pageLoaded: false,
 		startTime: null,
+		sound: false,
 	}
 
 	constructor(props) {
@@ -89,6 +92,9 @@ export default withRouter(class Progress extends React.Component {
 			get: () => isMounted,
 			set: (value) => isMounted = value,
 		});
+
+		this.correctSound = new Audio(CorrectSound);
+		this.incorrectSound = new Audio(IncorrectSound);
 	}
 
 	setState = (state, callback=null) => {
@@ -350,23 +356,22 @@ export default withRouter(class Progress extends React.Component {
 					canStartTest: true,
 				};
 
-				if (data.correct) {
-					this.props.logEvent("correct_answer", {
-						progress_id: this.props.match.params.progressId,
-					});
-				} else {
-					this.props.logEvent("incorrect_answer", {
-						progress_id: this.props.match.params.progressId,
-					});
-				}
-
 				if (this.state.mode === "lives") newState.lives = data.lives;
 
 				if (data.correct) {
 					// correct answer given
 					newState.answerInput = "";
+					// play sound
+					if (this.props.sound) {
+						this.correctSound.currentTime = 0;
+						this.correctSound.play();
+					}
 					// show next question if there are no more answers
 					if (!data.moreAnswers) newState = this.showNextQuestion(newState, newState);
+
+					this.props.logEvent("correct_answer", {
+						progress_id: this.props.match.params.progressId,
+					});
 				} else {
 					// incorrect answer given
 					// store prompt and count=0
@@ -377,6 +382,15 @@ export default withRouter(class Progress extends React.Component {
 						answer: data.lives === 0 ? data.correctAnswers : "",
 						count: 0,
 					};
+					// play sound
+					if (this.props.sound) {
+						this.incorrectSound.currentTime = 0;
+						this.incorrectSound.play();
+					}
+					
+					this.props.logEvent("incorrect_answer", {
+						progress_id: this.props.match.params.progressId,
+					});
 				}
 
 				if ((data.correct || data.lives === 0) && !data.moreAnswers && this.state.incorrectAnswers[data.currentVocabId]) {
