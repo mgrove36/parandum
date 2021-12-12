@@ -5,6 +5,7 @@ import Button from "./Button";
 import { withRouter } from "react-router-dom";
 import SettingsContent from "./SettingsContent";
 import Footer from "./Footer";
+import "./css/Donation.css";
 
 export default withRouter(class Settings extends Component {
 	constructor(props) {
@@ -103,6 +104,23 @@ export default withRouter(class Settings extends Component {
 						>
 							Save for this session
 						</Button>
+					</div>
+
+					<h1 className="donation-header">Appreciate my work?</h1>
+					<p>Projects like Parandum take a massive amount of time, effort, and money to run! I'm really grateful for all your support.</p>
+					<div className="donation-links">
+						<a href="https://www.buymeacoffee.com/mgrove36" target="_blank" rel="noreferrer">
+							<img
+								src="https://cdn.buymeacoffee.com/buttons/v2/default-green.png"
+								alt="Buy me a coffee"
+							/>
+						</a>
+						<a href="https://www.paypal.com/donate/?hosted_button_id=AW7XJ7KFLC7JG" target="_blank" rel="noreferrer">
+							<img
+								src="https://pics.paypal.com/00/s/M2E5OWQyMjItZWU1My00YmEwLTljNmYtYTA2ZTI1OGUzMjA5/file.PNG"
+								alt="Donate with PayPal"
+							/>
+						</a>
 					</div>
 				</main>
 				<Footer showTerms={true} />

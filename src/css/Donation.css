@@ -1,0 +1,17 @@
+.donation-links {
+	display: flex;
+	flex-direction: row;
+	column-gap: 16px;
+	row-gap: 8px;
+	flex-wrap: wrap;
+	margin-top: 12px;
+}
+
+.donation-links img {
+	width: 100%;
+	max-width: 210px;
+}
+
+.donation-header {
+	margin-top: 32px;
+}
