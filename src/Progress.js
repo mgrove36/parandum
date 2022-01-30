@@ -58,6 +58,7 @@ export default withRouter(class Progress extends React.Component {
 		pageLoaded: false,
 		startTime: null,
 		sound: false,
+		ignoreCaps: false,
 	}
 
 	constructor(props) {

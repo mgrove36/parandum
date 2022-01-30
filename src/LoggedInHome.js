@@ -72,6 +72,7 @@ export default withRouter(class LoggedInHome extends React.Component {
 			showLivesTestStart: false,
 			sliderValue: 1,
 			switchLanguage: false,
+			ignoreCaps: false,
 			totalTestQuestions: 1,
 			pendingDeletions: {},
 		};
@@ -199,6 +200,7 @@ export default withRouter(class LoggedInHome extends React.Component {
 				switch_language: this.state.switchLanguage,
 				mode: mode,
 				limit: this.state.sliderValue,
+				ignoreCaps: this.state.ignoreCaps,
 			}).then((result) => {
 				const progressId = result.data;
 				this.stopLoading();
@@ -348,6 +350,12 @@ export default withRouter(class LoggedInHome extends React.Component {
 	handleSwitchLanguageChange = (event) => {
 		this.setState({
 			switchLanguage: event.target.checked,
+		});
+	}
+
+	handleIgnoreCapsChange = (event) => {
+		this.setState({
+			ignoreCaps: event.target.checked,
 		});
 	}
 
@@ -570,7 +578,9 @@ export default withRouter(class LoggedInHome extends React.Component {
 						sliderValue={this.state.sliderValue}
 						onSliderChange={this.changeSliderValue}
 						switchLanguage={this.state.switchLanguage}
+						ignoreCaps={this.state.ignoreCaps}
 						handleSwitchLanguageChange={this.handleSwitchLanguageChange}
+						handleIgnoreCapsChange={this.handleIgnoreCapsChange}
 						loading={this.state.loading}
 					/>
 				}
@@ -583,7 +593,9 @@ export default withRouter(class LoggedInHome extends React.Component {
 						sliderValue={this.state.sliderValue}
 						onSliderChange={this.changeSliderValue}
 						switchLanguage={this.state.switchLanguage}
+						ignoreCaps={this.state.ignoreCaps}
 						handleSwitchLanguageChange={this.handleSwitchLanguageChange}
+						handleIgnoreCapsChange={this.handleIgnoreCapsChange}
 						loading={this.state.loading}
 					/>
 				}

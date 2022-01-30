@@ -61,6 +61,15 @@ export default function LivesTestStart(props) {
 					<span>Switch language</span>
 				</label>
 
+				<label>
+					<Checkbox
+						checked={props.ignoreCaps}
+						onChange={props.handleIgnoreCapsChange}
+						inputProps={{ 'aria-label': 'checkbox' }}
+					/>
+					<span>Ignore capitals</span>
+				</label>
+
 				<Button
 					onClick={() => props.startTest("lives")}
 					icon={<ArrowForwardRoundedIcon />}

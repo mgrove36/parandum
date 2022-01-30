@@ -140,10 +140,11 @@ exports.getGroupMembers = functions.https.onCall((data, context) => {
 /**
  * Creates new progress document.
  * @param {object} data The data passed to the function.
+ * @param {boolean} data.ignoreCaps Whether capitalisation of answers should matter during the test.
+ * @param {boolean} data.limit The maximum number of lives/questions for the test.
+ * @param {boolean} data.mode The mode to be tested in. Valid options are "questions" and "lives".
  * @param {array} data.sets An array of IDs of the desired sets.
  * @param {boolean} data.switch_language Whether or not the languages should be reversed.
- * @param {boolean} data.mode The mode to be tested in. Valid options are "questions" and "lives".
- * @param {boolean} data.limit The maximum number of lives/questions for the test.
  * @return {string} The ID of the created progress document.
 */
 exports.createProgress = functions.https.onCall((data, context) => {
@@ -237,6 +238,7 @@ exports.createProgress = functions.https.onCall((data, context) => {
 			setIds: setIds,
 			set_titles: setIds.map((setId) => setTitlesDict[setId]),
 			typo: false,
+			ignoreCaps: data.ignoreCaps,
 		}
 
 		return {
@@ -462,9 +464,14 @@ function arraysHaveSameMembers(arr1, arr2) {
  * @param {string} item The term/definition to remove the characters that should be ignored from.
  * @return {string} The original string with the unwanted characters removed.
  */
-function cleanseVocabString(item) {
+function cleanseVocabString(item, ignoreCaps=false) {
 	const chars = /[\p{P}\p{S} ]+/ug;
-	return item.replace(chars, "");
+	const cleansed = item.replace(chars, "");
+	if (ignoreCaps) {
+		return cleansed.toLowerCase();
+	} else {
+		return cleansed;
+	}
 }
 
 /**
@@ -541,15 +548,16 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 					if (index !== -1) {
 						cleansedDoneSplitCorrectAnswers.push(
 							cleanseVocabString(
-								notDoneSplitCorrectAnswers.splice(index, 1)[0]
+								notDoneSplitCorrectAnswers.splice(index, 1)[0],
+								docData.ignoreCaps
 							)
 						);
 					}
 				});
-				const cleansedNotDoneSplitCorrectAnswers = notDoneSplitCorrectAnswers.map((answer) => cleanseVocabString(answer));
+				const cleansedNotDoneSplitCorrectAnswers = notDoneSplitCorrectAnswers.map((answer) => cleanseVocabString(answer, docData.ignoreCaps));
 
 				const cleansedSplitCorrectAnswers = cleansedNotDoneSplitCorrectAnswers.concat(cleansedDoneSplitCorrectAnswers);
-				const cleansedInputAnswer = cleanseVocabString(inputAnswer);
+				const cleansedInputAnswer = cleanseVocabString(inputAnswer, docData.ignoreCaps);
 
 				let isCorrectAnswer = false;
 				let correctAnswerIndex;
