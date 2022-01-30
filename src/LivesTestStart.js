@@ -70,6 +70,14 @@ export default function LivesTestStart(props) {
 						/>
 						<span>Ignore capitals</span>
 					</label>
+					<label>
+						<Checkbox
+							checked={props.showNumberOfAnswers}
+							onChange={props.handleShowNumberOfAnswersChange}
+							inputProps={{ 'aria-label': 'checkbox' }}
+						/>
+						<span>Show number of answers</span>
+					</label>
 				</div>
 
 				<Button

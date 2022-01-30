@@ -167,6 +167,14 @@ exports.createProgress = functions.https.onCall((data, context) => {
 		throw new functions.https.HttpsError("invalid-argument", "switch_language must be a boolean");
 	}
 
+	if (typeof data.ignoreCaps !== "boolean") {
+		throw new functions.https.HttpsError("invalid-argument", "ignoreCaps must be a boolean");
+	}
+
+	if (typeof data.showNumberOfAnswers !== "boolean") {
+		throw new functions.https.HttpsError("invalid-argument", "showNumberOfAnswers must be a boolean");
+	}
+
 	if (data.mode !== "questions" && data.mode !== "lives") {
 		throw new functions.https.HttpsError("invalid-argument", "mode must be \"questions\" or \"lives\"");
 	}
@@ -239,6 +247,7 @@ exports.createProgress = functions.https.onCall((data, context) => {
 			set_titles: setIds.map((setId) => setTitlesDict[setId]),
 			typo: false,
 			ignoreCaps: data.ignoreCaps,
+			showNumberOfAnswers: data.showNumberOfAnswers,
 		}
 
 		return {
@@ -263,10 +272,12 @@ exports.createProgress = functions.https.onCall((data, context) => {
 			const terms = {
 				"item": doc.data().term,
 				"sound": doc.data().sound,
+				"numberOfAnswers": doc.data().definition.split("/").length,
 			};
 			const definitions = {
 				"item": doc.data().definition,
 				"sound": doc.data().sound,
+				"numberOfAnswers": doc.data().term.split("/").length,
 			};
 
 			data.dataToSet.questions.push(vocabId);
@@ -345,6 +356,8 @@ exports.createProgressWithIncorrect = functions.https.onCall((data, context) => 
 					typo: false,
 					setIds: progressData.setIds,
 					set_titles: progressData.set_titles,
+					ignoreCaps: progressData.ignoreCaps,
+					showNumberOfAnswers: progressData.showNumberOfAnswers,
 				};
 				if (progressData.mode === "lives") {
 					dataToSet.lives = progressData.start_lives;
@@ -607,6 +620,7 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 					totalCorrect: docData.correct.length,
 					totalIncorrect: docData.incorrect.length,
 					typo: false,
+					numberOfAnswers: progressDoc.data().showNumberOfAnswers === true ? 0 : null,
 				}
 
 				docData.typo = false;
@@ -747,6 +761,7 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 									sound: sound,
 									set_owner: nextSetOwner,
 								}
+								returnData.numberOfAnswers = promptDoc.data().numberOfAnswers;
 								transaction.set(progressDocId, docData);
 								return returnData;
 							});
@@ -771,7 +786,8 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 									item: promptDoc.data().item,
 									sound: sound,
 									set_owner: nextSetOwner,
-								}
+								};
+								returnData.numberOfAnswers = promptDoc.data().numberOfAnswers;
 								transaction.set(progressDocId, docData);
 								return returnData;
 							});

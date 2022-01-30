@@ -54,6 +54,7 @@ export default withRouter(class SetPage extends React.Component {
 			sliderValue: 1,
 			switchLanguage: false,
 			ignoreCaps: false,
+			showNumberOfAnswers: false,
 			totalTestQuestions: 1,
 		};
 
@@ -136,6 +137,7 @@ export default withRouter(class SetPage extends React.Component {
 				mode: mode,
 				limit: this.state.sliderValue,
 				ignoreCaps: this.state.ignoreCaps,
+				showNumberOfAnswers: this.state.showNumberOfAnswers,
 			}).then((result) => {
 				const progressId = result.data;
 				this.stopLoading();
@@ -340,6 +342,12 @@ export default withRouter(class SetPage extends React.Component {
 		});
 	}
 
+	handleShowNumberOfAnswersChange = (event) => {
+		this.setState({
+			showNumberOfAnswers: event.target.checked,
+		});
+	}
+
 	render() {
 		return (
 			<div>
@@ -488,8 +496,10 @@ export default withRouter(class SetPage extends React.Component {
 								onSliderChange={this.changeSliderValue}
 								switchLanguage={this.state.switchLanguage}
 								ignoreCaps={this.state.ignoreCaps}
+								showNumberOfAnswers={this.state.showNumberOfAnswers}
 								handleSwitchLanguageChange={this.handleSwitchLanguageChange}
 								handleIgnoreCapsChange={this.handleIgnoreCapsChange}
+								handleShowNumberOfAnswersChange={this.handleShowNumberOfAnswersChange}
 								loading={this.state.loading}
 								disabled={!this.state.canStartTest}
 							/>
@@ -504,8 +514,10 @@ export default withRouter(class SetPage extends React.Component {
 								onSliderChange={this.changeSliderValue}
 								switchLanguage={this.state.switchLanguage}
 								ignoreCaps={this.state.ignoreCaps}
+								showNumberOfAnswers={this.state.showNumberOfAnswers}
 								handleSwitchLanguageChange={this.handleSwitchLanguageChange}
 								handleIgnoreCapsChange={this.handleIgnoreCapsChange}
+								handleShowNumberOfAnswersChange={this.handleShowNumberOfAnswersChange}
 								loading={this.state.loading}
 								disabled={!this.state.canStartTest}
 							/>

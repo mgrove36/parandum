@@ -59,6 +59,7 @@ export default withRouter(class Progress extends React.Component {
 		startTime: null,
 		sound: false,
 		ignoreCaps: false,
+		numberOfAnswers: null,
 	}
 
 	constructor(props) {
@@ -131,6 +132,8 @@ export default withRouter(class Progress extends React.Component {
 				originalTotalQuestions: [...new Set(data.questions)].length,
 				setComplete: data.duration !== null,
 				pageLoaded: true,
+				numberOfAnswers: data.showNumberOfAnswers ? 0 : null,
+				ignoreCaps: data.ignoreCaps,
 			};
 
 			if (data.lives) {
@@ -165,6 +168,7 @@ export default withRouter(class Progress extends React.Component {
 				await nextPromptRef.get().then((doc) => {
 					newState.currentPrompt = doc.data().item;
 					newState.currentSound = doc.data().sound === true;
+					if (newState.numberOfAnswers === 0) newState.numberOfAnswers = doc.data().numberOfAnswers;
 				}).catch((error) => {
 					newState.progressInaccessible = true;
 					console.log(`Progress data inaccessible: ${error}`);
@@ -356,6 +360,7 @@ export default withRouter(class Progress extends React.Component {
 					typo: false,
 					canStartTest: true,
 				};
+				if (this.state.numberOfAnswers !== null && data.numberOfAnswers !== 0) newState.numberOfAnswers = data.numberOfAnswers;
 
 				if (this.state.mode === "lives") newState.lives = data.lives;
 
@@ -555,10 +560,16 @@ export default withRouter(class Progress extends React.Component {
 				limit: this.state.mode === "questions" ? this.state.progress - this.state.incorrect
 					: this.state.mode === "lives" ? this.state.lives
 					: 1,
+				ignoreCaps: this.state.ignoreCaps,
+				showNumberOfAnswers: this.state.numberOfAnswers === null,
 			}).then((result) => {
 				const progressId = result.data;
 				this.stopLoading();
 				this.props.history.push("/progress/" + progressId);
+
+				this.setState({
+					incorrectAnswers: {},
+				});
 
 				this.props.logEvent("restart_test", {
 					progress_id: progressId,
@@ -578,6 +589,10 @@ export default withRouter(class Progress extends React.Component {
 				const progressId = result.data;
 				this.stopLoading();
 				this.props.history.push("/progress/" + progressId);
+	
+				this.setState({
+					incorrectAnswers: {},
+				});
 	
 				this.props.logEvent("start_test_with_incorrect", {
 					progress_id: progressId,
@@ -667,6 +682,10 @@ export default withRouter(class Progress extends React.Component {
 													{
 														this.state.moreAnswers
 															?
+													this.state.numberOfAnswers !== null
+													?
+													`${this.state.currentCorrect.length} of ${this.state.numberOfAnswers} correct so far:`
+													:
 															"Correct so far:"
 															:
 															"Answers:"
@@ -677,6 +696,12 @@ export default withRouter(class Progress extends React.Component {
 												)}
 											</>
 											:
+										this.state.numberOfAnswers !== null
+										?
+										<h2>
+										{this.state.currentCorrect.length} of {this.state.numberOfAnswers} correct so far
+										</h2>
+										:
 											""
 									}
 								</div>
@@ -823,6 +848,10 @@ export default withRouter(class Progress extends React.Component {
 												{
 													this.state.moreAnswers
 													?
+													this.state.numberOfAnswers !== null
+													?
+													`${this.state.currentCorrect.length} of ${this.state.numberOfAnswers} correct so far:`
+													:
 													"Correct so far:"
 													:
 													"Answers:"
@@ -832,6 +861,12 @@ export default withRouter(class Progress extends React.Component {
 												<p key={index}>{vocab}</p>
 											)}
 										</>
+										:
+										this.state.numberOfAnswers !== null
+										?
+										<h2>
+										{this.state.currentCorrect.length} of {this.state.numberOfAnswers} correct so far
+										</h2>
 										:
 										""
 									}
