@@ -5,6 +5,7 @@ import Checkbox from '@material-ui/core/Checkbox';
 
 import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
+import "./css/SliderOverlay.css";
 
 export default function LivesTestStart(props) {
 	return (
@@ -52,23 +53,24 @@ export default function LivesTestStart(props) {
 					/>
 				</div>
 
-				<label>
-					<Checkbox
-						checked={props.switchLanguage}
-						onChange={props.handleSwitchLanguageChange}
-						inputProps={{ 'aria-label': 'checkbox' }}
-					/>
-					<span>Switch language</span>
-				</label>
-
-				<label>
-					<Checkbox
-						checked={props.ignoreCaps}
-						onChange={props.handleIgnoreCapsChange}
-						inputProps={{ 'aria-label': 'checkbox' }}
-					/>
-					<span>Ignore capitals</span>
-				</label>
+				<div className="test-options-container">
+					<label>
+						<Checkbox
+							checked={props.switchLanguage}
+							onChange={props.handleSwitchLanguageChange}
+							inputProps={{ 'aria-label': 'checkbox' }}
+						/>
+						<span>Switch language</span>
+					</label>
+					<label>
+						<Checkbox
+							checked={props.ignoreCaps}
+							onChange={props.handleIgnoreCapsChange}
+							inputProps={{ 'aria-label': 'checkbox' }}
+						/>
+						<span>Ignore capitals</span>
+					</label>
+				</div>
 
 				<Button
 					onClick={() => props.startTest("lives")}

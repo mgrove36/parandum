@@ -21,7 +21,6 @@ import "./css/History.css";
 import "./css/LoggedInHome.css";
 import "./css/PopUp.css";
 import "./css/OptionsListOverlay.css";
-import "./css/SliderOverlay.css";
 
 import { withRouter } from "react-router-dom";
 

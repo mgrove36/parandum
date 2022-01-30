@@ -29,6 +29,15 @@
 	width: 26px;
 }
 
+.test-options-container {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+	column-gap: 32px;
+	flex-wrap: wrap;
+}
+
 
 @media screen and (max-width: 500px) {
 	.slider-overlay-content {
