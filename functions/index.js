@@ -144,6 +144,8 @@ exports.getGroupMembers = functions.https.onCall((data, context) => {
  * @param {boolean} data.limit The maximum number of lives/questions for the test.
  * @param {boolean} data.mode The mode to be tested in. Valid options are "questions" and "lives".
  * @param {array} data.sets An array of IDs of the desired sets.
+ * @param {boolean} data.showNumberOfAnswers Whether the number of answers to each prompt should be
+ * 												displayed to the user during the test.
  * @param {boolean} data.switch_language Whether or not the languages should be reversed.
  * @return {string} The ID of the created progress document.
 */
@@ -508,6 +510,8 @@ function cleanseVocabString(item, ignoreCaps=false) {
  * @return {string} nextPrompt.item The term/definition prompt for the next question.
  * @return {boolean} nextPrompt.sound Whether the next prompt has an associated sound file. Null if language is switched.
  * @return {boolean} nextPrompt.set_owner User ID of the owner of the sound file associated with the next prompt. Null if there is no sound file.
+ * @return {boolean} numberOfAnswers Number of answers to next prompt, if showNumberOfAnswers is true in the progress document. 0 if prompt doesn't change.
+ * 						Null if showNumberOfAnswers is false in the progress document.
  * @return {integer} progress Total number of questions answered so far.
  * @return {integer} totalQuestions Total number of questions in the set (including duplicates after incorrect answers).
  * @return {integer} totalCorrect Total number of correct answers so far.
