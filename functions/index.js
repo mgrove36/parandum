@@ -555,12 +555,12 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 					currentVocabId: currentVocab,
 					moreAnswers: false,
 					nextPrompt: null,
+					numberOfAnswers: progressDoc.data().showNumberOfAnswers === true ? 0 : null,
 					progress: docData.progress,
 					totalQuestions: docData.questions.length,
 					totalCorrect: docData.correct.length,
 					totalIncorrect: docData.incorrect.length,
 					typo: false,
-					numberOfAnswers: progressDoc.data().showNumberOfAnswers === true ? 0 : null,
 				}
 
 				docData.typo = false;
