@@ -171,7 +171,9 @@ exports.createProgress = functions.https.onCall((data, context) => {
 		throw new functions.https.HttpsError("invalid-argument", "ignoreCaps must be a boolean");
 	}
 
-	if (typeof data.showNumberOfAnswers !== "boolean") {
+	if (typeof data.showNumberOfAnswers === "undefined") {
+		data.showNumberOfAnswers = false;
+	} else if (typeof data.showNumberOfAnswers !== "boolean") {
 		throw new functions.https.HttpsError("invalid-argument", "showNumberOfAnswers must be a boolean");
 	}
 
@@ -356,8 +358,8 @@ exports.createProgressWithIncorrect = functions.https.onCall((data, context) => 
 					typo: false,
 					setIds: progressData.setIds,
 					set_titles: progressData.set_titles,
-					ignoreCaps: progressData.ignoreCaps,
-					showNumberOfAnswers: progressData.showNumberOfAnswers,
+					ignoreCaps: progressData.ignoreCaps === true ? progressData.ignoreCaps : false,
+					showNumberOfAnswers: progressData.showNumberOfAnswers === true ? progressData.showNumberOfAnswers : false,
 				};
 				if (progressData.mode === "lives") {
 					dataToSet.lives = progressData.start_lives;
