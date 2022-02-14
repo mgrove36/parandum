@@ -171,14 +171,14 @@ exports.createProgress = functions.https.onCall((data, context) => {
 
 	if (typeof data.ignoreCaps === "undefined") {
 		data.ignoreCaps = false;
-		functions.logger.log("ignoreCaps not provided - using default value of false");
+		console.log("ignoreCaps not provided - using default value of false");
 	} else if (typeof data.ignoreCaps !== "boolean") {
 		throw new functions.https.HttpsError("invalid-argument", "showNumberOfAnswers must be a boolean");
 	}
 
 	if (typeof data.showNumberOfAnswers === "undefined") {
 		data.showNumberOfAnswers = false;
-		functions.logger.log("showNumberOfAnswers not provided - using default value of false");
+		console.log("showNumberOfAnswers not provided - using default value of false");
 	} else if (typeof data.showNumberOfAnswers !== "boolean") {
 		throw new functions.https.HttpsError("invalid-argument", "showNumberOfAnswers must be a boolean");
 	}
