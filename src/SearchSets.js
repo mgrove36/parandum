@@ -41,6 +41,11 @@ export default withRouter(class SearchSets extends Component {
 			showClassicTestStart: false,
 			showLivesTestStart: false,
 			searchInput: "",
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
+			switchLanguage: false,
+			sliderValue: 1,
+			totalTestQuestions: 1,
 		};
 
 		let isMounted = true;
@@ -134,6 +139,8 @@ export default withRouter(class SearchSets extends Component {
 				switch_language: this.state.switchLanguage,
 				mode: mode,
 				limit: this.state.sliderValue,
+				ignoreCaps: this.state.ignoreCaps,
+				showNumberOfAnswers: this.state.showNumberOfAnswers,
 			}).then((result) => {
 				const progressId = result.data;
 				this.stopLoading();
@@ -238,6 +245,18 @@ export default withRouter(class SearchSets extends Component {
 		});
 	}
 
+	handleIgnoreCapsChange = (event) => {
+		this.setState({
+			ignoreCaps: event.target.checked,
+		});
+	}
+
+	handleShowNumberOfAnswersChange = (event) => {
+		this.setState({
+			showNumberOfAnswers: event.target.checked,
+		});
+	}
+
 	handleSearchInput = (event) => {
 		if (!this.state.loadingSets) {
 			this.setState({
@@ -336,7 +355,11 @@ export default withRouter(class SearchSets extends Component {
 						sliderValue={this.state.sliderValue}
 						onSliderChange={this.changeSliderValue}
 						switchLanguage={this.state.switchLanguage}
+						ignoreCaps={this.state.ignoreCaps}
+						showNumberOfAnswers={this.state.showNumberOfAnswers}
 						handleSwitchLanguageChange={this.handleSwitchLanguageChange}
+						handleIgnoreCapsChange={this.handleIgnoreCapsChange}
+						handleShowNumberOfAnswersChange={this.handleShowNumberOfAnswersChange}
 						loading={this.state.loading}
 					/>
 				}
@@ -349,7 +372,11 @@ export default withRouter(class SearchSets extends Component {
 						sliderValue={this.state.sliderValue}
 						onSliderChange={this.changeSliderValue}
 						switchLanguage={this.state.switchLanguage}
+						ignoreCaps={this.state.ignoreCaps}
+						showNumberOfAnswers={this.state.showNumberOfAnswers}
 						handleSwitchLanguageChange={this.handleSwitchLanguageChange}
+						handleIgnoreCapsChange={this.handleIgnoreCapsChange}
+						handleShowNumberOfAnswersChange={this.handleShowNumberOfAnswersChange}
 						loading={this.state.loading}
 					/>
 				}

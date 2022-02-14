@@ -133,7 +133,7 @@ export default withRouter(class Progress extends React.Component {
 				setComplete: data.duration !== null,
 				pageLoaded: true,
 				numberOfAnswers: data.showNumberOfAnswers ? 0 : null,
-				ignoreCaps: data.ignoreCaps,
+				ignoreCaps: data.ignoreCaps === true,
 			};
 
 			if (data.lives) {

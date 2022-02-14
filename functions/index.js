@@ -140,12 +140,12 @@ exports.getGroupMembers = functions.https.onCall((data, context) => {
 /**
  * Creates new progress document.
  * @param {object} data The data passed to the function.
- * @param {boolean} data.ignoreCaps Whether capitalisation of answers should matter during the test.
+ * @param {boolean} data.ignoreCaps Whether capitalisation of answers should matter during the test. Optional.
  * @param {boolean} data.limit The maximum number of lives/questions for the test.
  * @param {boolean} data.mode The mode to be tested in. Valid options are "questions" and "lives".
  * @param {array} data.sets An array of IDs of the desired sets.
  * @param {boolean} data.showNumberOfAnswers Whether the number of answers to each prompt should be
- * 												displayed to the user during the test.
+ * 												displayed to the user during the test. Optional.
  * @param {boolean} data.switch_language Whether or not the languages should be reversed.
  * @return {string} The ID of the created progress document.
 */
@@ -169,12 +169,16 @@ exports.createProgress = functions.https.onCall((data, context) => {
 		throw new functions.https.HttpsError("invalid-argument", "switch_language must be a boolean");
 	}
 
-	if (typeof data.ignoreCaps !== "boolean") {
-		throw new functions.https.HttpsError("invalid-argument", "ignoreCaps must be a boolean");
+	if (typeof data.ignoreCaps === "undefined") {
+		data.ignoreCaps = false;
+		functions.logger.log("ignoreCaps not provided - using default value of false");
+	} else if (typeof data.ignoreCaps !== "boolean") {
+		throw new functions.https.HttpsError("invalid-argument", "showNumberOfAnswers must be a boolean");
 	}
 
 	if (typeof data.showNumberOfAnswers === "undefined") {
 		data.showNumberOfAnswers = false;
+		functions.logger.log("showNumberOfAnswers not provided - using default value of false");
 	} else if (typeof data.showNumberOfAnswers !== "boolean") {
 		throw new functions.https.HttpsError("invalid-argument", "showNumberOfAnswers must be a boolean");
 	}
