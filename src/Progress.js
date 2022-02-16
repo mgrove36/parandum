@@ -561,7 +561,7 @@ export default withRouter(class Progress extends React.Component {
 					: this.state.mode === "lives" ? this.state.lives
 					: 1,
 				ignoreCaps: this.state.ignoreCaps,
-				showNumberOfAnswers: this.state.numberOfAnswers === null,
+				showNumberOfAnswers: this.state.numberOfAnswers !== null,
 			}).then((result) => {
 				const progressId = result.data;
 				this.stopLoading();
