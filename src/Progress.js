@@ -1,6 +1,6 @@
 import React from 'react';
 import { withRouter } from "react-router-dom";
-import { HomeRounded as HomeRoundedIcon, ArrowForwardRounded as ArrowForwardRoundedIcon, SettingsRounded as SettingsRoundedIcon, CloseRounded as CloseRoundedIcon, PeopleRounded as PeopleRoundedIcon, QuestionAnswerRounded as QuestionAnswerRoundedIcon } from "@material-ui/icons";
+import { HomeRounded as HomeRoundedIcon, ArrowForwardRounded as ArrowForwardRoundedIcon, SettingsRounded as SettingsRoundedIcon, CloseRounded as CloseRoundedIcon, PeopleRounded as PeopleRoundedIcon, QuestionAnswerRounded as QuestionAnswerRoundedIcon, KeyboardRounded as KeyboardRoundedIcon } from "@material-ui/icons";
 import NavBar from "./NavBar";
 import Button from "./Button";
 import Error404 from "./Error404";
@@ -11,6 +11,9 @@ import ProgressStats from './ProgressStats';
 import ConfirmationDialog from "./ConfirmationDialog";
 import CorrectSound from "./CorrectSound.mp3";
 import IncorrectSound from "./IncorrectSound.mp3";
+import Keyboard from 'react-simple-keyboard';
+import 'react-simple-keyboard/build/css/index.css';
+import KeyboardLayouts from "simple-keyboard-layouts";
 
 import "./css/PopUp.css";
 import "./css/Progress.css";
