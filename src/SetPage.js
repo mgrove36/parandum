@@ -446,7 +446,7 @@ export default withRouter(class SetPage extends React.Component {
 										<>
 											<h1>Select a Group</h1>
 
-											<div className="set-page-overlay-group-container">
+											<div className="inline-option-buttons-container set-page-group-button-container">
 												{
 													Object.keys(this.state.groups).map((groupId) =>
 														<Button

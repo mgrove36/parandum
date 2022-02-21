@@ -1,9 +1,7 @@
 .user-groups-overlay-content {
-	width: 40%;
-	max-width: 500px;
-	height: 50%;
-	max-height: 400px;
-	align-items: center;
+	max-width: min(500px,80%);
+	padding-top: 64px;
+	padding-bottom: 64px;
 }
 
 .user-groups-overlay-input-container {
@@ -11,7 +9,7 @@
 	flex-direction: row;
 	flex-wrap: wrap;
 	align-items: center;
-	width: 80%;
+	width: 90%;
 }
 
 .user-groups-overlay-input-container > *:first-child {
@@ -56,28 +54,13 @@
 	text-decoration: none;
 }
 
-@media screen and (max-width: 1080px) {
-	.user-groups-overlay-content {
-		width: 50%;
-	}
-}
-@media screen and (max-width: 860px) {
-	.user-groups-overlay-content {
-		width: 70%;
-	}
-}
 @media screen and (max-width: 560px) {
-	.user-groups-overlay-input-container {
-		width: 90%;
-	}
 	.user-groups-overlay-input-container > .button {
 		margin-top: 4px;
 	}
 	.user-groups-overlay-input-container > input {
 		width: 100%;
 	}
-}
-@media screen and (max-width: 420px) {
 	.user-groups-overlay-input-container {
 		width: 100%;
 	}

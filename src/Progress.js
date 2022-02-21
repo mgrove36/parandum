@@ -60,6 +60,10 @@ export default withRouter(class Progress extends React.Component {
 		sound: false,
 		ignoreCaps: false,
 		numberOfAnswers: null,
+		virtualKeyboardLanguage: "english",
+		virtualKeyboardLayoutName: "default",
+		showVirtualKeyboard: false,
+		showVirtualKeyboardOptions: false,
 	}
 
 	constructor(props) {
@@ -75,6 +79,12 @@ export default withRouter(class Progress extends React.Component {
 			navbarItems: [
 				{
 					type: "button",
+					onClick: this.showVirtualKeyboardOptions,
+					icon: <KeyboardRoundedIcon />,
+					hideTextMobile: true,
+				},
+				{
+					type: "button",
 					onClick: this.showSettings,
 					icon: <SettingsRoundedIcon />,
 					hideTextMobile: true,
@@ -88,6 +98,16 @@ export default withRouter(class Progress extends React.Component {
 			],
 			...this.changeableStateItems,
 		};
+
+		this.keyboardLayouts = new KeyboardLayouts();
+		this.keyboardLayoutsObj = this.keyboardLayouts.get();
+		this.keyboardLayoutNames = Object.keys(this.keyboardLayoutsObj).map(key =>
+			[
+				key,
+				// title case from camel case
+				key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, " $1")
+			]
+		);
 		
 		let isMounted = true;
 		Object.defineProperty(this, "isMounted", {
@@ -300,15 +320,34 @@ export default withRouter(class Progress extends React.Component {
 			this.setState({
 				answerInput: event.target.value,
 			});
+    		this.virtualKeyboard.setInput(event.target.value);
 		}
 	}
 
-	proceed = () => {
+	onVirtualKeyboardChange = (answerInput) => {
+		this.setState({ answerInput });
+	};
+
+	onVirtualKeyboardKeyPress = (button) => {
+		if (button === "{shift}" || button === "{lock}") {
+			this.handleVirtualKeyboardShift();
+		} else if (button === "{enter}") {
+			this.proceed("virtual");
+		}
+	};
+
+	handleVirtualKeyboardShift = () => {
+		this.setState({
+			layoutName: this.state.virtualKeyboardLayoutName === "default" ? "shift" : "default",
+		});
+	}
+
+	proceed = (referrer="physical") => {
 		if (this.state.canProceed) {
 			if (this.state.currentAnswerStatus === null) {
-				this.processAnswer();
+				this.processAnswer(referrer);
 			} else {
-				this.nextQuestion();
+				this.nextQuestion(referrer);
 			}
 		}
 	}
@@ -325,7 +364,7 @@ export default withRouter(class Progress extends React.Component {
 		return newString;
 	}
 
-	processAnswer = async () => {
+	processAnswer = async (referrer="physical") => {
 		if (this.state.canProceed) {
 			this.startLoading();
 	
@@ -484,7 +523,7 @@ export default withRouter(class Progress extends React.Component {
 				await Promise.all(promises);
 
 				this.setState(newState, () => {
-					if (!newState.duration) this.answerInput.focus()
+					if (!newState.duration && referrer === "physical") this.answerInput.focus();
 				});
 			}).catch((error) => {
 				console.log(`Couldn't process answer: ${error}`);
@@ -497,7 +536,11 @@ export default withRouter(class Progress extends React.Component {
 	}
 
 	showNextQuestion = (newState, currentState) => {
-		if (currentState.nextPrompt === null) newState.setComplete = true;
+		if (currentState.nextPrompt === null) {
+			newState.setComplete = true;
+			this.virtualKeyboard.clearInput();
+			newState.showVirtualKeyboard = false;
+		}
 		newState.currentCorrect = [];
 		newState.currentPrompt = currentState.nextPrompt;
 		newState.currentSound = currentState.nextSound;
@@ -505,7 +548,7 @@ export default withRouter(class Progress extends React.Component {
 		return newState;
 	}
 
-	nextQuestion = () => {
+	nextQuestion = (referrer="physical") => {
 		if (this.state.canProceed) {
 			this.startLoading();
 	
@@ -520,7 +563,12 @@ export default withRouter(class Progress extends React.Component {
 				newState = this.showNextQuestion(newState, this.state);
 			}
 			
-			this.setState(newState, () => (this.isMounted && !this.state.setComplete) && this.answerInput.focus());
+			this.setState(newState, () => {
+				this.virtualKeyboard.clearInput();
+				if (this.isMounted && !this.state.setComplete && referrer === "physical") {
+					this.answerInput.focus();
+				}
+			});
 		}
 	}
 
@@ -634,6 +682,33 @@ export default withRouter(class Progress extends React.Component {
 		});
 	}
 
+	showVirtualKeyboardOptions = () => {
+		this.setState({
+			showVirtualKeyboardOptions: true,
+		})
+	}
+
+	hideVirtualKeyboardOptions = () => {
+		this.setState({
+			showVirtualKeyboardOptions: false,
+		})
+	}
+
+	showVirtualKeyboard = (language) => {
+		this.setState({
+			showVirtualKeyboard: true,
+			showVirtualKeyboardOptions: false,
+			virtualKeyboardLanguage: language,
+		});
+	}
+
+	hideVirtualKeyboard = () => {
+		this.setState({
+			showVirtualKeyboard: false,
+			showVirtualKeyboardOptions: false,
+		});
+	}
+
 	render() {
 		return (
 			<div>
@@ -665,7 +740,7 @@ export default withRouter(class Progress extends React.Component {
 										autoCorrect="off"
 									/>
 									<Button
-										onClick={() => this.processAnswer()}
+										onClick={() => this.proceed()}
 										icon={<ArrowForwardRoundedIcon />}
 										className="button--round"
 										disabled={!this.state.canProceed}
@@ -827,7 +902,7 @@ export default withRouter(class Progress extends React.Component {
 										autoCorrect="off"
 									/>
 									<Button
-										onClick={() => this.nextQuestion()}
+										onClick={() => this.proceed()}
 										icon={<ArrowForwardRoundedIcon />}
 										className="button--round"
 										disabled={!this.state.canProceed}
@@ -892,7 +967,7 @@ export default withRouter(class Progress extends React.Component {
 						this.state.showSettings &&
 						<>
 							<div className="overlay" onClick={this.hideSettings}></div>
-							<div className="overlay-content progress-settings-overlay-content">
+							<div className="overlay-content">
 								<SettingsContent
 									sound={this.props.sound}
 									theme={this.props.theme}
@@ -946,6 +1021,53 @@ export default withRouter(class Progress extends React.Component {
 							loading={this.state.loading}
 						/>
 					}
+					{
+						this.state.showVirtualKeyboardOptions &&
+						<>
+							<div className="overlay" onClick={this.hideVirtualKeyboardOptions}></div>
+							<div className="overlay-content">
+								<h1>Virtual Keyboard</h1>
+
+								<Button
+									onClick={() => this.hideVirtualKeyboard()}
+									className="hide-virtual-keyboard-button"
+									icon={<KeyboardRoundedIcon/>}
+								>
+									Hide
+								</Button>
+
+								<h3>Or select a language:</h3>
+								<div className="inline-option-buttons-container">
+								{
+									this.keyboardLayoutNames.map(([layout, formattedName]) => 
+										<Button
+											onClick={() => this.showVirtualKeyboard(layout)}
+											className="button--no-background"
+											key={layout}
+										>
+											{formattedName}
+										</Button>
+									)
+								}
+								</div>
+
+								<Button
+									onClick={this.hideVirtualKeyboardOptions}
+									icon={<CloseRoundedIcon />}
+									className="button--no-background popup-close-button"
+								></Button>
+							</div>
+						</>
+					}
+					<div style={{display: this.state.showVirtualKeyboard ? "block" : "none" }}>
+						<Keyboard
+							keyboardRef={r => (this.virtualKeyboard = r)}
+							onChange={this.onVirtualKeyboardChange}
+							onKeyPress={this.onVirtualKeyboardKeyPress}
+							layout={this.keyboardLayoutsObj[this.state.virtualKeyboardLanguage].layout}
+							layoutName={this.state.layoutName}
+						/>
+					</div>
 				</>)
 			}
 			</div>

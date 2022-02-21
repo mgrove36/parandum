@@ -26,37 +26,15 @@
 	border-right: 8px solid transparent;
 }
 
-.set-page-group-overlay-content {
-	width: 70%;
-	max-width: 800px;
-	height: 70%;
-	max-height: 600px;
-	align-items: center;
+.set-page-group-button-container {
+	width: 80%;
 }
 
-.set-page-overlay-group-container {
-	width: 80%;
-	display: flex;
-	flex-direction: row;
-	flex-wrap: wrap;
-	align-items: center;
-	justify-content: center;
-	column-gap: 24px;
-	row-gap: 8px;
+.set-page-group-overlay-content {
+	min-width: min(500px,80%);
 }
 
 .no-groups-message-list {
 	padding: 0 18px;
 	margin: 4px 0;
-}
-
-@media screen and (max-width: 860px) {
-	.set-page-group-overlay-content {
-		width: 75%;
-	}
-}
-@media screen and (max-height: 700px) {
-	.set-page-group-overlay-content {
-		height: 75%;
-	}
 }

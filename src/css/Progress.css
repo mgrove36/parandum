@@ -67,19 +67,6 @@
 	margin: 0;
 }
 
-.progress-settings-overlay-content {
-	width: 80%;
-	max-width: 700px;
-	height: 70%;
-	max-height: 500px;
-	align-items: center;
-}
-
-.progress-settings-overlay-content > .settings-themes-container {
-	justify-content: center;
-	width: 75%;
-}
-
 .form-submit {
 	display: none;
 }
@@ -128,6 +115,23 @@
 	margin: 0 0 -2px 0;
 }
 
+.hide-virtual-keyboard-button {
+	margin: 16px auto;
+}
+
+.simple-keyboard.hg-theme-default {
+	background-color: var(--background-color);
+}
+
+.simple-keyboard.hg-theme-default .hg-button {
+	background-color: var(--background-color--light);
+	border: 1px solid var(--overlay-color);
+	box-shadow: none;
+}
+
+.simple-keyboard.hg-theme-default .hg-button:hover, .simple-keyboard.hg-theme-default .hg-button:focus {
+	background-color: var(--overlay-color);
+}
 
 @media screen and (max-width: 880px) {
 	.current-prompt {
@@ -139,9 +143,6 @@
 }
 
 @media screen and (max-width: 700px) {
-	.progress-settings-overlay-content > .settings-themes-container {
-		width: 100%;
-	}
 	.current-prompt {
 		font-size: 30px;
 	}
@@ -151,25 +152,10 @@
 }
 
 @media screen and (max-width: 500px) {
-	.progress-settings-overlay-content {
-		width: 75%;
-	}
 	.current-prompt {
 		font-size: 26px;
 	}
 	.answer-input-container > input {
 		font-size: 24px;
-	}
-}
-
-@media screen and (max-height: 700px) {
-	.progress-settings-overlay-content {
-		height: 75%;
-	}
-}
-
-@media screen and (max-height: 600px) {
-	.progress-settings-overlay-content {
-		justify-content: flex-start;
 	}
 }

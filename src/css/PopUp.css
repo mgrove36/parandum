@@ -31,13 +31,14 @@
 	z-index: 20;
 	background: var(--background-color);
 	border-radius: 12px;
-	display: flex;
-	flex-direction: column;
 	overflow: auto;
 	text-align: center;
-	flex-wrap: nowrap;
-	justify-content: center;
 	padding: 32px;
+	justify-items: center;
+	max-width: min(800px,80%);
+	max-height: min(600px,80%);
+	display: grid;
+	height: max-content;
 }
 
 .overlay-content > h1 {
