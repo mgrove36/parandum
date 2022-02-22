@@ -1,8 +1,9 @@
 .login-overlay-content {
-	width: 40%;
-	max-width: 500px;
-	height: 60%;
-	max-height: 500px;
+	max-width: min(450px,80%);
+}
+
+#firebaseui_container {
+	width: 100%;
 }
 
 .firebaseui-container form button.mdl-button, .firebaseui-container form .firebaseui-idp-button, .firebaseui-button.mdl-button {
@@ -81,62 +82,27 @@
 	text-align: center !important;
 }
 
-@media screen and (max-width: 1080px) {
-	.login-overlay-content {
-		width: 50%;
-	}
+.firebaseui-card-header {
+	border-bottom: none !important;
+	margin-bottom: 0 !important;
 }
-@media screen and (max-width: 860px) {
-	.login-overlay-content {
-		width: 80%;
-	}
-}
-@media screen and (max-width: 680px) {
-	.login-overlay-content {
-		width: 70%;
-	}
-}
+
 @media screen and (max-width: 420px) {
-	.firebaseui-card-content, .firebaseui-card-actions {
+	.firebaseui-card-header, .firebaseui-card-content, .firebaseui-card-actions {
 		padding-left: 8px !important;
 		padding-right: 8px !important;
 	}
 }
 @media screen and (max-width: 300px) {
-	.firebaseui-card-content, .firebaseui-card-actions {
+	.firebaseui-card-header, .firebaseui-card-content, .firebaseui-card-actions {
 		padding-left: 0 !important;
 		padding-right: 0 !important;
 	}
 }
 
-@media screen and (max-height: 800px) {
-	.login-overlay-content {
-		height: 70%;
-	}
-}
-@media screen and (max-height: 700px) {
-	.login-overlay-content {
-		height: 80%;
-	}
-}
 @media screen and (max-height: 570px) {
 	.login-overlay-content {
 		display: block;
 		width: 70%;
-	}
-}
-@media screen and (max-height: 420px) {
-	.login-overlay-content {
-		height: 70%;
-	}
-}
-@media screen and (max-height: 300px) {
-	.login-overlay-content {
-		height: 60%;
-	}
-}
-@media screen and (max-height: 200px) {
-	.login-overlay-content {
-		height: 50%;
 	}
 }
