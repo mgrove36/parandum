@@ -926,7 +926,7 @@ async function updateUserGroupRole(snap, context) {
 				groupData.users = {};
 			}
 
-			if (typeof snap !== "undefined" && typeof snap.data() !== "undefined" && typeof snap.data().role !== "undefined") {
+			if (typeof snap === "object" && snap !== null && snap.data !== undefined && typeof snap.data === "function" && typeof snap.data() === "object" && snap.data() !== null && snap.data().role !== undefined) {
 				groupData.users[context.params.userId] = snap.data().role;
 			} else {
 				delete groupData.users[context.params.userId];
@@ -961,6 +961,18 @@ exports.userGroupRoleCreated = functions.firestore.document("users/{userId}/grou
 exports.userGroupRoleUpdated = functions.firestore.document("users/{userId}/groups/{groupId}")
 	.onUpdate(async (change, context) => {
 		return updateUserGroupRole(change.after, context);
+	});
+
+/**
+ * Removes an existing user from a group in the groups collection
+ * in Firestore, after the group has been removed from their
+ * document in the users collection.
+ * NOTE: Can't be unit tested.
+ * @return {boolean} Returns true on completion.
+*/
+exports.userGroupRoleDeleted = functions.firestore.document("users/{userId}/groups/{groupId}")
+	.onDelete(async (snap, context) => {
+		return updateUserGroupRole(null, context);
 	});
 
 /**
