@@ -355,18 +355,6 @@ export default withRouter(class Progress extends React.Component {
 		}
 	}
 
-	cleanseVocabString = (item) => {
-		const chars = " .,()-_'\"";
-
-		let newString = item;
-
-		chars.split("").forEach((char) => {
-			newString = newString.replace(char, "");
-		});
-
-		return newString;
-	}
-
 	processAnswer = async (referrer="physical") => {
 		if (this.state.canProceed) {
 			this.startLoading();

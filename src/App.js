@@ -318,13 +318,13 @@ class App extends React.Component {
                   }
               </Route>
                 <Route path="/create-set" exact>
-                  <CreateSet db={db} user={this.state.user} logEvent={analytics.logEvent} page={this.page} />
+                  <EditSet db={db} user={this.state.user} logEvent={analytics.logEvent} page={this.page} createSet={true} />
                 </Route>
                 <Route path="/my-sets" exact>
                   <UserSets db={db} functions={functions} user={this.state.user} logEvent={analytics.logEvent} page={this.page} />
                 </Route>
                 <Route path="/sets/:setId/edit" exact>
-                  <EditSet db={db} user={this.state.user} logEvent={analytics.logEvent} page={this.page} />
+                  <EditSet db={db} user={this.state.user} logEvent={analytics.logEvent} page={this.page} createSet={false} />
                 </Route>
                 <Route path="/history" exact>
                   <History db={db} user={this.state.user} logEvent={analytics.logEvent} page={this.page} />

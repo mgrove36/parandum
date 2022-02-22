@@ -14,7 +14,7 @@ export default withRouter(class EditSet extends Component {
 			user: props.user,
 			db: props.db,
 			loading: false,
-			canSaveSet: true,
+			canSaveSet: !(props.createSet === true),
 			inputs: {
 				title: "",
 				public: false,
@@ -31,6 +31,9 @@ export default withRouter(class EditSet extends Component {
 				}
 			],
 			canMakeSetNonPublic: true,
+			changesMade: false,
+			totalCompliantVocabPairs: 0,
+			totalUncompliantVocabPairs: 0,
 		};
 
 		let isMounted = true;
@@ -45,7 +48,7 @@ export default withRouter(class EditSet extends Component {
 	}
 
 	alertLeavingWithoutSaving = (e = null) => {
-		if (this.state.canSaveSet) {
+		if (this.state.canSaveSet && this.state.changesMade) {
 			var confirmationMessage = "Are you sure you want to leave? You will lose any unsaved changes.";
 	
 			(e || window.event).returnValue = confirmationMessage; //Gecko + IE
@@ -54,70 +57,69 @@ export default withRouter(class EditSet extends Component {
 		return "";
 	}
 
-	componentDidMount() {
+	async componentDidMount() {
 		window.addEventListener("beforeunload", this.alertLeavingWithoutSaving);
 
-		const setId = this.props.match.params.setId;
-		const setRef = this.state.db.collection("sets")
-			.doc(setId);
-		const setVocabRef = setRef.collection("vocab")
-			.orderBy("term");
+		if (this.props.createSet !== true) {
+			const setId = this.props.match.params.setId;
+			const setRef = this.state.db.collection("sets")
+				.doc(setId);
+			const setVocabRef = setRef.collection("vocab")
+				.orderBy("term");
 
-		setRef.get().then((setDoc) => {
-			document.title = `Edit | ${setDoc.data().title} | Parandum`;
+			await setRef.get().then(async (setDoc) => {
+				document.title = `Edit | ${setDoc.data().title} | Parandum`;
 
-			setVocabRef.get().then((querySnapshot) => {
-				let vocab = [];
-				let vocabPairsCount = 0;
+				await setVocabRef.get().then((querySnapshot) => {
+					let vocab = [];
 
-				querySnapshot.docs.map((doc) => {
-					const data = doc.data();
+					querySnapshot.docs.map((doc) => {
+						const data = doc.data();
 
-					if (this.cleanseVocabString(data.term) !== "" &&
-						this.cleanseVocabString(data.definition) !== "") {
-						vocabPairsCount++;
+						return vocab.push({
+							vocabId: doc.id,
+							term: data.term,
+							definition: data.definition,
+							sound: data.sound,
+							validInput: true,
+						});
+					});
+
+					let newState = {
+						inputs: {
+							title: setDoc.data().title,
+							public: setDoc.data().public,
+						},
+						inputContents: vocab,
+						originalInputContents: JSON.parse(JSON.stringify(vocab)),
+						canMakeSetNonPublic: !(setDoc.data().groups && setDoc.data().groups.length > 0),
+						totalCompliantVocabPairs: vocab.length,
+					};
+					
+					if (setDoc.data().owner !== this.state.user.uid) {
+						newState.setInaccessible = true;
 					}
 
-					return vocab.push({
-						vocabId: doc.id,
-						term: data.term,
-						definition: data.definition,
-						sound: data.sound,
-					});
+					this.setState(newState);
 				});
-
-				let newState = {
-					inputs: {
-						title: setDoc.data().title,
-						public: setDoc.data().public,
-					},
-					inputContents: vocab,
-					originalInputContents: JSON.parse(JSON.stringify(vocab)),
-					canMakeSetNonPublic: !(setDoc.data().groups && setDoc.data().groups.length > 0),
-				};
-
-				if (!(newState.inputs.title !== "" && vocabPairsCount > 0 && vocabPairsCount === this.state.inputContents.length)) {
-					newState.canSaveSet = false;
-				}
-				
-				if (setDoc.data().owner !== this.state.user.uid) {
-					newState.setInaccessible = true;
-				}
-
-				this.setState(newState);
-				this.props.page.load();
+			}).catch(() => {
+				this.setState({
+					setInaccessible: true,
+				});
 			});
-		}).catch(() => {
-			this.setState({
-				setInaccessible: true,
-			});
-			this.props.page.load();
-		});
 
-		this.props.logEvent("select_content", {
-			content_type: "edit_set",
-			item_id: this.props.match.params.setId,
-		});
+			this.props.logEvent("select_content", {
+				content_type: "edit_set",
+				item_id: this.props.match.params.setId,
+			});
+		} else {
+			document.title = "Create Set | Parandum";
+
+			this.props.logEvent("page_view");
+		}
+
+		!this.state.setInaccessible && this.setNameInput.focus();
+		this.props.page.load();
 	}
 
 	componentWillUnmount = () => {
@@ -126,63 +128,67 @@ export default withRouter(class EditSet extends Component {
 		this.props.page.unload();
 	}
 
-	stopLoading = () => {
+	stopLoading = (changesMade=this.state.changesMade) => {
 		this.setState({
-			canStartTest: true,
+			canSaveSet: true,
 			loading: false,
+			changesMade,
 		});
 	}
 
 	cleanseVocabString = (item) => {
-		const chars = " .,()-_'\"";
-
-		let newString = item;
-
-		chars.split("").forEach((char) => {
-			newString = newString.replace(char, "");
-		});
-
-		return newString;
+		const chars = /[\p{P}\p{S} ]+/ug;
+		return item.replace(chars, "");
 	}
 
-	handleSetDataChange = () => {
-		let vocabWithTextExists = false;
-		const noInvalidPairs = this.state.inputContents.map(contents => {
-				const cleansedTerm = this.cleanseVocabString(contents.term);
-				const cleansedDefinition = this.cleanseVocabString(contents.definition);
-				const emptyVocabTermPresent = cleansedTerm === "" || cleansedDefinition === "";
-				if (emptyVocabTermPresent && cleansedTerm !== cleansedDefinition) {
-					return true;
-				} else if (!emptyVocabTermPresent) {
-					vocabWithTextExists = true;
-				}
-				return false;
-			})
-			.filter(x => x === true)
-			.length === 0;
+	handleSetDataChange = (vocabIndex=null) => {
+		let inputContents = [...this.state.inputContents];
+		let totalCompliantVocabPairs = this.state.totalCompliantVocabPairs;
+		let totalUncompliantVocabPairs = this.state.totalUncompliantVocabPairs;
 
-		if (this.state.inputs.title.trim() !== "" && noInvalidPairs && vocabWithTextExists) {
-			this.setState({
-				canSaveSet: true,
-			})
-		} else {
-			this.setState({
-				canSaveSet: false,
-			})
+		if (vocabIndex !== null) {
+			const emptyTerm = this.cleanseVocabString(inputContents[vocabIndex].term) === "";
+			const emptyDefinition = this.cleanseVocabString(inputContents[vocabIndex].definition) === "";
+			let oldCompliance = inputContents[vocabIndex].validInput;
+			
+			if (oldCompliance === false) {
+				totalUncompliantVocabPairs--;
+			} else if (oldCompliance === true) {
+				totalCompliantVocabPairs--;
+			}
+
+			if (emptyTerm ? !emptyDefinition : emptyDefinition) {
+				inputContents[vocabIndex].validInput = false;
+				totalUncompliantVocabPairs++;
+			} else if (!emptyTerm && !emptyDefinition) {
+				inputContents[vocabIndex].validInput = true;
+				totalCompliantVocabPairs++;
+			} else {
+				inputContents[vocabIndex].validInput = null;
+			}
 		}
+
+		this.setState({
+			canSaveSet: totalUncompliantVocabPairs === 0 && totalCompliantVocabPairs > 0 && this.state.inputs.title.trim() !== "",
+			changesMade: true,
+			inputContents,
+			totalCompliantVocabPairs,
+			totalUncompliantVocabPairs,
+		});
 	}
 
-	onTermInputChange = (event) => {
+	onTermInputChange = (event, vocabIndex) => {
 		const index = Number(event.target.name.replace("term_", ""));
 		const input = event.target.value;
 
-		let inputContents = this.state.inputContents;
+		let inputContents = [...this.state.inputContents];
 
 		if (index >= this.state.inputContents.length && input !== "") {
 			inputContents.push({
 				term: input,
 				definition: "",
 				sound: false,
+				validInput: null,
 			});
 		} else {
 			if (index === this.state.inputContents.length - 1 && input === "" && this.state.inputContents[index].definition === "") {
@@ -194,10 +200,10 @@ export default withRouter(class EditSet extends Component {
 
 		this.setState({
 			inputContents: inputContents,
-		}, this.handleSetDataChange);
+		}, () => this.handleSetDataChange(vocabIndex));
 	}
 
-	onDefinitionInputChange = (event) => {
+	onDefinitionInputChange = (event, vocabIndex) => {
 		const index = Number(event.target.name.replace("definition_", ""));
 		const input = event.target.value;
 
@@ -208,6 +214,7 @@ export default withRouter(class EditSet extends Component {
 				term: "",
 				definition: input,
 				sound: false,
+				validInput: null,
 			});
 		} else {
 			if (index === this.state.inputContents.length - 1 && input === "" && this.state.inputContents[index].term === "") {
@@ -219,7 +226,7 @@ export default withRouter(class EditSet extends Component {
 
 		this.setState({
 			inputContents: inputContents,
-		}, this.handleSetDataChange);
+		}, () => this.handleSetDataChange(vocabIndex));
 	}
 
 	onSetTitleInputChange = (event) => {
@@ -228,7 +235,7 @@ export default withRouter(class EditSet extends Component {
 				...this.state.inputs,
 				title: event.target.value,
 			}
-		}, this.handleSetDataChange);
+		}, () => this.handleSetDataChange());
 	}
 
 	onPublicSetInputChange = (event) => {
@@ -240,65 +247,81 @@ export default withRouter(class EditSet extends Component {
 		});
 	}
 
+	getVocabDocRef = (vocabCollectionRef, contents) => {
+		if (this.props.createSet === true) {
+			return vocabCollectionRef.doc();
+		} else {
+			return vocabCollectionRef.doc(contents.vocabId);
+		}
+	}
+
 	saveSet = async () => {
 		if (this.state.canSaveSet) {
+			const noChangesMade = !this.state.changesMade;
+
 			this.setState({
 				loading: true,
 				canSaveSet: false,
+				changesMade: false,
 			});
-	
-			const db = this.state.db;
-			const setId = this.props.match.params.setId;
-			const setDocRef = db.collection("sets").doc(setId);
-	
-			let promises = [];
-			let batches = [db.batch()];
 
-			this.state.inputContents.map((contents, index) => {
-				if (index % 248 === 0) {
-					promises.push(batches[batches.length - 1].commit());
-					batches.push(db.batch());
-				}
-				const vocabDocRef = setDocRef.collection("vocab").doc(contents.vocabId);
-				if (contents.term === "") {
-					return batches[batches.length - 1].delete(vocabDocRef);
-				} else {
-					return batches[batches.length - 1].set(vocabDocRef, {
-						term: contents.term,
-						definition: contents.definition,
-						sound: contents.sound,
+			if (noChangesMade) {
+				this.props.history.push("/sets/" + this.props.match.params.setId);
+			} else {
+				const db = this.state.db;
+				const setCollectionRef = db.collection("sets");
+				let vocabCollectionRef;
+				let setId;
+				if (this.props.createSet === true) {
+					let setDocRef = setCollectionRef.doc();
+					await setDocRef.set({
+						title: this.state.inputs.title,
+						public: this.state.inputs.public,
+						owner: this.state.user.uid,
+						groups: [],
 					});
+					setId = setDocRef.id;
+					vocabCollectionRef = setDocRef.collection("vocab");
+				} else {
+					vocabCollectionRef = setCollectionRef.doc(this.props.match.params.setId).collection("vocab");
+					setId = this.props.match.params.setId;
 				}
-			})
+		
+				let promises = [];
+				let batches = [db.batch()];
 
-			// TODO: sound files
-			
-			if (this.state.inputContents.length < this.state.originalInputContents.length) {
-				let batchItems = this.state.inputContents.length % 248;
-				for (let i = this.state.inputContents.length; i < this.state.originalInputContents.length; i++) {
-					if (batchItems + i % 248 === 0) {
-						if (batchItems !== 0) batchItems = 0;
+				this.state.inputContents.map((contents, index) => {
+					if (index % 248 === 0) {
 						promises.push(batches[batches.length - 1].commit());
 						batches.push(db.batch());
 					}
 
-					const vocabDocRef = setDocRef
-						.collection("vocab")
-						.doc(this.state.originalInputContents[i].vocabId);
-					
-					batches[batches.length - 1].delete(vocabDocRef);
-				}
-			}
-			
-			if (!batches[batches.length - 1]._delegate._committed) promises.push(batches[batches.length - 1].commit().catch(() => null));
+					if (this.props.createSet !== true
+						&& this.cleanseVocabString(contents.term) === "") {
+							let vocabDocRef = this.getVocabDocRef(vocabCollectionRef, contents);
+							return batches[batches.length - 1].delete(vocabDocRef);
+					} else if (this.props.createSet === true || JSON.stringify(contents) !== JSON.stringify(this.state.originalInputContents[index])) {
+						let vocabDocRef = this.getVocabDocRef(vocabCollectionRef, contents);
+						return batches[batches.length - 1].set(vocabDocRef, {
+							term: contents.term,
+							definition: contents.definition,
+							sound: contents.sound,
+						});
+					}
 
-			Promise.all(promises).then(() => {
-				this.stopLoading();
-				this.props.history.push("/sets/" + setDocRef.id);
-			}).catch((error) => {
-				console.log("Couldn't update set: " + error);
-				this.stopLoading();
-			});
+					return true;
+				});
+				
+				if (!batches[batches.length - 1]._delegate._committed) promises.push(batches[batches.length - 1].commit().catch(() => null));
+
+				Promise.all(promises).then(() => {
+					this.stopLoading();
+					this.props.history.push("/sets/" + setId);
+				}).catch((error) => {
+					console.log("Couldn't update set: " + error);
+					this.stopLoading(true);
+				});
+			}
 		}
 	}
 
@@ -310,7 +333,7 @@ export default withRouter(class EditSet extends Component {
 			:
 			<div>
 				<Prompt
-					when={this.state.canSaveSet}
+					when={this.state.changesMade}
 					message="Are you sure you want to leave? You will lose any unsaved changes."
 				/>
 
@@ -327,6 +350,7 @@ export default withRouter(class EditSet extends Component {
 								value={this.state.inputs.title}
 								className="set-title-input"
 								autoComplete="off"
+								ref={inputEl => (this.setNameInput = inputEl)}
 							/>
 						</h2>
 						<Button
@@ -358,8 +382,8 @@ export default withRouter(class EditSet extends Component {
 								<input
 									type="text"
 									name={`term_${index}`}
-									onChange={this.onTermInputChange}
-									value={this.state.inputContents[index] ? this.state.inputContents[index].term : ""}
+									onChange={event => this.onTermInputChange(event, index)}
+									value={contents.term}
 									autoComplete="off"
 									autoCapitalize="none"
 									autoCorrect="off"
@@ -367,8 +391,8 @@ export default withRouter(class EditSet extends Component {
 								<input
 									type="text"
 									name={`definition_${index}`}
-									onChange={this.onDefinitionInputChange}
-									value={this.state.inputContents[index] ? this.state.inputContents[index].definition : ""}
+									onChange={event => this.onDefinitionInputChange(event, index)}
+									value={contents.definition}
 									autoComplete="off"
 									autoCapitalize="none"
 									autoCorrect="off"
