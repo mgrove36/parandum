@@ -14,10 +14,10 @@ import LinkButton from "./LinkButton";
 import Footer from "./Footer";
 import Error404 from "./Error404";
 import ConfirmationDialog from './ConfirmationDialog';
+import OverlayList from './OverlayList';
 
 import "./css/GroupPage.css";
 import "./css/ConfirmationDialog.css";
-import "./css/OptionsListOverlay.css";
 
 export default withRouter(
   class GroupPage extends Component {
@@ -290,6 +290,7 @@ export default withRouter(
     };
 
     editUserRole = (role) => {
+      role = role.toLowerCase();
       if (role === this.state.editingUser.role) {
         this.setState({
           editingUser: null,
@@ -637,16 +638,11 @@ export default withRouter(
                     </div>
                     {this.state.editingUser && (
                       <>
-                        <div className="overlay" onClick={this.hideEditUserRole}></div>
-                        <div className="overlay-content options-list-overlay-content">
-                          {["Owner", "Contributor", "Member", "Remove"].map((role) => (
-                            <h3 key={role} onClick={() => this.editUserRole(role.toLowerCase())}>
-                              {role}
-                            </h3>
-                          ))}
-
-                          <div onClick={this.hideEditUserRole}>Cancel</div>
-                        </div>
+                        <OverlayList
+                          closeOverlay={this.hideEditUserRole}
+                          selectOption={this.editUserRole}
+                          options={["Owner", "Contributor", "Member", "Remove"]}
+                        />
                       </>
                     )}
                     {this.state.showDeleteGroup && (

@@ -10,7 +10,6 @@ import GroupStats from "./GroupStats";
 import UserGroups from "./UserGroups";
 import Settings from "./Settings";
 import Progress from "./Progress";
-import CreateSet from "./CreateSet";
 import UserSets from "./UserSets";
 import EditSet from "./EditSet";
 import Error404 from "./Error404";
