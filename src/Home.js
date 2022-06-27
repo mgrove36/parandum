@@ -1,9 +1,11 @@
 import React, { useEffect } from "react";
 import "@material-ui/core";
-import { AccountCircleRounded as AccountCircleIcon } from "@material-ui/icons";
+import { AccountCircleRounded as AccountCircleIcon, ArrowDropDownRounded as ArrowDropDownRoundedIcon } from "@material-ui/icons";
 import "./css/Home.css";
 import NavBar from './NavBar';
 import Footer from "./Footer";
+
+import Collapsible from "react-collapsible";
 
 export default function Home(props) {
 	const navbarItems = [
@@ -41,6 +43,15 @@ export default function Home(props) {
 					<p>To get started, click login 👆</p>
 					<br/>
 					<p>If you have any feedback, please feel free to email me at <a href="mailto:parandum@mgrove.uk">parandum@mgrove.uk</a>.</p>
+					<br/>
+					<h2>What's New?</h2>
+					<Collapsible transitionTime={300} trigger={<>v2.0.6<ArrowDropDownRoundedIcon /></>}>
+						<ul>
+							<li>Add option to show number of answers for each prompt</li>
+							<li>Ensure test options are carried over to new tests that are made from pre-existing ones (i.e. with the restart test buttons)</li>
+						</ul>
+						{/* TODO: style */}
+					</Collapsible>
 				</div>
 			</main>
 			<Footer />
