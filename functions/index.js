@@ -611,7 +611,7 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 							currentVocab
 						);
 					} else {
-					docData.questions.push(currentVocab);
+						docData.questions.push(currentVocab);
 					}
 					returnData.totalQuestions = docData.questions.length;
 					returnData.totalIncorrect = docData.incorrect.length;

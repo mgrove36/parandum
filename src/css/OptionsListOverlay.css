@@ -1,13 +1,15 @@
 .options-list-overlay-content {
 	width: fit-content;
-	height: fit-content;
 	padding: 0;
+	overflow: hidden;
+	justify-items: center;
 }
 
 .options-list-overlay-content > * {
 	border-bottom: 1px solid var(--overlay-color);
 	cursor: pointer;
 	margin: 0;
+	width: calc(100% - 96px);
 }
 
 .options-list-overlay-content > *:not(:last-child) {
