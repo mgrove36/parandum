@@ -628,7 +628,7 @@ export default withRouter(class Progress extends React.Component {
 				const progressId = result.data;
 				this.stopLoading();
 				this.props.history.push("/progress/" + progressId);
-	
+				
 				this.setState({
 					incorrectAnswers: {},
 				});
@@ -742,33 +742,35 @@ export default withRouter(class Progress extends React.Component {
 								<div className="correct-answers">
 									{
 										this.state.currentCorrect && this.state.currentCorrect.length > 0
-											?
-											<>
-												<h2>
-													{
-														this.state.moreAnswers
-															?
+										?
+										<>
+											<h2>
+												{
+													this.state.moreAnswers
+													?
 													this.state.numberOfAnswers !== null
 													?
 													`${this.state.currentCorrect.length} of ${this.state.numberOfAnswers} correct so far:`
 													:
-															"Correct so far:"
-															:
-															"Answers:"
-													}
-												</h2>
+													"Correct so far:"
+													:
+													"Answers:"
+												}
+											</h2>
+											{this.state.currentCorrect.map((vocab, index) => 
 												{this.state.currentCorrect.map((vocab, index) =>
-													<p key={index}>{vocab}</p>
-												)}
-											</>
-											:
+											{this.state.currentCorrect.map((vocab, index) => 
+												<p key={index}>{vocab}</p>
+											)}
+										</>
+										:
 										this.state.numberOfAnswers !== null
 										?
 										<h2>
 										{this.state.currentCorrect.length} of {this.state.numberOfAnswers} correct so far
 										</h2>
 										:
-											""
+										""
 									}
 								</div>
 							</div>
