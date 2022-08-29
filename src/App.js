@@ -12,6 +12,7 @@ import Settings from "./Settings";
 import Progress from "./Progress";
 import UserSets from "./UserSets";
 import EditSet from "./EditSet";
+import BulkCreateSets from "./BulkCreateSets";
 import Error404 from "./Error404";
 import History from "./History";
 import MistakesHistory from "./MistakesHistory";
@@ -284,9 +285,12 @@ class App extends React.Component {
                     this.state.coloredEdges &&
                     <div className="colored-edges"></div>
                   }
-              </Route>
+                </Route>
                 <Route path="/create-set" exact>
                   <EditSet db={db} user={this.state.user} logEvent={analytics.logEvent} page={this.page} createSet={true} />
+                </Route>
+                <Route path="/create-set/bulk" exact>
+                  <BulkCreateSets db={db} user={this.state.user} logEvent={analytics.logEvent} page={this.page} />
                 </Route>
                 <Route path="/my-sets" exact>
                   <UserSets db={db} functions={functions} user={this.state.user} logEvent={analytics.logEvent} page={this.page} />

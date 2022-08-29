@@ -26,6 +26,40 @@
 	flex-basis: 0;
 }
 
+.bulk-create-sets-section {
+	margin-top: 16px;
+}
+
+.bulk-create-sets-header, .bulk-create-sets-header > * {
+	display: flex;
+	flex-direction: row;
+	column-gap: 24px;
+	row-gap: 8px;
+	flex-wrap: wrap;
+}
+
+.bulk-create-sets-header > * {
+	column-gap: 8px;
+}
+
+.bulk-create-sets-header > * > input {
+	min-width: 36px;
+}
+
+.bulk-create-sets-text {
+	min-height: 400px;
+	font: inherit;
+	background: transparent;
+	color: inherit;
+	border: 2px solid var(--overlay-color);
+	padding: 8px;
+	margin: 12px 0;
+}
+
+.bulk-create-sets-text:focus {
+	outline: none;
+}
+
 .form .checkbox-list-container {
 	flex: 1;
 }

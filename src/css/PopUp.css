@@ -22,7 +22,7 @@
 }
 
 .overlay-content {
-	position: absolute;
+	position: fixed;
 	margin: auto;
 	top: 0;
 	right: 0;

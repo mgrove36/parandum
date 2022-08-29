@@ -3,6 +3,7 @@ import { withRouter, Prompt } from "react-router-dom";
 import { HomeRounded as HomeRoundedIcon } from "@material-ui/icons";
 import NavBar from "./NavBar";
 import Button from "./Button";
+import LinkButton from "./LinkButton";
 import Error404 from "./Error404";
 import Footer from "./Footer";
 import Checkbox from '@material-ui/core/Checkbox';
@@ -137,7 +138,7 @@ export default withRouter(class EditSet extends Component {
 	}
 
 	cleanseVocabString = (item) => {
-		const chars = /[\p{P}\p{S} ]+/ug;
+		const chars = /[\p{P}\p{S}\n ]+/ug;
 		return item.replace(chars, "");
 	}
 
@@ -360,6 +361,10 @@ export default withRouter(class EditSet extends Component {
 						>
 							Save
 						</Button>
+						{
+							this.props.createSet &&
+							<LinkButton to="/create-set/bulk">Bulk add</LinkButton>
+						}
 					</div>
 
 					<div className="form create-set-vocab-list">

@@ -10,3 +10,7 @@
 	justify-content: space-between;
 	width: 100%;
 }
+
+.accept-dialog > .button-container {
+	justify-content: center;
+}

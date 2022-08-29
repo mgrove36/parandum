@@ -430,7 +430,7 @@ exports.createProgressWithIncorrect = functions.https.onCall((data, context) => 
  * @return {string} The original string with the unwanted characters removed.
  */
 function cleanseVocabString(item, ignoreCaps=false, ignoreAccents=false) {
-	const chars = /[\p{P}\p{S} ]+/ug;
+	const chars = /[\p{P}\p{S}\n ]+/ug;
 	let cleansed = item.replace(chars, "");
 	if (ignoreAccents) cleansed = cleansed.normalize('NFD').replace(/\p{Diacritic}/gu, "");
 	if (ignoreCaps) {
