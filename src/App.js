@@ -191,29 +191,6 @@ class App extends React.Component {
         iterations: 1,
         fill: "forwards",
       });
-      this.root.animate({
-        marginBottom: ["0px", `${this.cookieNoticeHeight}px`],
-      }, {
-        duration: 1000,
-        easing: "ease-in-out",
-        iterations: 1,
-        fill: "forwards",
-      });
-      window.addEventListener('resize', this.updateCookieNoticeMargins);
-    }
-  }
-
-  updateCookieNoticeMargins = () => {
-    if (this.cookieNoticeHeight !== this.cookieNotice.offsetHeight) {
-      this.cookieNoticeHeight = this.cookieNotice.offsetHeight;
-      this.root.animate({
-        marginBottom: [`${this.root.marginBottom}px`, `${this.cookieNoticeHeight}px`],
-      }, {
-        duration: 500,
-        easing: "ease-in-out",
-        iterations: 1,
-        fill: "forwards",
-      });
     }
   }
 
@@ -255,14 +232,6 @@ class App extends React.Component {
     this.cookieNoticeHeight = this.cookieNotice.offsetHeight;
     this.cookieNotice.animate({
       bottom: ["0px", `-${this.cookieNoticeHeight}px`],
-    }, {
-      duration: 1000,
-      easing: "ease-in-out",
-      iterations: 1,
-      fill: "forwards",
-    });
-    this.root.animate({
-      marginBottom: [`${this.cookieNoticeHeight}px`, "0px"],
     }, {
       duration: 1000,
       easing: "ease-in-out",
@@ -367,7 +336,7 @@ class App extends React.Component {
           }
           <div className="cookie-notice" id="cookie-notice">
             <div>
-              <p>Just so you know, we use cookies. Read our privacy policy <Link to="/privacy">here</Link>.</p>
+              <p>Just so you know, we use cookies. By using this site you consent to this. Read our privacy policy <Link to="/privacy">here</Link>.</p>
               <p></p>
             </div>
             <Button

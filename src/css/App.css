@@ -332,6 +332,9 @@ label .MuiIconButton-label > input {
   padding: 16px 24px;
   background-color: var(--primary-color-dark);
   text-align: center;
+  height: 300px;
+  max-height: 80vh;
+  font-size: 22px;
 }
 
 .cookie-notice > div > p {
