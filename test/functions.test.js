@@ -20,6 +20,8 @@ const setTwo = "set_02";
 const vocabOne = "vocab_01";
 const termOne = "term_01";
 const definitionOne = "definition_01";
+const definitionOneWithCaps = "DefinitIon_01";
+const definitionOneWithAccents = "dëfiñítion_01";
 const definitionOneTypoOne = "ddefinition_01";
 const definitionOneTypoTwo = "dinition_01";
 const definitionOneTypoThree = "dinition_02";
@@ -404,6 +406,9 @@ describe("Parandum Cloud Functions", function () {
 			mode: "questions",
 			typo: false,
 			setIds: [setOne],
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 		const termDataOne = {
 			"item": termOne,
@@ -563,6 +568,372 @@ describe("Parandum Cloud Functions", function () {
 		assert.strictEqual(snapAfterCorrectData.typo, false);
 	});
 
+	it("processAnswer updates progress documents appropriately when correct and incorrect answers provided with ignore caps enabled", async () => {
+		const processAnswer = test.wrap(cloudFunctions.processAnswer);
+
+		const progressData = {
+			correct: [],
+			current_correct: [],
+			duration: null,
+			incorrect: [],
+			progress: 0,
+			questions: [
+				progressVocabOne,
+				progressVocabTwo
+			],
+			set_title: setOne,
+			set_titles: [setOne],
+			start_time: 1627308670962,
+			switch_language: false,
+			uid: userOne,
+			mode: "questions",
+			typo: false,
+			setIds: [setOne],
+			ignoreAccents: false,
+			ignoreCaps: true,
+			showNumberOfAnswers: false,
+		};
+		const termDataOne = {
+			"item": termOne,
+			"sound": soundOne,
+		};
+		const termDataTwo = {
+			"item": termTwo,
+			"sound": soundTwo,
+		};
+		const definitionDataOne = {
+			"item": definitionOne,
+			"sound": soundOne,
+		};
+		const definitionDataTwo = {
+			"item": definitionTwo,
+			"sound": soundTwo,
+		};
+
+		const progressId = "progress_01";
+		const progressDocId = firestore.collection("progress").doc(progressId);
+
+		await progressDocId.set(progressData);
+		await progressDocId.collection("terms").doc(progressVocabOne)
+			.set(termDataOne);
+		await progressDocId.collection("terms").doc(progressVocabTwo)
+			.set(termDataTwo);
+		await progressDocId.collection("definitions").doc(progressVocabOne)
+			.set(definitionDataOne);
+		await progressDocId.collection("definitions").doc(progressVocabTwo)
+			.set(definitionDataTwo);
+
+		const firstTermAnswerRequestData = {
+			progressId: progressId,
+			answer: definitionOne,
+		};
+		const secondTermAnswerRequestData = {
+			progressId: progressId,
+			answer: definitionTwo,
+		};
+		const incorrectAnswerRequestData = {
+			progressId: progressId,
+			answer: definitionOneWithCaps,
+		};
+
+		const firstReturn = await processAnswer(incorrectAnswerRequestData);
+
+		hamjest.assertThat(firstReturn, hamjest.anyOf(
+			hamjest.is({
+				mode: "questions",
+				correct: false,
+				correctAnswers: [definitionOne],
+				currentVocabId: progressVocabOne,
+				moreAnswers: false,
+				nextPrompt: {
+					item: termOne,
+					sound: soundOne,
+					set_owner: userOne,
+				},
+				progress: 1,
+				totalQuestions: 3,
+				totalCorrect: 0,
+				totalIncorrect: 1,
+				typo: false,
+			}),
+			hamjest.is({
+				mode: "questions",
+				correct: false,
+				correctAnswers: [definitionOne],
+				currentVocabId: progressVocabOne,
+				moreAnswers: false,
+				nextPrompt: {
+					item: termTwo,
+					sound: soundTwo,
+					set_owner: userOne,
+				},
+				progress: 1,
+				totalQuestions: 3,
+				totalCorrect: 0,
+				totalIncorrect: 1,
+				typo: false,
+			})
+		));
+
+		const snapAfterIncorrectData = await progressDocId.get().then((doc) => doc.data());
+
+		hamjest.assertThat(snapAfterIncorrectData, hamjest.anyOf(
+			hamjest.is({
+				correct: [],
+				current_correct: [],
+				duration: null,
+				incorrect: [progressVocabOne],
+				progress: 1,
+				questions: [
+					progressVocabOne,
+					progressVocabOne,
+					progressVocabTwo
+				],
+				set_title: setOne,
+				set_titles: [setOne],
+				start_time: 1627308670962,
+				switch_language: false,
+				uid: userOne,
+				mode: "questions",
+				typo: false,
+				setIds: [setOne],
+			}),
+			hamjest.is({
+				correct: [],
+				current_correct: [],
+				duration: null,
+				incorrect: [progressVocabOne],
+				progress: 1,
+				questions: [
+					progressVocabOne,
+					progressVocabTwo,
+					progressVocabOne
+				],
+				set_title: setOne,
+				set_titles: [setOne],
+				start_time: 1627308670962,
+				switch_language: false,
+				uid: userOne,
+				mode: "questions",
+				typo: false,
+				setIds: [setOne],
+			})
+		));
+
+		if (firstReturn.nextPrompt.item === termOne) {
+			await processAnswer(firstTermAnswerRequestData);
+			await processAnswer(secondTermAnswerRequestData);
+		} else {
+			await processAnswer(secondTermAnswerRequestData);
+			await processAnswer(firstTermAnswerRequestData);
+		}
+
+		const snapAfterCorrectData = await progressDocId.get().then((doc) => doc.data());
+
+		hamjest.assertThat(snapAfterCorrectData.correct, hamjest.anyOf(
+			hamjest.is([progressVocabOne, progressVocabTwo]),
+			hamjest.is([progressVocabTwo, progressVocabOne])
+		));
+		hamjest.assertThat(snapAfterCorrectData.questions, hamjest.anyOf(
+			hamjest.is([progressVocabOne, progressVocabOne, progressVocabTwo]),
+			hamjest.is([progressVocabOne, progressVocabTwo, progressVocabOne])
+		));
+		assert.deepStrictEqual(snapAfterCorrectData.incorrect, [progressVocabOne]);
+		assert.deepStrictEqual(snapAfterCorrectData.current_correct, []);
+		assert.notStrictEqual(snapAfterCorrectData.duration, null);
+		assert.strictEqual(snapAfterCorrectData.progress, 3);
+		assert.strictEqual(snapAfterCorrectData.set_title, setOne);
+		assert.deepStrictEqual(snapAfterCorrectData.set_titles, [setOne]);
+		assert.strictEqual(snapAfterCorrectData.start_time, 1627308670962);
+		assert.strictEqual(snapAfterCorrectData.switch_language, false);
+		assert.strictEqual(snapAfterCorrectData.uid, userOne);
+		assert.strictEqual(snapAfterCorrectData.mode, "questions");
+		assert.strictEqual(snapAfterCorrectData.typo, false);
+	});
+
+	it("processAnswer updates progress documents appropriately when correct and incorrect answers provided with ignore accents enabled", async () => {
+		const processAnswer = test.wrap(cloudFunctions.processAnswer);
+
+		const progressData = {
+			correct: [],
+			current_correct: [],
+			duration: null,
+			incorrect: [],
+			progress: 0,
+			questions: [
+				progressVocabOne,
+				progressVocabTwo
+			],
+			set_title: setOne,
+			set_titles: [setOne],
+			start_time: 1627308670962,
+			switch_language: false,
+			uid: userOne,
+			mode: "questions",
+			typo: false,
+			setIds: [setOne],
+			ignoreAccents: false,
+			ignoreCaps: true,
+			showNumberOfAnswers: false,
+		};
+		const termDataOne = {
+			"item": termOne,
+			"sound": soundOne,
+		};
+		const termDataTwo = {
+			"item": termTwo,
+			"sound": soundTwo,
+		};
+		const definitionDataOne = {
+			"item": definitionOne,
+			"sound": soundOne,
+		};
+		const definitionDataTwo = {
+			"item": definitionTwo,
+			"sound": soundTwo,
+		};
+
+		const progressId = "progress_01";
+		const progressDocId = firestore.collection("progress").doc(progressId);
+
+		await progressDocId.set(progressData);
+		await progressDocId.collection("terms").doc(progressVocabOne)
+			.set(termDataOne);
+		await progressDocId.collection("terms").doc(progressVocabTwo)
+			.set(termDataTwo);
+		await progressDocId.collection("definitions").doc(progressVocabOne)
+			.set(definitionDataOne);
+		await progressDocId.collection("definitions").doc(progressVocabTwo)
+			.set(definitionDataTwo);
+
+		const firstTermAnswerRequestData = {
+			progressId: progressId,
+			answer: definitionOne,
+		};
+		const secondTermAnswerRequestData = {
+			progressId: progressId,
+			answer: definitionTwo,
+		};
+		const incorrectAnswerRequestData = {
+			progressId: progressId,
+			answer: definitionOneWithAccents,
+		};
+
+		const firstReturn = await processAnswer(incorrectAnswerRequestData);
+
+		hamjest.assertThat(firstReturn, hamjest.anyOf(
+			hamjest.is({
+				mode: "questions",
+				correct: false,
+				correctAnswers: [definitionOne],
+				currentVocabId: progressVocabOne,
+				moreAnswers: false,
+				nextPrompt: {
+					item: termOne,
+					sound: soundOne,
+					set_owner: userOne,
+				},
+				progress: 1,
+				totalQuestions: 3,
+				totalCorrect: 0,
+				totalIncorrect: 1,
+				typo: false,
+			}),
+			hamjest.is({
+				mode: "questions",
+				correct: false,
+				correctAnswers: [definitionOne],
+				currentVocabId: progressVocabOne,
+				moreAnswers: false,
+				nextPrompt: {
+					item: termTwo,
+					sound: soundTwo,
+					set_owner: userOne,
+				},
+				progress: 1,
+				totalQuestions: 3,
+				totalCorrect: 0,
+				totalIncorrect: 1,
+				typo: false,
+			})
+		));
+
+		const snapAfterIncorrectData = await progressDocId.get().then((doc) => doc.data());
+
+		hamjest.assertThat(snapAfterIncorrectData, hamjest.anyOf(
+			hamjest.is({
+				correct: [],
+				current_correct: [],
+				duration: null,
+				incorrect: [progressVocabOne],
+				progress: 1,
+				questions: [
+					progressVocabOne,
+					progressVocabOne,
+					progressVocabTwo
+				],
+				set_title: setOne,
+				set_titles: [setOne],
+				start_time: 1627308670962,
+				switch_language: false,
+				uid: userOne,
+				mode: "questions",
+				typo: false,
+				setIds: [setOne],
+			}),
+			hamjest.is({
+				correct: [],
+				current_correct: [],
+				duration: null,
+				incorrect: [progressVocabOne],
+				progress: 1,
+				questions: [
+					progressVocabOne,
+					progressVocabTwo,
+					progressVocabOne
+				],
+				set_title: setOne,
+				set_titles: [setOne],
+				start_time: 1627308670962,
+				switch_language: false,
+				uid: userOne,
+				mode: "questions",
+				typo: false,
+				setIds: [setOne],
+			})
+		));
+
+		if (firstReturn.nextPrompt.item === termOne) {
+			await processAnswer(firstTermAnswerRequestData);
+			await processAnswer(secondTermAnswerRequestData);
+		} else {
+			await processAnswer(secondTermAnswerRequestData);
+			await processAnswer(firstTermAnswerRequestData);
+		}
+
+		const snapAfterCorrectData = await progressDocId.get().then((doc) => doc.data());
+
+		hamjest.assertThat(snapAfterCorrectData.correct, hamjest.anyOf(
+			hamjest.is([progressVocabOne, progressVocabTwo]),
+			hamjest.is([progressVocabTwo, progressVocabOne])
+		));
+		hamjest.assertThat(snapAfterCorrectData.questions, hamjest.anyOf(
+			hamjest.is([progressVocabOne, progressVocabOne, progressVocabTwo]),
+			hamjest.is([progressVocabOne, progressVocabTwo, progressVocabOne])
+		));
+		assert.deepStrictEqual(snapAfterCorrectData.incorrect, [progressVocabOne]);
+		assert.deepStrictEqual(snapAfterCorrectData.current_correct, []);
+		assert.notStrictEqual(snapAfterCorrectData.duration, null);
+		assert.strictEqual(snapAfterCorrectData.progress, 3);
+		assert.strictEqual(snapAfterCorrectData.set_title, setOne);
+		assert.deepStrictEqual(snapAfterCorrectData.set_titles, [setOne]);
+		assert.strictEqual(snapAfterCorrectData.start_time, 1627308670962);
+		assert.strictEqual(snapAfterCorrectData.switch_language, false);
+		assert.strictEqual(snapAfterCorrectData.uid, userOne);
+		assert.strictEqual(snapAfterCorrectData.mode, "questions");
+		assert.strictEqual(snapAfterCorrectData.typo, false);
+	});
+
 	it("processAnswer returns correct data", async () => {
 		const processAnswer = test.wrap(cloudFunctions.processAnswer);
 
@@ -583,6 +954,9 @@ describe("Parandum Cloud Functions", function () {
 			mode: "questions",
 			typo: false,
 			setIds: [setOne],
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 		const termDataOne = {
 			"item": termOne,
@@ -668,6 +1042,9 @@ describe("Parandum Cloud Functions", function () {
 			mode: "questions",
 			typo: false,
 			setIds: [setOne],
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 		const termDataOne = {
 			"item": termOne,
@@ -861,6 +1238,9 @@ describe("Parandum Cloud Functions", function () {
 			mode: "questions",
 			typo: false,
 			setIds: [setOne],
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 		const termDataOne = {
 			"item": termOne,
@@ -922,6 +1302,9 @@ describe("Parandum Cloud Functions", function () {
 			mode: "questions",
 			typo: false,
 			setIds: [setOne],
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 		const termDataOne = {
 			"item": termOne,
@@ -973,6 +1356,9 @@ describe("Parandum Cloud Functions", function () {
 			mode: "questions",
 			typo: false,
 			setIds: [setOne],
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 		const termDataOne = {
 			"item": termOne,
@@ -1022,6 +1408,9 @@ describe("Parandum Cloud Functions", function () {
 			mode: "questions",
 			typo: false,
 			setIds: [setOne],
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 		const termDataOne = {
 			"item": termOne,
@@ -1073,6 +1462,9 @@ describe("Parandum Cloud Functions", function () {
 			mode: "questions",
 			typo: false,
 			setIds: [setOne],
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 		const termDataOne = {
 			"item": termOne,
@@ -1124,6 +1516,9 @@ describe("Parandum Cloud Functions", function () {
 			mode: "questions",
 			typo: false,
 			setIds: [setOne],
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 		const termDataOne = {
 			"item": termOne,
@@ -1175,6 +1570,9 @@ describe("Parandum Cloud Functions", function () {
 			mode: "questions",
 			typo: false,
 			setIds: [setOne],
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 		const termDataOne = {
 			"item": termOne,
@@ -1224,6 +1622,9 @@ describe("Parandum Cloud Functions", function () {
 			mode: "questions",
 			typo: false,
 			setIds: [setOne],
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 		const termDataOne = {
 			"item": termOne,
@@ -1275,6 +1676,9 @@ describe("Parandum Cloud Functions", function () {
 			mode: "questions",
 			typo: false,
 			setIds: [setOne],
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 		const termDataOne = {
 			"item": termOne,
@@ -1326,6 +1730,9 @@ describe("Parandum Cloud Functions", function () {
 			mode: "questions",
 			typo: true,
 			setIds: [setOne],
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 		const termDataOne = {
 			"item": termOne,
@@ -1379,6 +1786,9 @@ describe("Parandum Cloud Functions", function () {
 			mode: "questions",
 			typo: true,
 			setIds: [setOne],
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 		const termDataOne = {
 			"item": termOne,
@@ -1436,6 +1846,9 @@ describe("Parandum Cloud Functions", function () {
 			mode: "questions",
 			typo: false,
 			setIds: [setOne, setTwo],
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 		const termDataOne = {
 			"item": termOne,
@@ -1496,6 +1909,9 @@ describe("Parandum Cloud Functions", function () {
 			mode: "questions",
 			typo: false,
 			setIds: [setOne, setTwo],
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 		const completedProgressData = {
 			attempts: 1,
@@ -1569,6 +1985,9 @@ describe("Parandum Cloud Functions", function () {
 			mode: "questions",
 			typo: false,
 			setIds: [setOne],
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 		const termDataOne = {
 			"item": termOne,
@@ -1640,6 +2059,9 @@ describe("Parandum Cloud Functions", function () {
 			mode: "questions",
 			typo: false,
 			setIds: [setOne],
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 		const groupOneData = {
 			role: "owner",
@@ -1715,6 +2137,9 @@ describe("Parandum Cloud Functions", function () {
 			mode: "questions",
 			typo: false,
 			setIds: [setOne],
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 		const termDataOne = {
 			"item": termOne,
@@ -1772,6 +2197,9 @@ describe("Parandum Cloud Functions", function () {
 			mode: "questions",
 			typo: false,
 			setIds: [setOne],
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 		const termDataOne = {
 			"item": termOne,
@@ -2166,6 +2594,9 @@ describe("Parandum Cloud Functions", function () {
 			typo: false,
 			setIds: [setOne, setTwo],
 			set_titles: [setOne, setTwo],
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 		const termDataOne = {
 			term: termOne,
@@ -2270,6 +2701,9 @@ describe("Parandum Cloud Functions", function () {
 			lives: 2,
 			start_lives: 5,
 			set_titles: [setOne, setTwo],
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 		const termDataOne = {
 			term: termOne,
@@ -2369,6 +2803,9 @@ describe("Parandum Cloud Functions", function () {
 			current_correct: [],
 			typo: false,
 			setIds: [setOne, setTwo],
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 		const termDataOne = {
 			term: termOne,
@@ -2431,6 +2868,9 @@ describe("Parandum Cloud Functions", function () {
 			current_correct: [],
 			typo: false,
 			setIds: [setOne, setTwo],
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 		const termDataOne = {
 			term: termOne,
@@ -2499,6 +2939,9 @@ describe("Parandum Cloud Functions", function () {
 			current_correct: [],
 			typo: false,
 			setIds: [setOne, setTwo],
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 		const termDataOne = {
 			term: termOne,
