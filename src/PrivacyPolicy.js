@@ -247,7 +247,7 @@ export default function PrivacyPolicy(props) {
 
 				<h2>Contact Us</h2>
 
-				<p>If you have questions or comments about this Privacy Policy, please contact us at <a href="mailto:parandum@mgrove.uk">parandum@mgrove.uk</a></p>
+				<p>If you have questions or comments about this Privacy Policy, please contact us at <a href="mailto:contact@parandum.mgrove.uk">contact@parandum.mgrove.uk</a></p>
 			</main>
 			<Footer />
 		</div>

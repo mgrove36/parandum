@@ -40,7 +40,7 @@ export default function Home(props) {
 					<br/>
 					<p>To get started, click login 👆</p>
 					<br/>
-					<p>If you have any feedback, please feel free to email me at <a href="mailto:parandum@mgrove.uk">parandum@mgrove.uk</a>.</p>
+					<p>If you have any feedback, please feel free to email us at <a href="mailto:contact@parandum.mgrove.uk">contact@parandum.mgrove.uk</a>.</p>
 				</div>
 			</main>
 			<Footer />
