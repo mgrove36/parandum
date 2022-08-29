@@ -526,7 +526,7 @@ export default withRouter(class LoggedInHome extends React.Component {
 								</div>
 							</div>
 						}
-						{this.state.userGroupSets && this.state.userGroupSets.length > 0 && typeof this.state.userGroupSets.group.data === "function" && this.state.userGroupSets
+						{this.state.userGroupSets && this.state.userGroupSets.length > 0 && this.state.userGroupSets.group && typeof this.state.userGroupSets.group.data === "function" && this.state.userGroupSets
 							.map(data =>
 							data.sets && data.sets.length > 0 &&
 								<div key={data.group.id} className="checkbox-list-container">
