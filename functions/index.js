@@ -7,6 +7,7 @@ admin.initializeApp();
 const db = admin.firestore();
 
 const LOCAL_TESTING = false;
+const TESTING_USER_ID = "IjQBy5MmTPyOaZY0heexwb5bdKzG" //"M3JPrFRH6Fdo8XMUbF0l2zVZUCH3"
 
 /**
  * Randomises the items in an array.
@@ -66,7 +67,7 @@ exports.userDeleted = functions.auth.user().onDelete((user) => {
  * NOTE: can't be unit tested
  */
 exports.getGroupMembers = functions.https.onCall((data, context) => {
-	const uid = LOCAL_TESTING ? "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3" : context.auth.uid;
+	const uid = LOCAL_TESTING ? TESTING_USER_ID : context.auth.uid;
 
 	if (context.app == undefined && !LOCAL_TESTING) {
 		throw new functions.https.HttpsError(
@@ -150,7 +151,7 @@ exports.getGroupMembers = functions.https.onCall((data, context) => {
  * @return {string} The ID of the created progress document.
 */
 exports.createProgress = functions.https.onCall((data, context) => {
-	const uid = LOCAL_TESTING ? "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3" : context.auth.uid;
+	const uid = LOCAL_TESTING ? TESTING_USER_ID : context.auth.uid;
 	if (context.app == undefined && !LOCAL_TESTING) {
 		throw new functions.https.HttpsError(
 			"failed-precondition",
@@ -328,7 +329,7 @@ exports.createProgress = functions.https.onCall((data, context) => {
  * @return {string} The ID of the created progress document.
 */
 exports.createProgressWithIncorrect = functions.https.onCall((data, context) => {
-	const uid = LOCAL_TESTING ? "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3" : context.auth.uid;
+	const uid = LOCAL_TESTING ? TESTING_USER_ID : context.auth.uid;
 
 	if (context.app == undefined && !LOCAL_TESTING) {
 		throw new functions.https.HttpsError(
@@ -457,7 +458,7 @@ function cleanseVocabString(item, ignoreCaps=false) {
  * @return {boolean} typo Whether the inputted answer is likely to include a typo (using Levenshtein distance or by detecting a null answer).
  */
 exports.processAnswer = functions.https.onCall((data, context) => {
-	const uid = LOCAL_TESTING ? "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3" : context.auth.uid;
+	const uid = LOCAL_TESTING ? TESTING_USER_ID : context.auth.uid;
 
 	if (context.app == undefined && !LOCAL_TESTING) {
 		throw new functions.https.HttpsError(
@@ -755,7 +756,7 @@ exports.processAnswer = functions.https.onCall((data, context) => {
  * @return {promise} The promise from setting the target user's admin custom auth claim.
 */
 exports.setAdmin = functions.https.onCall(async (data, context) => {
-	const uid = LOCAL_TESTING ? "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3" : context.auth.uid;
+	const uid = LOCAL_TESTING ? TESTING_USER_ID : context.auth.uid;
 	const isAdmin = LOCAL_TESTING ? true : context.auth.token.admin;
 
 	if (context.app == undefined && !LOCAL_TESTING) {
@@ -788,7 +789,7 @@ exports.setAdmin = functions.https.onCall(async (data, context) => {
  * @return {boolean} true, to show the function has succeeded.
 */
 exports.addSetToGroup = functions.https.onCall((data, context) => {
-	const uid = LOCAL_TESTING ? "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3" : context.auth.uid;
+	const uid = LOCAL_TESTING ? TESTING_USER_ID : context.auth.uid;
 	const isAdmin = LOCAL_TESTING ? false : context.auth.token.admin;
 	const auth = LOCAL_TESTING ? { uid: uid } : context.auth;
 
@@ -857,7 +858,7 @@ exports.addSetToGroup = functions.https.onCall((data, context) => {
  * @return {promise} The promise from setting the group's updated data.
 */
 exports.removeSetFromGroup = functions.https.onCall((data, context) => {
-	const uid = LOCAL_TESTING ? "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3" : context.auth.uid;
+	const uid = LOCAL_TESTING ? TESTING_USER_ID : context.auth.uid;
 	const isAdmin = LOCAL_TESTING ? false : context.auth.token.admin;
 	const auth = LOCAL_TESTING ? { uid: uid } : context.auth;
 
@@ -996,7 +997,7 @@ async function generateJoinCode() {
  * @return {string} The ID of the new group's document in the groups collection.
 */
 exports.createGroup = functions.https.onCall(async (data, context) => {
-	const uid = LOCAL_TESTING ? "M3JPrFRH6Fdo8XMUbF0l2zVZUCH3" : context.auth.uid;
+	const uid = LOCAL_TESTING ? TESTING_USER_ID : context.auth.uid;
 
 	if (context.app == undefined && !LOCAL_TESTING) {
 		throw new functions.https.HttpsError(
