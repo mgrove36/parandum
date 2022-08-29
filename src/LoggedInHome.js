@@ -72,6 +72,7 @@ export default withRouter(class LoggedInHome extends React.Component {
 			sliderValue: 1,
 			switchLanguage: false,
 			ignoreCaps: false,
+			ignoreAccents: false,
 			showNumberOfAnswers: false,
 			totalTestQuestions: 1,
 			pendingDeletions: {},
@@ -201,6 +202,7 @@ export default withRouter(class LoggedInHome extends React.Component {
 				mode: mode,
 				limit: this.state.sliderValue,
 				ignoreCaps: this.state.ignoreCaps,
+				ignoreAccents: this.state.ignoreAccents,
 				showNumberOfAnswers: this.state.showNumberOfAnswers,
 			}).then((result) => {
 				const progressId = result.data;
@@ -357,6 +359,12 @@ export default withRouter(class LoggedInHome extends React.Component {
 	handleIgnoreCapsChange = (event) => {
 		this.setState({
 			ignoreCaps: event.target.checked,
+		});
+	}
+
+	handleIgnoreAccentsChange = (event) => {
+		this.setState({
+			ignoreAccents: event.target.checked,
 		});
 	}
 
@@ -586,9 +594,11 @@ export default withRouter(class LoggedInHome extends React.Component {
 						onSliderChange={this.changeSliderValue}
 						switchLanguage={this.state.switchLanguage}
 						ignoreCaps={this.state.ignoreCaps}
+						ignoreAccents={this.state.ignoreAccents}
 						showNumberOfAnswers={this.state.showNumberOfAnswers}
 						handleSwitchLanguageChange={this.handleSwitchLanguageChange}
 						handleIgnoreCapsChange={this.handleIgnoreCapsChange}
+						handleIgnoreAccentsChange={this.handleIgnoreAccentsChange}
 						handleShowNumberOfAnswersChange={this.handleShowNumberOfAnswersChange}
 						loading={this.state.loading}
 					/>
@@ -603,9 +613,11 @@ export default withRouter(class LoggedInHome extends React.Component {
 						onSliderChange={this.changeSliderValue}
 						switchLanguage={this.state.switchLanguage}
 						ignoreCaps={this.state.ignoreCaps}
+						ignoreAccents={this.state.ignoreAccents}
 						showNumberOfAnswers={this.state.showNumberOfAnswers}
 						handleSwitchLanguageChange={this.handleSwitchLanguageChange}
 						handleIgnoreCapsChange={this.handleIgnoreCapsChange}
+						handleIgnoreAccentsChange={this.handleIgnoreAccentsChange}
 						handleShowNumberOfAnswersChange={this.handleShowNumberOfAnswersChange}
 						loading={this.state.loading}
 					/>

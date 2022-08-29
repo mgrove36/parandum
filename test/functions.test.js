@@ -127,6 +127,9 @@ describe("Parandum Cloud Functions", function () {
 			sets: [setOne],
 			mode: "questions",
 			limit: 2,
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 
 		const progressId = await createProgress(requestData);
@@ -164,7 +167,7 @@ describe("Parandum Cloud Functions", function () {
 		});
 	});
 
-	it("createProgress can create new questions mode progress file from multiple existing sets", async () => {
+	it("createProgress can create new questions mode progress file from multiple existing sets with all test aids enabled", async () => {
 		const createProgress = test.wrap(cloudFunctions.createProgress);
 
 		const setDataOne = {
@@ -218,6 +221,9 @@ describe("Parandum Cloud Functions", function () {
 			sets: [setOne, setTwo],
 			mode: "questions",
 			limit: 4,
+			ignoreAccents: true,
+			ignoreCaps: true,
+			showNumberOfAnswers: true,
 		};
 
 		const progressId = await createProgress(requestData);
@@ -241,7 +247,7 @@ describe("Parandum Cloud Functions", function () {
 		assert.strictEqual(snapAfter.typo, false);
 	});
 
-	it("createProgress can create new lives mode progress file from existing set", async () => {
+	it("createProgress can create new lives mode progress file from existing set with no test aids enabled", async () => {
 		const createProgress = test.wrap(cloudFunctions.createProgress);
 
 		const setDataOne = {
@@ -271,6 +277,9 @@ describe("Parandum Cloud Functions", function () {
 			sets: [setOne],
 			mode: "lives",
 			limit: 2,
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 
 		const progressId = await createProgress(requestData);
@@ -328,6 +337,9 @@ describe("Parandum Cloud Functions", function () {
 			sets: [setOne],
 			mode: "questions",
 			limit: 2,
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 
 		firebase.assertSucceeds(createProgress(requestData));
@@ -363,6 +375,9 @@ describe("Parandum Cloud Functions", function () {
 			sets: [setTwo],
 			mode: "questions",
 			limit: 2,
+			ignoreAccents: false,
+			ignoreCaps: false,
+			showNumberOfAnswers: false,
 		};
 		
 		firebase.assertFails(createProgress(requestData));

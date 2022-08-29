@@ -62,6 +62,7 @@ export default withRouter(class Progress extends React.Component {
 		startTime: null,
 		sound: false,
 		ignoreCaps: false,
+		ignoreAccents: false,
 		numberOfAnswers: null,
 		virtualKeyboardLanguage: "english",
 		virtualKeyboardLayoutName: "default",
@@ -757,8 +758,6 @@ export default withRouter(class Progress extends React.Component {
 													"Answers:"
 												}
 											</h2>
-											{this.state.currentCorrect.map((vocab, index) => 
-												{this.state.currentCorrect.map((vocab, index) =>
 											{this.state.currentCorrect.map((vocab, index) => 
 												<p key={index}>{vocab}</p>
 											)}

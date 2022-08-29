@@ -141,6 +141,7 @@ exports.getGroupMembers = functions.https.onCall((data, context) => {
 /**
  * Creates new progress document.
  * @param {object} data The data passed to the function.
+ * @param {boolean} data.ignoreAccents Whether accents on letters should matter during the test. Optional.
  * @param {boolean} data.ignoreCaps Whether capitalisation of answers should matter during the test. Optional.
  * @param {boolean} data.limit The maximum number of lives/questions for the test.
  * @param {boolean} data.mode The mode to be tested in. Valid options are "questions" and "lives".
@@ -174,7 +175,14 @@ exports.createProgress = functions.https.onCall((data, context) => {
 		data.ignoreCaps = false;
 		console.log("ignoreCaps not provided - using default value of false");
 	} else if (typeof data.ignoreCaps !== "boolean") {
-		throw new functions.https.HttpsError("invalid-argument", "showNumberOfAnswers must be a boolean");
+		throw new functions.https.HttpsError("invalid-argument", "ignoreCaps must be a boolean");
+	}
+
+	if (typeof data.ignoreAccents === "undefined") {
+		data.ignoreAccents = false;
+		console.log("ignoreAccents not provided - using default value of false");
+	} else if (typeof data.ignoreAccents !== "boolean") {
+		throw new functions.https.HttpsError("invalid-argument", "ignoreAccents must be a boolean");
 	}
 
 	if (typeof data.showNumberOfAnswers === "undefined") {
@@ -256,6 +264,7 @@ exports.createProgress = functions.https.onCall((data, context) => {
 			set_titles: setIds.map((setId) => setTitlesDict[setId]),
 			typo: false,
 			ignoreCaps: data.ignoreCaps,
+			ignoreAccents: data.ignoreAccents,
 			showNumberOfAnswers: data.showNumberOfAnswers,
 		}
 
@@ -420,9 +429,10 @@ exports.createProgressWithIncorrect = functions.https.onCall((data, context) => 
  * @param {string} item The term/definition to remove the characters that should be ignored from.
  * @return {string} The original string with the unwanted characters removed.
  */
-function cleanseVocabString(item, ignoreCaps=false) {
+function cleanseVocabString(item, ignoreCaps=false, ignoreAccents=false) {
 	const chars = /[\p{P}\p{S} ]+/ug;
-	const cleansed = item.replace(chars, "");
+	let cleansed = item.replace(chars, "");
+	if (ignoreAccents) cleansed = cleansed.normalize('NFD').replace(/\p{Diacritic}/gu, "");
 	if (ignoreCaps) {
 		return cleansed.toLowerCase();
 	} else {
@@ -494,6 +504,8 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 
 			return transaction.get(progressDoc.data().switch_language ? termDocId : definitionDocId).then((answerDoc) => {
 				const docData = progressDoc.data();
+				docData.ignoreCaps = docData.ignoreCaps === true;
+				docData.ignoreAccents = docData.ignoreAccents === true;
 				const mode = docData.mode;
 				const correctAnswers = answerDoc.data().item;
 				const splitCorrectAnswers = correctAnswers.split("/");
@@ -507,15 +519,16 @@ exports.processAnswer = functions.https.onCall((data, context) => {
 						cleansedDoneSplitCorrectAnswers.push(
 							cleanseVocabString(
 								notDoneSplitCorrectAnswers.splice(index, 1)[0],
-								docData.ignoreCaps
+								docData.ignoreCaps,
+								docData.ignoreAccents
 							)
 						);
 					}
 				});
-				const cleansedNotDoneSplitCorrectAnswers = notDoneSplitCorrectAnswers.map((answer) => cleanseVocabString(answer, docData.ignoreCaps));
+				const cleansedNotDoneSplitCorrectAnswers = notDoneSplitCorrectAnswers.map((answer) => cleanseVocabString(answer, docData.ignoreCaps, docData.ignoreAccents));
 
 				const cleansedSplitCorrectAnswers = cleansedNotDoneSplitCorrectAnswers.concat(cleansedDoneSplitCorrectAnswers);
-				const cleansedInputAnswer = cleanseVocabString(inputAnswer, docData.ignoreCaps);
+				const cleansedInputAnswer = cleanseVocabString(inputAnswer, docData.ignoreCaps, docData.ignoreAccents);
 
 				let isCorrectAnswer = false;
 				let correctAnswerIndex;

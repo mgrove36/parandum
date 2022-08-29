@@ -72,6 +72,14 @@ export default function LivesTestStart(props) {
 					</label>
 					<label>
 						<Checkbox
+							checked={props.ignoreAccents}
+							onChange={props.handleIgnoreAccentsChange}
+							inputProps={{ 'aria-label': 'checkbox' }}
+						/>
+						<span>Ignore accents</span>
+					</label>
+					<label>
+						<Checkbox
 							checked={props.showNumberOfAnswers}
 							onChange={props.handleShowNumberOfAnswersChange}
 							inputProps={{ 'aria-label': 'checkbox' }}

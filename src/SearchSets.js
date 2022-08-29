@@ -42,6 +42,7 @@ export default withRouter(class SearchSets extends Component {
 			showLivesTestStart: false,
 			searchInput: "",
 			ignoreCaps: false,
+			ignoreAccents: false,
 			showNumberOfAnswers: false,
 			switchLanguage: false,
 			sliderValue: 1,
@@ -140,6 +141,7 @@ export default withRouter(class SearchSets extends Component {
 				mode: mode,
 				limit: this.state.sliderValue,
 				ignoreCaps: this.state.ignoreCaps,
+				ignoreAccents: this.state.ignoreAccents,
 				showNumberOfAnswers: this.state.showNumberOfAnswers,
 			}).then((result) => {
 				const progressId = result.data;
@@ -251,6 +253,12 @@ export default withRouter(class SearchSets extends Component {
 		});
 	}
 
+	handleIgnoreAccentsChange = (event) => {
+		this.setState({
+			ignoreAccents: event.target.checked,
+		});
+	}
+
 	handleShowNumberOfAnswersChange = (event) => {
 		this.setState({
 			showNumberOfAnswers: event.target.checked,
@@ -356,9 +364,11 @@ export default withRouter(class SearchSets extends Component {
 						onSliderChange={this.changeSliderValue}
 						switchLanguage={this.state.switchLanguage}
 						ignoreCaps={this.state.ignoreCaps}
+						ignoreAccents={this.state.ignoreAccents}
 						showNumberOfAnswers={this.state.showNumberOfAnswers}
 						handleSwitchLanguageChange={this.handleSwitchLanguageChange}
 						handleIgnoreCapsChange={this.handleIgnoreCapsChange}
+						handleIgnoreAccentsChange={this.handleIgnoreAccentsChange}
 						handleShowNumberOfAnswersChange={this.handleShowNumberOfAnswersChange}
 						loading={this.state.loading}
 					/>
@@ -373,9 +383,11 @@ export default withRouter(class SearchSets extends Component {
 						onSliderChange={this.changeSliderValue}
 						switchLanguage={this.state.switchLanguage}
 						ignoreCaps={this.state.ignoreCaps}
+						ignoreAccents={this.state.ignoreAccents}
 						showNumberOfAnswers={this.state.showNumberOfAnswers}
 						handleSwitchLanguageChange={this.handleSwitchLanguageChange}
 						handleIgnoreCapsChange={this.handleIgnoreCapsChange}
+						handleIgnoreAccentsChange={this.handleIgnoreAccentsChange}
 						handleShowNumberOfAnswersChange={this.handleShowNumberOfAnswersChange}
 						loading={this.state.loading}
 					/>
