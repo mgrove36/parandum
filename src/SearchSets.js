@@ -88,7 +88,7 @@ export default withRouter(class SearchSets extends Component {
 
 			let completeSetsRef;
 
-			if (this.state.pageNumber % paginationFrequency === 0 || reload) {
+			if (this.state.pageNumber === 0 || reload) {
 				completeSetsRef = setsRef.limit(paginationFrequency);
 			} else {
 				completeSetsRef = setsRef.startAfter(this.state.sets[this.state.sets.length - 1]).limit(paginationFrequency);
@@ -334,7 +334,7 @@ export default withRouter(class SearchSets extends Component {
 						)}
 					</div>
 					{
-						!this.state.loadedAllSets && this.state.sets.length === paginationFrequency &&
+						!this.state.loadedAllSets && this.state.sets.length % paginationFrequency === 0 &&
 						<Button
 							onClick={() => this.loadSets()}
 							disabled={this.state.loadingSets}

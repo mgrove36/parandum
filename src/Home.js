@@ -46,7 +46,15 @@ export default function Home(props) {
 					<br/>
 					<div className="whats-new">
 						<h2>What's New?</h2>
-						<Collapsible open={true} transitionTime={500} easing="ease" trigger={<>v2.3.0<ArrowDropDownRoundedIcon /></>}>
+						<Collapsible open={true} transitionTime={500} easing="ease" trigger={<>v2.3.2<ArrowDropDownRoundedIcon /></>}>
+							<ul>
+								<li>Bug fixes:</li>
+								<ul>
+									<li>On the search page, all sets are now visible rather than just the first 48</li>
+								</ul>
+							</ul>
+						</Collapsible>
+						<Collapsible transitionTime={500} easing="ease" trigger={<>v2.3.0<ArrowDropDownRoundedIcon /></>}>
 							<ul>
 								<li>Add option to ignore accents during tests</li>
 								<li>Update cookie notice</li>
