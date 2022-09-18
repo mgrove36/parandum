@@ -46,7 +46,15 @@ export default function Home(props) {
 					<br/>
 					<div className="whats-new">
 						<h2>What's New?</h2>
-						<Collapsible open={true} transitionTime={500} easing="ease" trigger={<>v2.3.2<ArrowDropDownRoundedIcon /></>}>
+						<Collapsible open={true} transitionTime={500} easing="ease" trigger={<>v2.3.3<ArrowDropDownRoundedIcon /></>}>
+							<ul>
+								<li>Bug fixes:</li>
+								<ul>
+									<li>On the search page, all sets are shown instead of only the last 50 showing and previous ones being overwritten</li>
+								</ul>
+							</ul>
+						</Collapsible>
+						<Collapsible transitionTime={500} easing="ease" trigger={<>v2.3.2<ArrowDropDownRoundedIcon /></>}>
 							<ul>
 								<li>Bug fixes:</li>
 								<ul>

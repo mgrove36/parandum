@@ -102,7 +102,7 @@ export default withRouter(class SearchSets extends Component {
 					sets: reload ? querySnapshot.docs : this.state.sets.concat(querySnapshot.docs),
 					selections: selections,
 					pageNumber: this.state.pageNumber + 1,
-					loadedAllSets: querySnapshot.docs.length === 0,
+					loadedAllSets: querySnapshot.docs.length < paginationFrequency,
 					loadingSets: false,
 				});
 			});
@@ -334,7 +334,7 @@ export default withRouter(class SearchSets extends Component {
 						)}
 					</div>
 					{
-						!this.state.loadedAllSets && this.state.sets.length % paginationFrequency === 0 &&
+						!this.state.loadedAllSets &&
 						<Button
 							onClick={() => this.loadSets()}
 							disabled={this.state.loadingSets}
