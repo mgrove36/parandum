@@ -317,7 +317,7 @@ export default withRouter(class SearchSets extends Component {
 
 					<div className="checkbox-list">
 						{
-							this.state.sets.slice(-50).map(set =>
+							this.state.sets.map(set =>
 								<div key={set.id}>
 									<label>
 										<Checkbox
