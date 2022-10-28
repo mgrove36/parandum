@@ -35,6 +35,7 @@ import "firebase/functions";
 import "firebase/app-check";
 import "firebase/firestore";
 import "firebase/analytics";
+import PlatformDisabled from './PlatformDisabled';
 
 // TODO: app check debug token set in index.html - remove before deploy
 
@@ -258,6 +259,15 @@ class App extends React.Component {
             ?
             <>
               <Switch>
+                <Route path="/tos" exact>
+                  <TermsOfService logEvent={analytics.logEvent} page={this.page} />
+                </Route>
+                <Route path="/privacy" exact>
+                  <PrivacyPolicy logEvent={analytics.logEvent} page={this.page} />
+                </Route>
+                <Route path="/">
+                    <PlatformDisabled logEvent={analytics.logEvent} page={this.page} />
+                </Route>
                 <Route path="/" exact>
                     <LoggedInHome db={db} firebase={firebase} functions={functions} user={this.state.user} logEvent={analytics.logEvent} page={this.page} />
                 </Route>
