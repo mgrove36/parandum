@@ -17,13 +17,10 @@ const PlatformDisabled = (props) => {
 
       <main>
         <div className="description-section">
-          <h1>Your access to Parandum has been temporarily disabled</h1>
+          <h1>Your access to Parandum has been disabled</h1>
           <p>
             Apologies, but due to unpaid invoices by <Link to={{pathname: "https://reading-school.co.uk"}} target="_blank">Reading School</Link> you
-            are currently unable to access this platform. Please contact Mr M Cooper at{" "}
-            <Link to={{pathname: "mailto:mcooper@reading-school.co.uk"}} target="_blank">mcooper@reading-school.co.uk</Link> and{" "}
-            <Link to={{pathname: "mailto:finance@reading-school.co.uk"}} target="_blank">finance@reading-school.co.uk</Link> to regain access. If
-            you are a student at Reading School, please also discuss this with your language teacher.
+            are currently unable to access this platform. Please contact your head of department, senior leadership team, and finance department.
           </p>
         </div>
       </main>

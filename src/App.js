@@ -265,9 +265,12 @@ class App extends React.Component {
                 <Route path="/privacy" exact>
                   <PrivacyPolicy logEvent={analytics.logEvent} page={this.page} />
                 </Route>
-                <Route path="/">
-                    <PlatformDisabled logEvent={analytics.logEvent} page={this.page} />
-                </Route>
+                {
+                  this.state.user.email.endsWith("@reading-school.co.uk") &&
+                  <Route path="/">
+                      <PlatformDisabled logEvent={analytics.logEvent} page={this.page} />
+                  </Route>
+                }
                 <Route path="/" exact>
                     <LoggedInHome db={db} firebase={firebase} functions={functions} user={this.state.user} logEvent={analytics.logEvent} page={this.page} />
                 </Route>
